@@ -113,10 +113,12 @@ export async function getLibrary(): Promise<LibrarySnapshot> {
     }
   }
 
-  // La biblioteca llega como secciones (grid o shelves)
-  for (const section of lib?.items ?? lib?.sections ?? []) {
-    if (Array.isArray(section?.contents ?? section?.items)) {
-      consume(section.contents ?? section.items)
+  // La biblioteca llega como secciones (grid o shelves). En youtubei.js v18
+  // los items cuelgan de `contents`; mantenemos los nombres antiguos por si acaso.
+  for (const section of lib?.contents ?? lib?.items ?? lib?.sections ?? []) {
+    const inner = section?.contents ?? section?.items
+    if (Array.isArray(inner)) {
+      consume(inner)
     } else {
       consume([section])
     }

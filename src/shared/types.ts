@@ -135,6 +135,7 @@ export const IPC = {
   LIB_PLAYLIST_REMOVE: 'library:playlistRemove',
   LIB_PLAYLIST_CREATE: 'library:playlistCreate',
   LIB_SUBSCRIBE: 'library:subscribe',
+  LIB_LIKED_IDS: 'library:likedIds',
   HISTORY_ADD: 'history:add',
   HISTORY_LIST: 'history:list',
   // descargas
@@ -156,6 +157,8 @@ export const IPC = {
   MINI_COMMAND: 'mini:command', // mini -> main -> renderer principal
   MINI_SHOW_MAIN: 'mini:showMain',
   MINI_SET_CORNER: 'mini:setCorner',
+  MINI_OPEN_SETTINGS: 'mini:openSettings',
+  MINI_SET_SCALE: 'mini:setScale',
   // streaming
   STREAM_PREPARE: 'stream:prepare',
   // ventana
@@ -210,6 +213,10 @@ export interface AppSettings {
   discordRpc: boolean
   /** Esquina del mini-player: tl/tr/bl/br o posición libre */
   miniCorner: 'tl' | 'tr' | 'bl' | 'br' | 'free'
+  /** Modo karaoke del mini-player: letra en lugar de título/timeline */
+  miniKaraoke: boolean
+  /** Escala de la tarjeta del mini-player (0.8–1.6) */
+  miniScale: number
   /** Posición libre del mini-player (si miniCorner = 'free') */
   miniX?: number
   miniY?: number
@@ -230,7 +237,24 @@ export const DEFAULT_SETTINGS: AppSettings = {
   preservePitch: true,
   closeToTray: false,
   discordRpc: false,
-  miniCorner: 'br'
+  miniCorner: 'br',
+  miniKaraoke: false,
+  miniScale: 1
+}
+
+export interface LyricWord {
+  /** Inicio absoluto de la palabra en ms */
+  timeMs: number
+  /** Duración cantada de la palabra en ms */
+  durMs: number
+  text: string
+}
+
+export interface LyricLine {
+  timeMs: number
+  text: string
+  /** Tiempos por palabra (KRC de KuGou): karaoke que sigue al cantante */
+  words?: LyricWord[]
 }
 
 export interface LyricsData {
@@ -238,5 +262,5 @@ export interface LyricsData {
   /** Texto plano (no sincronizado) */
   plain?: string
   /** Líneas sincronizadas si existen */
-  synced?: { timeMs: number; text: string }[]
+  synced?: LyricLine[]
 }

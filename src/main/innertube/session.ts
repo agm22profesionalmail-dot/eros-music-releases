@@ -206,6 +206,39 @@ class SessionManager extends EventEmitter {
     return rebuilt
   }
 
+  /**
+   * Refresca las cookies visitando music.youtube.com en una ventana oculta
+   * con la partición de login: Chromium aplica las rotaciones de Google
+   * (SIDTS y compañía) y releemos el header. Evita el clásico "deja de
+   * funcionar hasta que reinicio" en sesiones abiertas durante días.
+   */
+  async refreshCookiesInBackground(): Promise<void> {
+    if (this.#authState.method !== 'cookie') return
+    try {
+      const { BrowserWindow } = await import('electron')
+      const win = new BrowserWindow({
+        show: false,
+        webPreferences: { partition: AUTH_PARTITION, sandbox: true }
+      })
+      await win.loadURL('https://music.youtube.com/').catch(() => undefined)
+      await new Promise((r) => setTimeout(r, 5000))
+      win.destroy()
+      const header = await this.readCookiesFromPartition()
+      if (header && header !== this.#cookieHeader) {
+        this.#cookieHeader = header
+        this.#innertube = null
+        this.#creating = null
+        this.#streamingReady = false
+        await this.get()
+        console.log('[auth] cookies rotadas y sesión reconstruida')
+      }
+    } catch (err) {
+      console.warn('[auth] refresco de cookies falló:', err)
+    }
+  }
+
+  #cookieRefreshTimer: NodeJS.Timeout | null = null
+
   /** Restaura la sesión guardada al arrancar la app. */
   async restore(): Promise<void> {
     const method = await this.#readMarker()
@@ -217,6 +250,14 @@ class SessionManager extends EventEmitter {
         this.#streamingReady = false
         await this.get()
         this.#setAuthState({ status: 'signedIn', method: 'cookie' })
+        // Rotación de cookies: refresco al arrancar y cada 6 horas
+        void this.refreshCookiesInBackground()
+        if (!this.#cookieRefreshTimer) {
+          this.#cookieRefreshTimer = setInterval(
+            () => void this.refreshCookiesInBackground(),
+            6 * 3600_000
+          )
+        }
         return
       }
       // Cookies caducadas o borradas

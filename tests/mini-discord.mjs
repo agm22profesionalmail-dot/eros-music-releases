@@ -115,28 +115,79 @@ if (miniPage) {
     check('seek desde el mini (barra no encontrada)', false)
   }
 
-  // 7. Esquinas: ruedita -> elegir "Arriba izquierda" y verificar posición real
+  // 7. Ventana de ajustes independiente: abrir con la ruedita
   await miniPage.hover('body')
-  await miniPage.locator('[title="Posición del mini-player"]').click()
-  await miniPage.locator('.context-menu button', { hasText: 'Arriba izquierda' }).click()
-  await win.waitForTimeout(800)
-  const miniBounds = await app.evaluate(({ BrowserWindow }) => {
-    const mini = BrowserWindow.getAllWindows().find((w) => w.webContents.getURL().includes('#/mini'))
-    return mini ? mini.getBounds() : null
-  })
-  console.log('  bounds tras esquina TL:', JSON.stringify(miniBounds))
-  check('anclado arriba-izquierda', Boolean(miniBounds && miniBounds.x < 40 && miniBounds.y < 40))
+  await miniPage.locator('[title="Ajustes del mini-player"]').click()
+  let settingsPage = null
+  for (let i = 0; i < 20 && !settingsPage; i++) {
+    await win.waitForTimeout(400)
+    settingsPage = app.windows().find((w) => w.url().includes('#/mini-settings'))
+  }
+  check('ventana de ajustes del mini abierta', Boolean(settingsPage))
 
-  // Modo libre: deben aparecer los puntitos de arrastre
-  await miniPage.locator('[title="Posición del mini-player"]').click()
-  await miniPage.locator('.context-menu button', { hasText: 'Posición libre' }).click()
-  await miniPage.waitForTimeout(400)
-  check('agarre de puntitos en modo libre', await miniPage.locator('[title="Arrastra para mover"]').isVisible())
-  await miniPage.screenshot({ path: join(shots, 'miniplayer-v2.png') })
+  if (settingsPage) {
+    await settingsPage.waitForLoadState('domcontentloaded')
+    await settingsPage.waitForTimeout(500)
 
-  // Vuelve a abajo-derecha (deja el ajuste por defecto)
-  await miniPage.locator('[title="Posición del mini-player"]').click()
-  await miniPage.locator('.context-menu button', { hasText: 'Abajo derecha' }).click()
+    // Esquina arriba-izquierda desde el diagrama
+    await settingsPage.locator('[title="Arriba izquierda"]').click()
+    await win.waitForTimeout(800)
+    const miniBounds = await app.evaluate(({ BrowserWindow }) => {
+      const mini = BrowserWindow.getAllWindows().find(
+        (w) => w.webContents.getURL().includes('#/mini') && !w.webContents.getURL().includes('settings')
+      )
+      return mini ? mini.getBounds() : null
+    })
+    console.log('  bounds tras esquina TL:', JSON.stringify(miniBounds))
+    check('anclado arriba-izquierda', Boolean(miniBounds && miniBounds.x < 40 && miniBounds.y < 40))
+
+    // Escala al 130%: la ventana del mini debe crecer
+    await settingsPage.locator('input[type="range"]').fill('1.3')
+    await win.waitForTimeout(800)
+    const scaledBounds = await app.evaluate(({ BrowserWindow }) => {
+      const mini = BrowserWindow.getAllWindows().find(
+        (w) => w.webContents.getURL().includes('#/mini') && !w.webContents.getURL().includes('settings')
+      )
+      return mini ? mini.getBounds() : null
+    })
+    console.log('  bounds al 130%:', JSON.stringify(scaledBounds))
+    check('escala aplicada (ancho ≈ 520)', Boolean(scaledBounds && Math.abs(scaledBounds.width - 520) < 6))
+    await settingsPage.locator('input[type="range"]').fill('1')
+    await win.waitForTimeout(500)
+
+    // Karaoke: activar y comprobar que aparece letra en la tarjeta
+    await settingsPage.locator('input[type="checkbox"]').check()
+    await miniPage.waitForTimeout(6000) // deja cargar la letra
+    const karaokeText = await miniPage
+      .locator('div[title="Abrir Metrolist"] div')
+      .first()
+      .textContent()
+      .catch(() => null)
+    console.log('  línea de karaoke:', karaokeText)
+    check(
+      'karaoke muestra letra (no el título)',
+      Boolean(karaokeText && karaokeText.length > 2 && !karaokeText.includes('·'))
+    )
+    await miniPage.screenshot({ path: join(shots, 'miniplayer-karaoke.png') })
+    await settingsPage.locator('input[type="checkbox"]').uncheck()
+
+    // Posición libre: puntitos de arrastre
+    await settingsPage.locator('button', { hasText: 'Libre' }).click()
+    await miniPage.waitForTimeout(400)
+    check(
+      'agarre de puntitos en modo libre',
+      await miniPage.locator('[title="Arrastra para mover"]').isVisible()
+    )
+
+    // Vuelve a abajo-derecha y cierra ajustes
+    await settingsPage.locator('[title="Abajo derecha"]').click()
+    await settingsPage.locator('[aria-label="Cerrar"]').click()
+    await win.waitForTimeout(500)
+    check(
+      'ventana de ajustes cerrada',
+      !app.windows().some((w) => w.url().includes('#/mini-settings'))
+    )
+  }
 
   // 8. Cierra el mini con su botón
   await miniPage.hover('body')

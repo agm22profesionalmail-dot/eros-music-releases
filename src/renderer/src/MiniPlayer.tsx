@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import type { AppSettings, MiniCorner } from '@shared/types'
+import type { AppSettings, LyricsData, MiniCorner } from '@shared/types'
 import {
   CloseIcon,
+  MicIcon,
   MusicNoteIcon,
   PauseIcon,
   PlayIcon,
@@ -11,70 +12,76 @@ import {
 } from './components/Icons'
 import { formatTime } from './app/authStore'
 import { extractAccent } from './app/artworkColor'
-
-/** Aplica tema + acento fijo al DOM del mini (misma apariencia que la app). */
-function applyThemeDom(s: AppSettings): void {
-  const root = document.documentElement
-  root.dataset.theme = s.theme
-  if (s.accentMode === 'fixed') {
-    root.style.setProperty('--accent', s.accent)
-    root.style.setProperty('--accent-hover', s.accent + 'dd')
-  }
-}
+import { applyThemeDom } from './app/themeDom'
+import { computeLineFill } from './app/karaoke'
 
 /**
  * Mini-player flotante.
- * Layout: [carátula] [título · artista / línea de tiempo] [◀ ⏯ ▶]
- * - Ruedita de ajustes en la tarjeta: 4 esquinas o posición libre.
- * - En posición libre aparece un agarre de puntitos arriba-centro para arrastrar.
+ * Normal:  [carátula] [título · artista / línea de tiempo] [◀ ⏯ ▶]
+ * Karaoke: [carátula] [ letra sincronizada en vivo        ] [◀ ⏯ ▶]
+ * La ruedita abre una ventana de ajustes independiente (esquinas, tamaño, karaoke).
  */
 
 interface MiniState {
+  videoId: string
   title: string
   artists: string
+  album?: string
   thumbnailUrl?: string
   isPlaying: boolean
   positionSec: number
   durationSec: number
 }
 
-const CORNERS: { key: MiniCorner; label: string; glyph: string }[] = [
-  { key: 'tl', label: 'Arriba izquierda', glyph: '◤' },
-  { key: 'tr', label: 'Arriba derecha', glyph: '◥' },
-  { key: 'bl', label: 'Abajo izquierda', glyph: '◣' },
-  { key: 'br', label: 'Abajo derecha', glyph: '◢' },
-  { key: 'free', label: 'Posición libre', glyph: '✥' }
-]
-
 export default function MiniPlayer(): React.JSX.Element {
   const [state, setState] = useState<MiniState | null>(null)
   const [corner, setCorner] = useState<MiniCorner>('br')
-  const [gearOpen, setGearOpen] = useState(false)
+  const [karaoke, setKaraoke] = useState(false)
+  const [scale, setScale] = useState(1)
   const [hover, setHover] = useState(false)
   const [accentMode, setAccentMode] = useState<AppSettings['accentMode']>('fixed')
   const [tint, setTint] = useState<string | null>(null)
+  const [lyrics, setLyrics] = useState<LyricsData | null>(null)
+  const [smoothPos, setSmoothPos] = useState(0)
   const barRef = useRef<HTMLDivElement>(null)
+  const lastSync = useRef<{ pos: number; at: number; playing: boolean }>({
+    pos: 0,
+    at: Date.now(),
+    playing: false
+  })
+
+  const applySettings = (s: AppSettings): void => {
+    setCorner(s.miniCorner)
+    setKaraoke(s.miniKaraoke)
+    setScale(s.miniScale || 1)
+    setAccentMode(s.accentMode)
+    applyThemeDom(s)
+  }
 
   useEffect(() => {
-    void window.api.settings.get().then((s) => {
-      setCorner(s.miniCorner)
-      setAccentMode(s.accentMode)
-      applyThemeDom(s)
+    void window.api.settings.get().then(applySettings)
+    const offState = window.api.mini.onState((raw) => {
+      const s = raw as MiniState
+      setState(s)
+      lastSync.current = { pos: s.positionSec, at: Date.now(), playing: s.isPlaying }
     })
-    const offState = window.api.mini.onState((s) => setState(s as MiniState))
-    // Cambios de tema/acento en la app principal -> se reflejan aquí en vivo
-    const offSettings = window.api.settings.onChanged((s) => {
-      setCorner(s.miniCorner)
-      setAccentMode(s.accentMode)
-      applyThemeDom(s)
-    })
+    const offSettings = window.api.settings.onChanged(applySettings)
     return () => {
       offState()
       offSettings()
     }
   }, [])
 
-  // Acento dinámico + tinte de fondo a partir de la carátula (como la app)
+  // Posición interpolada (el estado llega a 1 Hz; el karaoke necesita fluidez)
+  useEffect(() => {
+    const t = window.setInterval(() => {
+      const { pos, at, playing } = lastSync.current
+      setSmoothPos(playing ? pos + (Date.now() - at) / 1000 : pos)
+    }, 100)
+    return () => window.clearInterval(t)
+  }, [])
+
+  // Acento dinámico + tinte de fondo desde la carátula
   useEffect(() => {
     const url = state?.thumbnailUrl
     if (!url) {
@@ -95,9 +102,35 @@ export default function MiniPlayer(): React.JSX.Element {
     }
   }, [state?.thumbnailUrl, accentMode])
 
+  // Letra para el modo karaoke (cacheada en el main por canción)
+  useEffect(() => {
+    if (!karaoke || !state?.videoId) {
+      setLyrics(null)
+      return
+    }
+    let cancelled = false
+    void window.api.music
+      .lyrics({
+        videoId: state.videoId,
+        title: state.title,
+        artists: state.artists.split(', '),
+        album: state.album,
+        durationSec: state.durationSec
+      })
+      .then((data) => {
+        if (!cancelled) setLyrics(data)
+      })
+      .catch(() => {
+        if (!cancelled) setLyrics(null)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [karaoke, state?.videoId])
+
   const pct =
     state && state.durationSec > 0
-      ? Math.min(100, (state.positionSec / state.durationSec) * 100)
+      ? Math.min(100, (smoothPos / state.durationSec) * 100)
       : 0
 
   const seekTo = (e: React.PointerEvent): void => {
@@ -108,21 +141,36 @@ export default function MiniPlayer(): React.JSX.Element {
     void window.api.mini.command(`seek:${(ratio * state.durationSec).toFixed(1)}`)
   }
 
-  const pickCorner = (c: MiniCorner): void => {
-    setCorner(c)
-    setGearOpen(false)
-    void window.api.mini.setCorner(c)
+  // Línea activa del karaoke + progreso de relleno (iluminación fluida)
+  const synced = lyrics?.synced
+  let activeLine = ''
+  let nextLine = ''
+  let linePct = 0
+  if (synced?.length) {
+    const timeMs = smoothPos * 1000
+    let idx = -1
+    for (let i = 0; i < synced.length; i++) {
+      if (synced[i].timeMs <= timeMs) idx = i
+      else break
+    }
+    activeLine = idx >= 0 ? synced[idx].text || '♪' : '♪'
+    nextLine = synced[idx + 1]?.text ?? ''
+    if (idx >= 0) {
+      const end = synced[idx + 1]?.timeMs ?? synced[idx].timeMs + 6000
+      linePct = computeLineFill(synced[idx], end, timeMs)
+    }
   }
+
+  const karaokeActive = karaoke && Boolean(synced?.length)
 
   return (
     <div
       onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => {
-        setHover(false)
-        setGearOpen(false)
-      }}
+      onMouseLeave={() => setHover(false)}
       style={{
-        height: '100vh',
+        width: 400,
+        height: 84,
+        zoom: scale,
         display: 'grid',
         gridTemplateColumns: '84px 1fr auto',
         alignItems: 'center',
@@ -159,18 +207,13 @@ export default function MiniPlayer(): React.JSX.Element {
           {[...Array(6)].map((_, i) => (
             <span
               key={i}
-              style={{
-                width: 3,
-                height: 3,
-                borderRadius: '50%',
-                background: 'var(--text-secondary)'
-              }}
+              style={{ width: 3, height: 3, borderRadius: '50%', background: 'var(--text-secondary)' }}
             />
           ))}
         </div>
       )}
 
-      {/* Ruedita + cerrar (aparecen al pasar el ratón) */}
+      {/* Micro (karaoke) + ruedita + cerrar (al pasar el ratón) */}
       <div
         style={{
           position: 'absolute',
@@ -185,9 +228,17 @@ export default function MiniPlayer(): React.JSX.Element {
       >
         <button
           className="icon-btn"
-          title="Posición del mini-player"
+          title={karaoke ? 'Salir del karaoke' : 'Modo karaoke'}
+          style={{ width: 20, height: 20, color: karaoke ? 'var(--accent)' : undefined }}
+          onClick={() => void window.api.settings.set({ miniKaraoke: !karaoke })}
+        >
+          <MicIcon size={12} />
+        </button>
+        <button
+          className="icon-btn"
+          title="Ajustes del mini-player"
           style={{ width: 20, height: 20 }}
-          onClick={() => setGearOpen((v) => !v)}
+          onClick={() => void window.api.mini.openSettings()}
         >
           <SettingsIcon size={13} />
         </button>
@@ -201,31 +252,9 @@ export default function MiniPlayer(): React.JSX.Element {
         </button>
       </div>
 
-      {/* Popover de posición */}
-      {gearOpen && (
-        <div
-          className="context-menu"
-          style={{ position: 'absolute', top: 26, right: 6, minWidth: 170, zIndex: 10 }}
-        >
-          {CORNERS.map((c) => (
-            <button key={c.key} onClick={() => pickCorner(c.key)}>
-              <span style={{ width: 18, textAlign: 'center' }}>{c.glyph}</span>
-              {c.label}
-              {corner === c.key && (
-                <span style={{ marginLeft: 'auto', color: 'var(--accent)' }}>●</span>
-              )}
-            </button>
-          ))}
-        </div>
-      )}
-
       {/* Carátula */}
       {state?.thumbnailUrl ? (
-        <img
-          src={state.thumbnailUrl}
-          alt=""
-          style={{ width: 84, height: 84, objectFit: 'cover' }}
-        />
+        <img src={state.thumbnailUrl} alt="" style={{ width: 84, height: 84, objectFit: 'cover' }} />
       ) : (
         <div
           style={{
@@ -241,57 +270,104 @@ export default function MiniPlayer(): React.JSX.Element {
         </div>
       )}
 
-      {/* Centro: título · artista (línea de arriba) + línea de tiempo (abajo) */}
-      <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 7 }}>
+      {/* Centro */}
+      {karaokeActive ? (
         <div
           style={{
-            fontSize: 13,
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
+            minWidth: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            gap: 3,
             cursor: 'pointer'
           }}
           title="Abrir Metrolist"
           onClick={() => void window.api.mini.showMain()}
         >
-          <b>{state?.title ?? 'Metrolist'}</b>
-          <span style={{ color: 'var(--text-secondary)' }}>
-            {state?.artists ? ` · ${state.artists}` : ''}
-          </span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ fontSize: 10, color: 'var(--text-subdued)', fontVariantNumeric: 'tabular-nums' }}>
-            {formatTime(state?.positionSec ?? 0)}
-          </span>
           <div
-            ref={barRef}
-            onPointerDown={seekTo}
-            style={{ flex: 1, height: 12, display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+            className="karaoke-fill"
+            style={{
+              fontSize: 15,
+              fontWeight: 800,
+              lineHeight: 1.25,
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+              ['--fill' as string]: `${linePct.toFixed(1)}%`,
+              transition: 'background-size 0.12s linear'
+            }}
           >
+            {activeLine}
+          </div>
+          {nextLine && (
             <div
               style={{
-                width: '100%',
-                height: 4,
-                borderRadius: 2,
-                background: 'var(--bg-tinted)',
-                position: 'relative'
+                fontSize: 11,
+                color: 'var(--text-subdued)',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis'
               }}
+            >
+              {nextLine}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 7 }}>
+          <div
+            style={{
+              fontSize: 13,
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              cursor: 'pointer'
+            }}
+            title="Abrir Metrolist"
+            onClick={() => void window.api.mini.showMain()}
+          >
+            <b>{state?.title ?? 'Metrolist'}</b>
+            <span style={{ color: 'var(--text-secondary)' }}>
+              {state?.artists ? ` · ${state.artists}` : ''}
+            </span>
+            {karaoke && !synced?.length && (
+              <span style={{ color: 'var(--text-subdued)', fontSize: 11 }}> · sin letra ♪</span>
+            )}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span
+              style={{ fontSize: 10, color: 'var(--text-subdued)', fontVariantNumeric: 'tabular-nums' }}
+            >
+              {formatTime(smoothPos)}
+            </span>
+            <div
+              ref={barRef}
+              onPointerDown={seekTo}
+              style={{ flex: 1, height: 12, display: 'flex', alignItems: 'center', cursor: 'pointer' }}
             >
               <div
                 style={{
-                  width: `${pct}%`,
-                  height: '100%',
+                  width: '100%',
+                  height: 4,
                   borderRadius: 2,
-                  background: 'var(--accent)'
+                  background: 'var(--bg-tinted)',
+                  position: 'relative'
                 }}
-              />
+              >
+                <div
+                  style={{ width: `${pct}%`, height: '100%', borderRadius: 2, background: 'var(--accent)' }}
+                />
+              </div>
             </div>
+            <span
+              style={{ fontSize: 10, color: 'var(--text-subdued)', fontVariantNumeric: 'tabular-nums' }}
+            >
+              {formatTime(state?.durationSec ?? 0)}
+            </span>
           </div>
-          <span style={{ fontSize: 10, color: 'var(--text-subdued)', fontVariantNumeric: 'tabular-nums' }}>
-            {formatTime(state?.durationSec ?? 0)}
-          </span>
         </div>
-      </div>
+      )}
 
       {/* Derecha: los 3 botones */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingRight: 2 }}>

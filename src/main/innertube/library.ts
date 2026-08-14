@@ -19,17 +19,27 @@ export interface LibraryResult extends LibrarySnapshot {
 
 export async function getLibraryCached(forceRefresh = false): Promise<LibraryResult> {
   const cached = readLibrarySection<LibrarySnapshot>(SECTION)
-  if (cached && !forceRefresh) {
+  const cachedHasContent =
+    cached &&
+    (cached.data.playlists?.length ||
+      cached.data.albums?.length ||
+      cached.data.artists?.length ||
+      cached.data.songs?.length)
+  if (cached && cachedHasContent && !forceRefresh) {
     // Refresco en segundo plano sin bloquear la respuesta
     void refreshLibrary().catch(() => undefined)
     return { ...cached.data, fromCache: true, updatedAt: cached.updatedAt }
   }
+  // Sin caché o caché vacía (p. ej. guardada por un fallo antiguo): refresco directo
   return refreshLibrary()
 }
 
 export async function refreshLibrary(): Promise<LibraryResult> {
   const fresh = await getLibrary()
-  cacheLibrarySection(SECTION, fresh)
+  // No machacar una caché buena con una instantánea vacía (fallo transitorio)
+  const hasContent =
+    fresh.playlists.length || fresh.albums.length || fresh.artists.length || fresh.songs.length
+  if (hasContent) cacheLibrarySection(SECTION, fresh)
   return { ...fresh, fromCache: false, updatedAt: Date.now() }
 }
 
@@ -39,9 +49,25 @@ export type LikeAction = 'like' | 'dislike' | 'clear'
 
 export async function setTrackRating(videoId: string, action: LikeAction): Promise<void> {
   const yt = await sessionManager.get()
-  if (action === 'like') await yt.interact.like(videoId)
-  else if (action === 'dislike') await yt.interact.dislike(videoId)
-  else await yt.interact.removeRating(videoId)
+  // El InteractionManager de youtubei.js manda target como string y cliente TV,
+  // que InnerTube rechaza con 400 para YT Music. Llamada directa correcta:
+  const endpoint =
+    action === 'like' ? '/like/like' : action === 'dislike' ? '/like/dislike' : '/like/removelike'
+  await yt.actions.execute(endpoint, {
+    client: 'YTMUSIC',
+    target: { videoId }
+  } as never)
+}
+
+/** IDs de las canciones con "Me gusta" (playlist LM), para hidratar los corazones. */
+export async function getLikedIds(): Promise<string[]> {
+  try {
+    const { getPlaylist } = await import('./api')
+    const liked = await getPlaylist('LM')
+    return liked.tracks.map((t) => t.videoId)
+  } catch {
+    return []
+  }
 }
 
 export async function addToPlaylist(playlistId: string, videoIds: string[]): Promise<void> {

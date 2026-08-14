@@ -273,7 +273,7 @@ a:hover {
 
 .chip.active {
   background: var(--text-primary);
-  color: #000;
+  color: var(--bg-base);
 }
 
 .sidebar-library-list {
@@ -1150,6 +1150,23 @@ a:hover {
   color: var(--text-secondary);
   text-align: center;
   padding: 48px 24px;
+}
+
+/* Karaoke: el texto se ilumina de izquierda a derecha mientras se canta.
+   --fill controla el porcentaje relleno con el color de acento. */
+.karaoke-fill {
+  --fill: 0%;
+  background-image:
+    linear-gradient(var(--accent), var(--accent)),
+    linear-gradient(var(--text-subdued), var(--text-subdued));
+  background-size:
+    var(--fill) 100%,
+    100% 100%;
+  background-repeat: no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  transition: background-size 0.25s linear;
 }
 
 .error-banner {

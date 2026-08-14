@@ -63,6 +63,7 @@ export function initMediaIntegration(): () => void {
     window.api.mini.publishState(
       current
         ? {
+            videoId: current.videoId,
             title: current.title,
             artists: current.artists.map((a) => a.name).join(', '),
             album: current.album?.name,

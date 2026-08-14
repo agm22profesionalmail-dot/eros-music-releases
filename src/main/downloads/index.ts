@@ -144,6 +144,11 @@ function ytDlpDownload(
     )
     let stderr = ''
     let lastFile: string | null = null
+    // Si yt-dlp se queda colgado, corta con error visible en vez de silencio
+    const killer = setTimeout(() => {
+      proc.kill('SIGKILL')
+      reject(new Error('yt-dlp no respondió en 3 minutos'))
+    }, 180_000)
     proc.stdout.on('data', (d) => {
       const text = String(d)
       const pm = text.match(/\[download\]\s+([\d.]+)%/)
@@ -154,8 +159,12 @@ function ytDlpDownload(
       if (already) lastFile = already[1].trim()
     })
     proc.stderr.on('data', (d) => (stderr += d))
-    proc.on('error', reject)
+    proc.on('error', (err) => {
+      clearTimeout(killer)
+      reject(err)
+    })
     proc.on('close', async (code) => {
+      clearTimeout(killer)
       if (code !== 0) {
         reject(new Error(`yt-dlp salió con ${code}: ${stderr.slice(-300)}`))
         return

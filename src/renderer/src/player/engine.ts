@@ -40,6 +40,8 @@ export class PlayerEngine {
   #listeners = new Map<EventKey, Set<EngineEvents[EventKey]>>()
   #crossfadeSec = 0
   #preparedNext: { videoId: string; url: string } | null = null
+  /** Timers de limpieza post-crossfade, por deck (para poder cancelarlos) */
+  #fadeCleanup = new Map<Deck, number>()
 
   constructor() {
     this.#ctx = new AudioContext({ latencyHint: 'playback' })
@@ -141,6 +143,14 @@ export class PlayerEngine {
       const to = this.#inactiveDeck()
       this.#active = 1 - this.#active
 
+      // El deck destino puede tener una limpieza pendiente de un crossfade
+      // anterior (doble "siguiente" rápido): cancélala o matará esta pista.
+      const pending = this.#fadeCleanup.get(to)
+      if (pending) {
+        window.clearTimeout(pending)
+        this.#fadeCleanup.delete(to)
+      }
+
       to.el.src = url
       to.el.playbackRate = this.#rate
       ;(to.el as HTMLAudioElement & { preservesPitch: boolean }).preservesPitch =
@@ -156,11 +166,15 @@ export class PlayerEngine {
       from.fade.gain.linearRampToValueAtTime(0, now + dur)
       to.fade.gain.linearRampToValueAtTime(1, now + dur)
 
-      window.setTimeout(() => {
+      const timer = window.setTimeout(() => {
+        this.#fadeCleanup.delete(from)
+        // Si mientras tanto volvió a ser el deck activo, no lo toques
+        if (this.#activeDeck() === from) return
         from.el.pause()
         from.el.removeAttribute('src')
         from.el.load()
       }, dur * 1000 + 100)
+      this.#fadeCleanup.set(from, timer)
     } else {
       const deck = this.#activeDeck()
       const other = this.#inactiveDeck()

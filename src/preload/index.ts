@@ -90,7 +90,11 @@ const api = {
     command: (cmd: string): Promise<void> => ipcRenderer.invoke(IPC.MINI_COMMAND, cmd),
     /** Ancla el mini a una esquina o lo deja en posición libre */
     setCorner: (corner: 'tl' | 'tr' | 'bl' | 'br' | 'free'): Promise<void> =>
-      ipcRenderer.invoke(IPC.MINI_SET_CORNER, corner)
+      ipcRenderer.invoke(IPC.MINI_SET_CORNER, corner),
+    /** Abre/cierra la ventana de ajustes del mini-player */
+    openSettings: (): Promise<void> => ipcRenderer.invoke(IPC.MINI_OPEN_SETTINGS),
+    /** Escala de la tarjeta (0.8–1.6): redimensiona ventana y contenido */
+    setScale: (scale: number): Promise<void> => ipcRenderer.invoke(IPC.MINI_SET_SCALE, scale)
   },
 
   player: {
@@ -110,7 +114,8 @@ const api = {
     playlistCreate: (title: string, videoIds: string[]): Promise<string | null> =>
       ipcRenderer.invoke(IPC.LIB_PLAYLIST_CREATE, title, videoIds),
     subscribe: (channelId: string, subscribed: boolean): Promise<void> =>
-      ipcRenderer.invoke(IPC.LIB_SUBSCRIBE, channelId, subscribed)
+      ipcRenderer.invoke(IPC.LIB_SUBSCRIBE, channelId, subscribed),
+    likedIds: (): Promise<string[]> => ipcRenderer.invoke(IPC.LIB_LIKED_IDS)
   },
 
   history: {

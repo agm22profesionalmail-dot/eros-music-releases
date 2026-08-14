@@ -20,31 +20,42 @@ export function SearchPage({ query }: { query: string }): React.JSX.Element {
   const [filter, setFilter] = useState<SearchFilter>('all')
   const [results, setResults] = useState<SearchResults | null>(null)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const playTracks = usePlayer((s) => s.playTracks)
   const debounce = useRef<number>(0)
+  // Nº de petición: las respuestas viejas no pisan a las nuevas
+  const requestSeq = useRef(0)
+
+  const runSearch = (q: string, f: SearchFilter): void => {
+    const seq = ++requestSeq.current
+    setLoading(true)
+    setError(null)
+    void window.api.music
+      .search(q, f)
+      .then((res) => {
+        if (seq !== requestSeq.current) return // respuesta obsoleta
+        setResults(res)
+        setLoading(false)
+      })
+      .catch((err) => {
+        if (seq !== requestSeq.current) return
+        setError(String((err as Error)?.message ?? err))
+        setLoading(false)
+      })
+  }
 
   useEffect(() => {
+    window.clearTimeout(debounce.current)
     if (!query.trim()) {
+      // Borrar la caja también invalida cualquier búsqueda en vuelo
+      requestSeq.current++
       setResults(null)
+      setLoading(false)
+      setError(null)
       return
     }
-    setLoading(true)
-    window.clearTimeout(debounce.current)
-    debounce.current = window.setTimeout(() => {
-      let cancelled = false
-      void window.api.music
-        .search(query, filter)
-        .then((res) => {
-          if (!cancelled) setResults(res)
-        })
-        .catch(() => undefined)
-        .finally(() => {
-          if (!cancelled) setLoading(false)
-        })
-      return () => {
-        cancelled = true
-      }
-    }, 300)
+    debounce.current = window.setTimeout(() => runSearch(query, filter), 300)
+    return () => window.clearTimeout(debounce.current)
   }, [query, filter])
 
   return (
@@ -68,8 +79,36 @@ export function SearchPage({ query }: { query: string }): React.JSX.Element {
         </div>
       )}
 
-      {results && !loading && (
+      {error && !loading && (
+        <div className="empty-state">
+          <div className="error-banner" style={{ display: 'inline-block' }}>
+            La búsqueda falló: {error}
+          </div>
+          <div style={{ paddingTop: 12 }}>
+            <button className="btn btn-primary" onClick={() => runSearch(query, filter)}>
+              Reintentar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {results && !loading && !error && (
         <>
+          {results.topResult && (
+            <>
+              <h2>Mejor resultado</h2>
+              <div style={{ maxWidth: 220 }}>
+                <Card
+                  item={results.topResult}
+                  onPlay={(card) => {
+                    if (card.kind === 'song' || card.kind === 'video') {
+                      void playTracks([cardToTrack(card)])
+                    }
+                  }}
+                />
+              </div>
+            </>
+          )}
           {results.songs.length > 0 && (
             <>
               <h2>Canciones</h2>

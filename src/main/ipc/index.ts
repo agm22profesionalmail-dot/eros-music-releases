@@ -69,6 +69,7 @@ export function registerIpc(getMainWindow: () => BrowserWindow | null): void {
   ipcMain.handle(IPC.LIB_SUBSCRIBE, (_e, channelId: string, subscribed: boolean) =>
     lib.setSubscribed(channelId, subscribed)
   )
+  ipcMain.handle(IPC.LIB_LIKED_IDS, () => lib.getLikedIds())
   ipcMain.handle(IPC.HISTORY_ADD, (_e, track: TrackSummary) => lib.addHistoryEntry(track))
   ipcMain.handle(IPC.HISTORY_LIST, (_e, limit?: number) => lib.getHistory(limit))
 
@@ -98,6 +99,16 @@ export function registerIpc(getMainWindow: () => BrowserWindow | null): void {
 
   // ---- Streaming ----
   ipcMain.handle(IPC.STREAM_PREPARE, async (_e, videoId: string): Promise<PreparedStream> => {
+    // Descargada -> directo del disco, sin tocar la red (modo offline real)
+    const { getDownloadPath } = await import('../db')
+    const local = getDownloadPath(videoId)
+    if (local) {
+      return {
+        url: streamUrlFor(videoId),
+        mimeType: local.endsWith('.opus') ? 'audio/ogg' : 'audio/mp4',
+        via: 'local'
+      }
+    }
     const resolved = await resolveStream(videoId)
     return {
       url: streamUrlFor(videoId),

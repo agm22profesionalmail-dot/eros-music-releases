@@ -4,7 +4,7 @@
 
 import type { LyricsData } from '@shared/types'
 import { fetchLrclibLyrics, type LrclibLyrics } from './lrclib'
-import { fetchKugouLyrics } from './kugou'
+import { fetchKugouLyrics, fetchKugouKrc } from './kugou'
 import { parseLrc } from './parser'
 
 export interface GetLyricsParams {
@@ -79,18 +79,23 @@ async function lookup(
   artist: string,
   params: GetLyricsParams
 ): Promise<LyricsData | null> {
-  // 1) LRCLIB — fuente principal. Si la red falla seguimos con el respaldo.
-  let lrclib: LrclibLyrics | null = null
-  try {
-    lrclib = await fetchLrclibLyrics({
-      title,
-      artist,
-      album: params.album,
-      durationSec: params.durationSec
-    })
-  } catch {
-    lrclib = null
+  // KRC de KuGou (tiempos por palabra) y LRCLIB (líneas) en paralelo:
+  // el karaoke de verdad necesita palabras; LRCLIB es el respaldo fiable.
+  const kugouParams = { title, artist, durationSec: params.durationSec }
+  const [krcResult, lrclibResult] = await Promise.allSettled([
+    fetchKugouKrc(kugouParams),
+    fetchLrclibLyrics({ title, artist, album: params.album, durationSec: params.durationSec })
+  ])
+
+  // 1) KuGou KRC — karaoke por palabra (el que sigue al cantante)
+  const krc = krcResult.status === 'fulfilled' ? krcResult.value : null
+  if (krc && hasRealLines(krc) && !krc.some((l) => l.text.includes('纯音乐'))) {
+    return { source: 'KuGou (karaoke)', synced: krc }
   }
+
+  // 2) LRCLIB sincronizada por líneas
+  const lrclib: LrclibLyrics | null =
+    lrclibResult.status === 'fulfilled' ? lrclibResult.value : null
   if (lrclib?.synced) {
     const synced = parseLrc(lrclib.synced)
     if (hasRealLines(synced)) {
@@ -98,8 +103,8 @@ async function lookup(
     }
   }
 
-  // 2) KuGou — respaldo sincronizado (nunca lanza)
-  const kugouLrc = await fetchKugouLyrics({ title, artist, durationSec: params.durationSec })
+  // 3) KuGou LRC — respaldo sincronizado por líneas (nunca lanza)
+  const kugouLrc = await fetchKugouLyrics(kugouParams)
   if (kugouLrc) {
     const synced = parseLrc(kugouLrc)
     // "纯音乐" = pista instrumental marcada por KuGou: no es una letra real
@@ -108,7 +113,7 @@ async function lookup(
     }
   }
 
-  // 3) LRCLIB texto plano — mejor que nada
+  // 4) LRCLIB texto plano — mejor que nada
   if (lrclib?.plain) {
     return { source: 'LRCLIB', plain: lrclib.plain }
   }

@@ -29,6 +29,13 @@ export const useLibrary = create<LibraryState>((set, get) => ({
     } catch {
       /* sin sesión o sin red */
     }
+    // Hidrata los corazones con los "Me gusta" reales de la cuenta
+    try {
+      const ids = await window.api.library.likedIds()
+      if (ids.length) set({ likedIds: new Set(ids) })
+    } catch {
+      /* sin likes accesibles */
+    }
   },
 
   refresh: async () => {

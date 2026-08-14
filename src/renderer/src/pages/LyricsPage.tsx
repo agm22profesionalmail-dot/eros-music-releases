@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import type { LyricsData } from '@shared/types'
 import { usePlayer } from '../player/store'
+import { engine } from '../player/engine'
+import { computeLineFill } from '../app/karaoke'
 
 /**
  * Vista de letras a pantalla completa: línea activa resaltada con
@@ -55,6 +57,34 @@ export function LyricsPage(): React.JSX.Element {
   useEffect(() => {
     activeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }, [activeIndex])
+
+  // Animación fluida de karaoke: rellena la línea activa siguiendo el reloj
+  // real del audio (rAF), sin pasar por re-renders de React.
+  const offsetRef = useRef(offsetMs)
+  offsetRef.current = offsetMs
+  const syncedRef = useRef(synced)
+  syncedRef.current = synced
+  const activeIndexRef = useRef(activeIndex)
+  activeIndexRef.current = activeIndex
+
+  useEffect(() => {
+    let raf = 0
+    const tick = (): void => {
+      const el = activeRef.current
+      const lines = syncedRef.current
+      const idx = activeIndexRef.current
+      if (el && lines && idx >= 0) {
+        const line = lines[idx]
+        const nextStart = lines[idx + 1]?.timeMs ?? line.timeMs + 6000
+        const nowMs = engine.currentTime * 1000 + offsetRef.current
+        const pct = computeLineFill(line, nextStart, nowMs)
+        el.style.setProperty('--fill', `${pct.toFixed(1)}%`)
+      }
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [])
 
   if (!current) {
     return <div className="empty-state">Reproduce algo para ver su letra</div>
@@ -111,6 +141,7 @@ export function LyricsPage(): React.JSX.Element {
               <button
                 key={i}
                 ref={i === activeIndex ? activeRef : undefined}
+                className={i === activeIndex ? 'karaoke-fill' : undefined}
                 onClick={() => seek(Math.max(0, (line.timeMs - offsetMs) / 1000))}
                 style={{
                   display: 'block',
@@ -121,9 +152,11 @@ export function LyricsPage(): React.JSX.Element {
                   fontWeight: 800,
                   lineHeight: 1.25,
                   letterSpacing: '-0.01em',
-                  color: i === activeIndex ? 'var(--text-primary)' : 'var(--text-subdued)',
+                  // Cantadas: iluminadas; futuras: apagadas; la activa la pinta .karaoke-fill
+                  color: i === activeIndex ? undefined : i < activeIndex ? 'var(--text-primary)' : 'var(--text-subdued)',
                   transition: 'color 0.3s',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  ...(i === activeIndex ? { transition: 'none' } : {})
                 }}
               >
                 {line.text || '♪'}

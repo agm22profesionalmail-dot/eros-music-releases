@@ -1,5 +1,6 @@
 import { usePlayer } from '../player/store'
 import { CloseIcon, MusicNoteIcon } from '../components/Icons'
+import { openContextMenu } from '../components/ContextMenu'
 
 export function QueuePanel({ onClose }: { onClose: () => void }): React.JSX.Element {
   const queue = usePlayer((s) => s.queue)
@@ -43,11 +44,22 @@ export function QueuePanel({ onClose }: { onClose: () => void }): React.JSX.Elem
           <button
             key={item.queueId}
             className="library-row"
-            onContextMenu={(e) => {
-              e.preventDefault()
-              removeFromQueue(item.queueId)
+            onDoubleClick={() => {
+              const idx = queue.findIndex((q) => q.queueId === item.queueId)
+              if (idx >= 0) void usePlayer.getState().playTracks(queue, idx)
             }}
-            title="Clic derecho para quitar de la cola"
+            onContextMenu={(e) =>
+              openContextMenu(e, [
+                {
+                  label: 'Reproducir ya',
+                  action: () => {
+                    const idx = queue.findIndex((q) => q.queueId === item.queueId)
+                    if (idx >= 0) void usePlayer.getState().playTracks(queue, idx)
+                  }
+                },
+                { label: 'Quitar de la cola', action: () => removeFromQueue(item.queueId) }
+              ])
+            }
           >
             {item.thumbnailUrl ? (
               <img src={item.thumbnailUrl} alt="" loading="lazy" />
