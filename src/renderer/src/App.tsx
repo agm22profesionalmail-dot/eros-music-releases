@@ -12,10 +12,13 @@ import { LoginPage } from './pages/LoginPage'
 import { LibraryPage } from './pages/LibraryPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { LyricsPage } from './pages/LyricsPage'
+import { VisualizerPage } from './pages/VisualizerPage'
 import { ContextMenuHost } from './components/ContextMenu'
 import { TextModalHost } from './components/TextModal'
+import { AmbientBackground } from './components/AmbientBackground'
 import { useLibrary } from './app/libraryStore'
 import { useSettings } from './app/settingsStore'
+import { useAmbient } from './app/ambientStore'
 import { initMediaIntegration } from './player/mediaSession'
 import { useRouter } from './app/router'
 import { useAuth } from './app/authStore'
@@ -42,12 +45,17 @@ export default function App(): React.JSX.Element {
   const [scrolled, setScrolled] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
 
+  const routeKey = (r: { name: string; id?: string }): string =>
+    r.id ? `${r.name}-${r.id}` : r.name
+
   const initSettings = useSettings((s) => s.init)
+  const initAmbient = useAmbient((s) => s.init)
   useEffect(() => {
     initAuth()
     void initSettings()
+    initAmbient()
     return initMediaIntegration()
-  }, [initAuth, initSettings])
+  }, [initAuth, initSettings, initAmbient])
 
   // Carga la biblioteca cuando hay sesión; límpiala al cerrar sesión
   const loadLibrary = useLibrary((s) => s.load)
@@ -66,6 +74,7 @@ export default function App(): React.JSX.Element {
 
   return (
     <div className="shell">
+      <AmbientBackground />
       <TitleBar />
       <div className={`shell-main ${queueOpen ? 'with-queue' : ''}`}>
         <Sidebar />
@@ -141,11 +150,11 @@ export default function App(): React.JSX.Element {
               </div>
             </div>
 
-            {/* Página activa */}
+            {/* Página activa (con transición cross-fade suave) */}
             {auth.status !== 'signedIn' && route.name === 'home' ? (
               <LoginPage />
             ) : (
-              <>
+              <div key={routeKey(route)} className="page-transition">
                 {route.name === 'home' && <HomePage />}
                 {route.name === 'search' && <SearchPage query={searchText} />}
                 {route.name === 'playlist' && <PlaylistPage id={route.id} />}
@@ -153,8 +162,9 @@ export default function App(): React.JSX.Element {
                 {route.name === 'artist' && <ArtistPage id={route.id} />}
                 {route.name === 'library' && <LibraryPage />}
                 {route.name === 'lyrics' && <LyricsPage />}
+                {route.name === 'visualizer' && <VisualizerPage />}
                 {route.name === 'settings' && <SettingsPage />}
-              </>
+              </div>
             )}
           </div>
         </main>

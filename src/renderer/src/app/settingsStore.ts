@@ -33,6 +33,8 @@ function setAccentVars(accent: string): void {
 
 function applyTheme(s: AppSettings): void {
   document.documentElement.dataset.theme = s.theme
+  // El ambientStore lee esto para decidir si el acento sigue a la carátula
+  document.documentElement.dataset.accentMode = s.accentMode
   if (s.accentMode === 'fixed') setAccentVars(s.accent)
   else applyDynamicAccent()
 }

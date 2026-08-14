@@ -5,9 +5,11 @@ import { useRouter } from '../app/router'
 interface CardProps {
   item: MediaCard
   onPlay?: (item: MediaCard) => void
+  /** Índice para la entrada escalonada */
+  index?: number
 }
 
-export function Card({ item, onPlay }: CardProps): React.JSX.Element {
+export function Card({ item, onPlay, index = 0 }: CardProps): React.JSX.Element {
   const navigate = useRouter((s) => s.navigate)
 
   const open = (): void => {
@@ -33,6 +35,7 @@ export function Card({ item, onPlay }: CardProps): React.JSX.Element {
   return (
     <div
       className={`media-card ${item.kind === 'artist' ? 'artist' : ''}`}
+      style={{ ['--i' as string]: Math.min(index, 20) }}
       onClick={open}
       role="button"
       tabIndex={0}

@@ -25,7 +25,24 @@
   --panel-radius: 8px;
   --panel-gap: 8px;
 
+  /* Ambiente 60-30-10 (los rellena ambientStore desde la carátula) */
+  --amb-60: var(--bg-base);
+  --amb-60-soft: var(--bg-highlight);
+  --amb-30: var(--bg-elevated);
+  --amb-glow: transparent;
+
+  /* Curvas de movimiento (impeccable: nada de ease-in al aparecer) */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
   font-family: 'Segoe UI Variable Display', 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* Tema negro puro (AMOLED) */
@@ -135,7 +152,16 @@ a:hover {
   height: 100vh;
   display: grid;
   grid-template-rows: var(--titlebar-h) 1fr var(--nowplaying-h);
-  background: var(--bg-app);
+  background: var(--amb-60, var(--bg-app));
+  position: relative;
+  z-index: 1;
+  transition: background 0.8s var(--ease-out);
+}
+
+/* Todo el contenido del shell va por encima del fondo ambiental */
+.shell > * {
+  position: relative;
+  z-index: 1;
 }
 
 .shell-main {
@@ -202,9 +228,11 @@ a:hover {
 }
 
 .sidebar-nav {
-  background: var(--bg-base);
+  background: color-mix(in srgb, var(--amb-30) 30%, var(--bg-base) 82%);
+  backdrop-filter: blur(24px);
   border-radius: var(--panel-radius);
   padding: 8px 12px;
+  transition: background 0.8s var(--ease-out);
 }
 
 .sidebar-nav-item {
@@ -226,12 +254,14 @@ a:hover {
 }
 
 .sidebar-library {
-  background: var(--bg-base);
+  background: color-mix(in srgb, var(--amb-30) 30%, var(--bg-base) 82%);
+  backdrop-filter: blur(24px);
   border-radius: var(--panel-radius);
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
+  transition: background 0.8s var(--ease-out);
 }
 
 .sidebar-library-header {
@@ -341,13 +371,18 @@ a:hover {
 
 /* ---------- Contenido principal ---------- */
 .main-view {
-  background: linear-gradient(var(--bg-highlight), var(--bg-base) 30%);
+  background: linear-gradient(
+    color-mix(in srgb, var(--amb-30) 40%, var(--bg-highlight) 70%),
+    color-mix(in srgb, var(--amb-60) 30%, var(--bg-base) 85%) 34%
+  );
+  backdrop-filter: blur(24px);
   border-radius: var(--panel-radius);
   overflow: hidden;
   position: relative;
   min-height: 0;
   display: flex;
   flex-direction: column;
+  transition: background 0.8s var(--ease-out);
 }
 
 .main-scroll {
@@ -492,13 +527,33 @@ a:hover {
   border-radius: 8px;
   padding: 12px;
   text-align: left;
-  transition: background 0.2s;
+  transition:
+    background 0.2s,
+    transform 0.2s var(--ease-out);
   position: relative;
   min-width: 0;
 }
 
 .media-card:hover {
-  background: var(--bg-card-hover);
+  background: color-mix(in srgb, var(--amb-30) 22%, var(--bg-card-hover) 88%);
+  transform: translateY(-4px);
+}
+
+/* Entrada escalonada de tarjetas (el índice pone --i) */
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card-grid > * {
+  animation: card-in 0.4s var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 35ms);
 }
 
 .media-card .art {
@@ -513,10 +568,18 @@ a:hover {
   object-fit: cover;
   border-radius: 6px;
   background: var(--bg-elevated);
-  box-shadow: var(--shadow-card);
+  box-shadow: 0 8px 20px -8px var(--amb-glow, rgba(0, 0, 0, 0.5)),
+    0 3px 8px rgba(0, 0, 0, 0.4);
   display: grid;
   place-items: center;
   color: var(--text-subdued);
+  transition: box-shadow 0.3s var(--ease-out);
+}
+
+.media-card:hover .art img,
+.media-card:hover .art .ph {
+  box-shadow: 0 16px 32px -10px var(--amb-glow, rgba(0, 0, 0, 0.7)),
+    0 6px 14px rgba(0, 0, 0, 0.5);
 }
 
 .media-card.artist .art img,
@@ -536,19 +599,26 @@ a:hover {
   display: grid;
   place-items: center;
   opacity: 0;
-  transform: translateY(8px);
-  transition: opacity 0.2s, transform 0.2s, background 0.1s;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+  transform: translateY(8px) scale(0.9);
+  transition:
+    opacity 0.24s var(--ease-out),
+    transform 0.28s var(--ease-spring),
+    background 0.1s;
+  box-shadow: 0 8px 20px -4px var(--amb-glow, rgba(0, 0, 0, 0.5));
 }
 
 .media-card:hover .hover-play {
   opacity: 1;
-  transform: translateY(0);
+  transform: translateY(0) scale(1);
 }
 
 .media-card .hover-play:hover {
   background: var(--accent-hover);
-  transform: scale(1.05);
+  transform: scale(1.08);
+}
+
+.media-card .hover-play:active {
+  transform: scale(0.94);
 }
 
 .media-card .title {
@@ -570,6 +640,17 @@ a:hover {
 }
 
 /* ---------- Cabeceras de detalle (playlist/álbum/artista) ---------- */
+@keyframes detail-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .detail-header {
   display: flex;
   align-items: flex-end;
@@ -577,6 +658,17 @@ a:hover {
   padding: 48px 24px 24px;
   background: linear-gradient(transparent, rgba(0, 0, 0, 0.4)),
     var(--header-tint, linear-gradient(#404040, #282828));
+  animation: detail-in 0.45s var(--ease-out) both;
+}
+
+.detail-header .cover {
+  animation: detail-in 0.5s var(--ease-spring) both;
+  animation-delay: 0.05s;
+}
+
+.track-row {
+  animation: card-in 0.35s var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 18ms);
 }
 
 .detail-header .cover {
@@ -647,9 +739,20 @@ a:hover {
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
 }
 
+.big-play {
+  transition: transform 0.18s var(--ease-spring), background 0.2s, box-shadow 0.2s;
+  box-shadow: 0 8px 20px -6px var(--amb-glow, rgba(0, 0, 0, 0.4));
+}
+
 .big-play:hover {
-  transform: scale(1.04);
+  transform: scale(1.06);
   background: var(--accent-hover);
+  box-shadow: 0 10px 28px -6px var(--amb-glow, rgba(0, 0, 0, 0.5));
+}
+
+.big-play:active {
+  transform: scale(0.96);
+  transition-duration: 0.08s;
 }
 
 .icon-btn {
@@ -880,11 +983,45 @@ a:hover {
   color: #000;
   display: grid;
   place-items: center;
-  transition: transform 0.1s;
+  transition: transform 0.18s var(--ease-spring);
 }
 
 .np-play:hover {
-  transform: scale(1.06);
+  transform: scale(1.08);
+}
+
+.np-play:active {
+  transform: scale(0.92);
+  transition-duration: 0.08s;
+}
+
+/* Los controles secundarios reaccionan al pulsar */
+.np-ctrl:active {
+  transform: scale(0.85);
+}
+
+.np-ctrl {
+  transition: color 0.12s, transform 0.15s var(--ease-spring);
+}
+
+/* Corazón: latido al marcar Me gusta */
+@keyframes heart-pop {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.35);
+  }
+  55% {
+    transform: scale(0.9);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.heart-liked {
+  animation: heart-pop 0.42s var(--ease-spring);
 }
 
 .np-ctrl {
@@ -926,7 +1063,7 @@ a:hover {
 .slider {
   --pct: 0%;
   flex: 1;
-  height: 12px;
+  height: 14px;
   display: flex;
   align-items: center;
   cursor: pointer;
@@ -934,39 +1071,45 @@ a:hover {
 
 .slider .rail {
   width: 100%;
-  height: 4px;
-  border-radius: 2px;
-  background: hsla(0, 0%, 100%, 0.3);
+  height: 5px;
+  border-radius: 3px;
+  background: hsla(0, 0%, 100%, 0.22);
   position: relative;
   overflow: visible;
+  transition: height 0.15s var(--ease-out);
+}
+
+.slider:hover .rail {
+  height: 7px;
 }
 
 .slider .fill {
   position: absolute;
   inset: 0 auto 0 0;
   width: var(--pct);
-  border-radius: 2px;
-  background: var(--text-primary);
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--accent-press), var(--accent));
+  box-shadow: 0 0 8px -1px var(--amb-glow, transparent);
+  transition: background 0.4s var(--ease-out);
 }
 
-.slider:hover .fill {
-  background: var(--accent);
-}
-
+/* Punto arrastrable estilo Metrolist: crece con muelle al pasar el ratón */
 .slider .knob {
   position: absolute;
   left: var(--pct);
   top: 50%;
-  transform: translate(-50%, -50%);
-  width: 12px;
-  height: 12px;
+  transform: translate(-50%, -50%) scale(0);
+  width: 13px;
+  height: 13px;
   border-radius: 50%;
   background: var(--text-primary);
-  opacity: 0;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 30%, transparent);
+  transition: transform 0.2s var(--ease-spring);
 }
 
-.slider:hover .knob {
-  opacity: 1;
+.slider:hover .knob,
+.slider:active .knob {
+  transform: translate(-50%, -50%) scale(1);
 }
 
 .np-right {
@@ -1112,6 +1255,112 @@ a:hover {
   height: 1px;
   background: var(--divider);
   margin: 4px 0;
+}
+
+/* Transición de página: cross-fade suave al cambiar de ruta */
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-transition {
+  animation: page-in 0.28s var(--ease-out);
+}
+
+/* Sidebar: entrada suave al arrancar */
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.sidebar {
+  animation: slide-in-left 0.4s var(--ease-out) both;
+}
+
+.sidebar-nav-item,
+.nav-circle,
+.chip,
+.icon-btn,
+.btn,
+.titlebar-btn {
+  transition:
+    background 0.15s,
+    color 0.12s,
+    transform 0.15s var(--ease-spring),
+    border-color 0.15s;
+}
+
+.chip:active,
+.icon-btn:active {
+  transform: scale(0.9);
+}
+
+/* Carátula del now-playing: gira lento cuando suena (opcional, sutil) */
+@keyframes vinyl-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Efecto shine en carátulas al pasar el ratón (barrido de luz) */
+.media-card .art {
+  overflow: hidden;
+  border-radius: 6px;
+  position: relative;
+}
+
+.media-card .art::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    transparent 30%,
+    hsla(0, 0%, 100%, 0.18) 50%,
+    transparent 70%
+  );
+  transform: translateX(-100%);
+  transition: transform 0.7s var(--ease-out);
+  pointer-events: none;
+}
+
+.media-card:hover .art::after {
+  transform: translateX(100%);
+}
+
+.media-card.artist .art,
+.media-card.artist .art img,
+.media-card.artist .art .ph {
+  border-radius: 50%;
+}
+
+/* Halo de acento pulsante alrededor del play grande cuando suena */
+@keyframes play-pulse {
+  0%,
+  100% {
+    box-shadow: 0 8px 20px -6px var(--amb-glow, rgba(0, 0, 0, 0.4)),
+      0 0 0 0 color-mix(in srgb, var(--accent) 45%, transparent);
+  }
+  50% {
+    box-shadow: 0 8px 20px -6px var(--amb-glow, rgba(0, 0, 0, 0.4)),
+      0 0 0 12px color-mix(in srgb, var(--accent) 0%, transparent);
+  }
+}
+
+.big-play.is-playing {
+  animation: play-pulse 2.2s ease-out infinite;
 }
 
 /* ---------- Utilidades ---------- */

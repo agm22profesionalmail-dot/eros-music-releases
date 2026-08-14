@@ -92,7 +92,7 @@ export function PlaylistPage({ id }: { id: string }): React.JSX.Element {
       <div className="detail-body">
         <div className="detail-actions">
           <button
-            className="big-play"
+            className={`big-play ${isThisPlaying ? 'is-playing' : ''}`}
             aria-label="Reproducir playlist"
             onClick={() => {
               if (isThisPlaying) togglePlay()

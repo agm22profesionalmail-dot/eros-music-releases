@@ -40,6 +40,7 @@ export function TrackTable({
           <button
             key={`${t.videoId}-${i}`}
             className={`track-row ${isPlaying ? 'playing' : ''}`}
+            style={{ ['--i' as string]: Math.min(i, 30) }}
             onDoubleClick={() => onPlayIndex?.(i)}
             onContextMenu={(e) => onContextMenu?.(e, t, i)}
           >

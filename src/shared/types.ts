@@ -195,6 +195,10 @@ export interface AppSettings {
   accent: string
   /** 'fixed' usa el acento elegido; 'dynamic' lo saca de la carátula en reproducción */
   accentMode: 'fixed' | 'dynamic'
+  /** Fondo ambiental animado: off | ambient (deriva suave) | reactive (respira con el audio) */
+  bgMode: 'off' | 'ambient' | 'reactive'
+  /** Tinte de las superficies con el color de la carátula (0-100 %) */
+  ambientTint: number
   /** Segundos de crossfade entre pistas (0 = desactivado) */
   crossfadeSec: number
   /** Continuar con radio al agotar la cola */
@@ -229,6 +233,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   theme: 'dark',
   accent: '#f43f4f',
   accentMode: 'fixed',
+  bgMode: 'ambient',
+  ambientTint: 60,
   crossfadeSec: 0,
   autoplay: true,
   eqGains: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],

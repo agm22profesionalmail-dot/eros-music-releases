@@ -37,6 +37,7 @@ export class PlayerEngine {
   #preamp: GainNode
   #eq: BiquadFilterNode[]
   #volume: GainNode
+  #analyser: AnalyserNode
   #listeners = new Map<EventKey, Set<EngineEvents[EventKey]>>()
   #crossfadeSec = 0
   #preparedNext: { videoId: string; url: string } | null = null
@@ -58,15 +59,19 @@ export class PlayerEngine {
       return f
     })
     this.#volume = this.#ctx.createGain()
+    this.#analyser = this.#ctx.createAnalyser()
+    this.#analyser.fftSize = 256
+    this.#analyser.smoothingTimeConstant = 0.8
 
-    // preamp -> eq0 -> eq1 ... -> volumen -> salida
+    // preamp -> eq0 -> eq1 ... -> volumen -> analyser -> salida
     let node: AudioNode = this.#preamp
     for (const f of this.#eq) {
       node.connect(f)
       node = f
     }
     node.connect(this.#volume)
-    this.#volume.connect(this.#ctx.destination)
+    this.#volume.connect(this.#analyser)
+    this.#analyser.connect(this.#ctx.destination)
 
     this.#decks = [this.#makeDeck(), this.#makeDeck()]
     this.#decks[0].fade.gain.value = 1
@@ -272,6 +277,15 @@ export class PlayerEngine {
       d.el.load()
     }
     this.#preparedNext = null
+  }
+
+  /** Espectro de frecuencias (0-255) para el visualizador. */
+  getFrequencyData(target: Uint8Array): void {
+    this.#analyser.getByteFrequencyData(target as Uint8Array<ArrayBuffer>)
+  }
+
+  get analyserBins(): number {
+    return this.#analyser.frequencyBinCount
   }
 }
 

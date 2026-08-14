@@ -119,7 +119,9 @@ export function NowPlayingBar({
               aria-label="Me gusta"
               onClick={() => void toggleLike(current)}
             >
-              <HeartIcon size={16} filled={isLiked} />
+              <span key={isLiked ? 'on' : 'off'} className={isLiked ? 'heart-liked' : undefined} style={{ display: 'grid' }}>
+                <HeartIcon size={16} filled={isLiked} />
+              </span>
             </button>
           </>
         ) : (
@@ -174,6 +176,22 @@ export function NowPlayingBar({
           disabled={!current}
         >
           <MicIcon size={16} />
+        </button>
+        <button
+          className={`np-ctrl ${route.name === 'visualizer' ? 'active' : ''}`}
+          aria-label="Visualizador"
+          title="Visualizador"
+          onClick={() =>
+            navigate(route.name === 'visualizer' ? { name: 'home' } : { name: 'visualizer' })
+          }
+          disabled={!current}
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+            <rect x="1" y="6" width="2.4" height="4" rx="1.2" />
+            <rect x="5" y="2" width="2.4" height="12" rx="1.2" />
+            <rect x="9" y="4" width="2.4" height="8" rx="1.2" />
+            <rect x="13" y="7" width="2.4" height="2" rx="1" />
+          </svg>
         </button>
         <button
           className={`np-ctrl ${queueOpen ? 'active' : ''}`}

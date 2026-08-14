@@ -15,7 +15,7 @@ export function ShelfRow({ shelf, onPlayItem, limit = 7 }: ShelfProps): React.JS
       </div>
       <div className="card-grid">
         {shelf.items.slice(0, limit).map((item, i) => (
-          <Card key={`${item.id}-${i}`} item={item} onPlay={onPlayItem} />
+          <Card key={`${item.id}-${i}`} item={item} index={i} onPlay={onPlayItem} />
         ))}
       </div>
     </section>

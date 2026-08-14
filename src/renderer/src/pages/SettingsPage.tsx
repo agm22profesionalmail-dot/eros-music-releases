@@ -220,6 +220,28 @@ export function SettingsPage(): React.JSX.Element {
           </button>
         ))}
       </Row>
+      <Row label="Fondo de la aplicación">
+        {(
+          [
+            ['off', 'Ninguno'],
+            ['ambient', 'Ambiental'],
+            ['reactive', 'Reactivo al audio']
+          ] as const
+        ).map(([value, label]) => (
+          <button
+            key={value}
+            className={`chip ${settings.bgMode === value ? 'active' : ''}`}
+            onClick={() => void update({ bgMode: value })}
+          >
+            {label}
+          </button>
+        ))}
+      </Row>
+      <p style={{ color: 'var(--text-subdued)', fontSize: 12, padding: '4px 0 0' }}>
+        «Ambiental» tiñe el fondo con los colores del álbum (reparto 60-30-10) y deriva
+        suavemente. «Reactivo» además respira con el ritmo de la canción.
+      </p>
+
       <Row label="Color de acento">
         <button
           className={`chip ${settings.accentMode === 'dynamic' ? 'active' : ''}`}

@@ -12,6 +12,7 @@ export type Route =
   | { name: 'album'; id: string }
   | { name: 'artist'; id: string }
   | { name: 'lyrics' }
+  | { name: 'visualizer' }
   | { name: 'settings' }
 
 interface RouterState {
