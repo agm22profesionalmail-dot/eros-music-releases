@@ -137,6 +137,18 @@ export const IPC = {
   LIB_SUBSCRIBE: 'library:subscribe',
   HISTORY_ADD: 'history:add',
   HISTORY_LIST: 'history:list',
+  // descargas
+  DL_ADD: 'downloads:add',
+  DL_REMOVE: 'downloads:remove',
+  DL_LIST: 'downloads:list',
+  DL_PROGRESS: 'downloads:progress', // main -> renderer (evento)
+  DL_CHANGE_DIR: 'downloads:changeDir',
+  DL_OPEN_DIR: 'downloads:openDir',
+  // ajustes
+  SETTINGS_GET: 'settings:get',
+  SETTINGS_SET: 'settings:set',
+  // control remoto (teclas multimedia globales) main -> renderer
+  MEDIA_COMMAND: 'media:command',
   // streaming
   STREAM_PREPARE: 'stream:prepare',
   // ventana
@@ -162,6 +174,42 @@ export interface LibrarySnapshot {
   albums: MediaCard[]
   artists: MediaCard[]
   songs: TrackSummary[]
+}
+
+export interface AppSettings {
+  /** Carpeta de descargas */
+  downloadsDir: string
+  /** Tema visual */
+  theme: 'dark' | 'black' | 'light'
+  /** Color de acento (hex) */
+  accent: string
+  /** Segundos de crossfade entre pistas (0 = desactivado) */
+  crossfadeSec: number
+  /** Continuar con radio al agotar la cola */
+  autoplay: boolean
+  /** Ganancias del ecualizador en dB (10 bandas) */
+  eqGains: number[]
+  /** Preamplificador en dB */
+  preampDb: number
+  /** Velocidad de reproducción */
+  playbackRate: number
+  /** Mantener tono al cambiar velocidad */
+  preservePitch: boolean
+  /** Cerrar a la bandeja en vez de salir */
+  closeToTray: boolean
+}
+
+export const DEFAULT_SETTINGS: AppSettings = {
+  downloadsDir: '',
+  theme: 'dark',
+  accent: '#f43f4f',
+  crossfadeSec: 0,
+  autoplay: true,
+  eqGains: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  preampDb: 0,
+  playbackRate: 1,
+  preservePitch: true,
+  closeToTray: false
 }
 
 export interface LyricsData {

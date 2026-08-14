@@ -6,7 +6,10 @@ import { openCookieLogin } from '../auth/cookieLogin'
 import { resolveStream } from '../stream/resolver'
 import { streamUrlFor } from '../stream/server'
 import * as lib from '../innertube/library'
-import type { TrackSummary } from '@shared/types'
+import * as downloads from '../downloads'
+import { getLyrics } from '../lyrics'
+import { getAllSettings, updateSettings, changeDownloadsDir, openDownloadsDir } from '../settings'
+import type { AppSettings, TrackSummary } from '@shared/types'
 
 /** Registra todos los handlers IPC. Llamar una sola vez en app.whenReady. */
 export function registerIpc(getMainWindow: () => BrowserWindow | null): void {
@@ -35,7 +38,19 @@ export function registerIpc(getMainWindow: () => BrowserWindow | null): void {
   ipcMain.handle(IPC.MUSIC_ALBUM, (_e, id: string) => music.getAlbum(id))
   ipcMain.handle(IPC.MUSIC_ARTIST, (_e, id: string) => music.getArtist(id))
   ipcMain.handle(IPC.MUSIC_UP_NEXT, (_e, videoId: string) => music.getUpNext(videoId))
-  ipcMain.handle(IPC.MUSIC_LYRICS, (_e, videoId: string) => music.getYtLyrics(videoId))
+  ipcMain.handle(
+    IPC.MUSIC_LYRICS,
+    async (
+      _e,
+      params: { videoId: string; title: string; artists: string[]; album?: string; durationSec?: number }
+    ) => {
+      // LRCLIB/KuGou (sincronizadas) primero; letra de YouTube como último recurso
+      const synced = await getLyrics(params)
+      if (synced) return synced
+      const yt = await music.getYtLyrics(params.videoId)
+      return yt ? { source: 'YouTube Music', plain: yt.text } : null
+    }
+  )
 
   // ---- Biblioteca (escrituras) e historial ----
   ipcMain.handle(IPC.LIB_REFRESH, () => lib.refreshLibrary())
@@ -56,6 +71,18 @@ export function registerIpc(getMainWindow: () => BrowserWindow | null): void {
   )
   ipcMain.handle(IPC.HISTORY_ADD, (_e, track: TrackSummary) => lib.addHistoryEntry(track))
   ipcMain.handle(IPC.HISTORY_LIST, (_e, limit?: number) => lib.getHistory(limit))
+
+  // ---- Descargas ----
+  downloads.setDownloadNotifier(getMainWindow)
+  ipcMain.handle(IPC.DL_ADD, (_e, track: TrackSummary) => downloads.enqueueDownload(track))
+  ipcMain.handle(IPC.DL_REMOVE, (_e, videoId: string) => downloads.deleteDownload(videoId))
+  ipcMain.handle(IPC.DL_LIST, () => downloads.listDownloads())
+  ipcMain.handle(IPC.DL_CHANGE_DIR, () => changeDownloadsDir(getMainWindow()))
+  ipcMain.handle(IPC.DL_OPEN_DIR, () => openDownloadsDir())
+
+  // ---- Ajustes ----
+  ipcMain.handle(IPC.SETTINGS_GET, () => getAllSettings())
+  ipcMain.handle(IPC.SETTINGS_SET, (_e, patch: Partial<AppSettings>) => updateSettings(patch))
 
   // ---- Streaming ----
   ipcMain.handle(IPC.STREAM_PREPARE, async (_e, videoId: string): Promise<PreparedStream> => {

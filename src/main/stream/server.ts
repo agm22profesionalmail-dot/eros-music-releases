@@ -1,7 +1,8 @@
 import http from 'http'
 import { once } from 'events'
-import { createReadStream } from 'fs'
+import { createReadStream, promises as fs } from 'fs'
 import { getSpool, waitForBytes } from './spool'
+import { getDownloadPath } from '../db'
 
 /**
  * Proxy HTTP local para el <audio> del renderer.
@@ -57,6 +58,13 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse): Prom
     return
   }
   const videoId = match[1]
+
+  // Si está descargada, sirve el fichero local (funciona sin red)
+  const localPath = getDownloadPath(videoId)
+  if (localPath) {
+    const served = await serveLocalFile(req, res, localPath)
+    if (served) return
+  }
 
   const spool = await getSpool(videoId)
 
@@ -120,4 +128,43 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse): Prom
   }
 
   res.end()
+}
+
+/** Sirve un fichero local completo con soporte de Range. */
+async function serveLocalFile(
+  req: http.IncomingMessage,
+  res: http.ServerResponse,
+  path: string
+): Promise<boolean> {
+  const st = await fs.stat(path).catch(() => null)
+  if (!st) return false
+  const total = st.size
+  const mime = path.endsWith('.opus') ? 'audio/ogg' : 'audio/mp4'
+
+  let start = 0
+  let end = total - 1
+  let partial = false
+  const m = req.headers.range?.match(/bytes=(\d+)-(\d*)/)
+  if (m) {
+    start = Number(m[1])
+    if (m[2]) end = Math.min(Number(m[2]), total - 1)
+    partial = true
+  }
+  if (start >= total) {
+    res.writeHead(416, { 'Content-Range': `bytes */${total}` })
+    res.end()
+    return true
+  }
+
+  res.writeHead(partial ? 206 : 200, {
+    'content-type': mime,
+    'accept-ranges': 'bytes',
+    'content-length': String(end - start + 1),
+    ...(partial ? { 'content-range': `bytes ${start}-${end}/${total}` } : {})
+  })
+
+  const stream = createReadStream(path, { start, end })
+  stream.pipe(res)
+  await once(stream, 'close').catch(() => undefined)
+  return true
 }

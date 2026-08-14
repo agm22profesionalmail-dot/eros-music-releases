@@ -1,9 +1,14 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, Tray, Menu, globalShortcut, nativeImage } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { registerIpc } from './ipc'
 import { sessionManager } from './innertube/session'
 import { startStreamServer } from './stream/server'
+import { getAllSettings } from './settings'
+import { IPC } from '@shared/types'
+
+let tray: Tray | null = null
+let isQuitting = false
 
 let mainWindow: BrowserWindow | null = null
 
@@ -57,11 +62,70 @@ function createWindow(): void {
     return { action: 'deny' }
   })
 
+  // Cerrar a la bandeja (si está activado en Ajustes)
+  mainWindow.on('close', (e) => {
+    if (!isQuitting && getAllSettings().closeToTray) {
+      e.preventDefault()
+      mainWindow?.hide()
+    }
+  })
+
   if (is.dev && process.env.ELECTRON_RENDERER_URL) {
     mainWindow.loadURL(process.env.ELECTRON_RENDERER_URL)
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
+}
+
+function iconPath(): string {
+  return app.isPackaged
+    ? join(process.resourcesPath, 'icon-256.png')
+    : join(app.getAppPath(), 'assets', 'icon-256.png')
+}
+
+function sendMedia(cmd: string): void {
+  mainWindow?.webContents.send(IPC.MEDIA_COMMAND, cmd)
+}
+
+function createTray(): void {
+  const image = nativeImage.createFromPath(iconPath()).resize({ width: 16, height: 16 })
+  tray = new Tray(image)
+  tray.setToolTip('Metrolist PC')
+  tray.setContextMenu(
+    Menu.buildFromTemplate([
+      {
+        label: 'Mostrar Metrolist',
+        click: () => {
+          mainWindow?.show()
+          mainWindow?.focus()
+        }
+      },
+      { type: 'separator' },
+      { label: 'Reproducir/Pausar', click: () => sendMedia('playpause') },
+      { label: 'Siguiente', click: () => sendMedia('next') },
+      { label: 'Anterior', click: () => sendMedia('previous') },
+      { type: 'separator' },
+      {
+        label: 'Salir',
+        click: () => {
+          isQuitting = true
+          app.quit()
+        }
+      }
+    ])
+  )
+  tray.on('double-click', () => {
+    mainWindow?.show()
+    mainWindow?.focus()
+  })
+}
+
+function registerMediaKeys(): void {
+  // Teclas multimedia globales (funcionan con la app en segundo plano)
+  globalShortcut.register('MediaPlayPause', () => sendMedia('playpause'))
+  globalShortcut.register('MediaNextTrack', () => sendMedia('next'))
+  globalShortcut.register('MediaPreviousTrack', () => sendMedia('previous'))
+  globalShortcut.register('MediaStop', () => sendMedia('pause'))
 }
 
 const gotTheLock = app.requestSingleInstanceLock()
@@ -87,6 +151,9 @@ if (!gotTheLock) {
 
     // Proxy local de audio
     void startStreamServer()
+
+    createTray()
+    registerMediaKeys()
 
     // Gancho de pruebas de humo: METROLIST_TEST_SEARCH="consulta" imprime
     // los primeros resultados y sale. Solo para verificación automatizada.
@@ -181,4 +248,12 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
   }
+})
+
+app.on('before-quit', () => {
+  isQuitting = true
+})
+
+app.on('will-quit', () => {
+  globalShortcut.unregisterAll()
 })

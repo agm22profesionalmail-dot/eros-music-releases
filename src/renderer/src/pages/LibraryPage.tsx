@@ -6,7 +6,7 @@ import { Card } from '../components/Card'
 import { TrackTable } from '../components/TrackTable'
 import { usePlayer } from '../player/store'
 
-type Tab = 'playlists' | 'albums' | 'artists' | 'songs' | 'history'
+type Tab = 'playlists' | 'albums' | 'artists' | 'songs' | 'history' | 'downloads'
 
 export function LibraryPage(): React.JSX.Element {
   const library = useLibrary((s) => s.library)
@@ -14,10 +14,14 @@ export function LibraryPage(): React.JSX.Element {
   const playTracks = usePlayer((s) => s.playTracks)
   const [tab, setTab] = useState<Tab>('playlists')
   const [history, setHistory] = useState<TrackSummary[]>([])
+  const [downloadsList, setDownloadsList] = useState<TrackSummary[]>([])
 
   useEffect(() => {
     if (tab === 'history') {
       void window.api.history.list(200).then(setHistory)
+    }
+    if (tab === 'downloads') {
+      void window.api.downloads.list().then((d) => setDownloadsList(d.map((x) => x.track)))
     }
   }, [tab])
 
@@ -26,7 +30,8 @@ export function LibraryPage(): React.JSX.Element {
     ['albums', 'Álbumes'],
     ['artists', 'Artistas'],
     ['songs', 'Canciones'],
-    ['history', 'Historial']
+    ['history', 'Historial'],
+    ['downloads', 'Descargas']
   ]
 
   return (
@@ -86,9 +91,36 @@ export function LibraryPage(): React.JSX.Element {
           onContextMenu={(e, t) => openContextMenu(e, trackMenu(t))}
         />
       )}
-      {library && tab !== 'history' && !library[tab === 'songs' ? 'songs' : tab]?.length && (
-        <div className="empty-state">Nada por aquí todavía</div>
+      {tab === 'downloads' && (
+        <>
+          <TrackTable
+            tracks={downloadsList}
+            showAlbum
+            onPlayIndex={(i) => void playTracks(downloadsList, i)}
+            onContextMenu={(e, t) =>
+              openContextMenu(e, [
+                ...trackMenu(t),
+                { separator: true, label: '' },
+                {
+                  label: 'Quitar descarga',
+                  action: () =>
+                    void window.api.downloads.remove(t.videoId).then(() =>
+                      window.api.downloads.list().then((d) => setDownloadsList(d.map((x) => x.track)))
+                    )
+                }
+              ])
+            }
+          />
+          {!downloadsList.length && (
+            <div className="empty-state">
+              Sin descargas. Clic derecho en cualquier canción → «Descargar».
+            </div>
+          )}
+        </>
       )}
+      {library &&
+        (tab === 'playlists' || tab === 'albums' || tab === 'artists' || tab === 'songs') &&
+        !library[tab].length && <div className="empty-state">Nada por aquí todavía</div>}
     </div>
   )
 }

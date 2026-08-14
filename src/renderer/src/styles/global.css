@@ -28,6 +28,46 @@
   font-family: 'Segoe UI Variable Display', 'Segoe UI', system-ui, -apple-system, sans-serif;
 }
 
+/* Tema negro puro (AMOLED) */
+:root[data-theme='black'] {
+  --bg-app: #000000;
+  --bg-base: #000000;
+  --bg-highlight: #0d0d0d;
+  --bg-elevated: #161616;
+  --bg-press: #1f1f1f;
+  --bg-card: #0a0a0a;
+  --bg-card-hover: #1a1a1a;
+  --divider: #1c1c1c;
+}
+
+/* Tema claro */
+:root[data-theme='light'] {
+  --bg-app: #f0f0f0;
+  --bg-base: #ffffff;
+  --bg-highlight: #f6f6f6;
+  --bg-elevated: #e8e8e8;
+  --bg-press: #dedede;
+  --bg-card: #f7f7f7;
+  --bg-card-hover: #ebebeb;
+  --bg-tinted: rgba(0, 0, 0, 0.06);
+  --bg-tinted-hover: rgba(0, 0, 0, 0.11);
+  --text-primary: #121212;
+  --text-secondary: #4f4f4f;
+  --text-subdued: #8a8a8a;
+  --divider: #e2e2e2;
+  --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+:root[data-theme='light'] .nav-circle {
+  background: rgba(255, 255, 255, 0.85);
+  color: #121212;
+}
+
+:root[data-theme='light'] .np-play {
+  background: #121212;
+  color: #fff;
+}
+
 * {
   margin: 0;
   padding: 0;

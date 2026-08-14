@@ -10,15 +10,20 @@ import { AlbumPage } from './pages/AlbumPage'
 import { ArtistPage } from './pages/ArtistPage'
 import { LoginPage } from './pages/LoginPage'
 import { LibraryPage } from './pages/LibraryPage'
+import { SettingsPage } from './pages/SettingsPage'
+import { LyricsPage } from './pages/LyricsPage'
 import { ContextMenuHost } from './components/ContextMenu'
 import { useLibrary } from './app/libraryStore'
+import { useSettings } from './app/settingsStore'
+import { initMediaIntegration } from './player/mediaSession'
 import { useRouter } from './app/router'
 import { useAuth } from './app/authStore'
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
   PersonIcon,
-  SearchIcon
+  SearchIcon,
+  SettingsIcon
 } from './components/Icons'
 
 export default function App(): React.JSX.Element {
@@ -36,9 +41,12 @@ export default function App(): React.JSX.Element {
   const [scrolled, setScrolled] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
 
+  const initSettings = useSettings((s) => s.init)
   useEffect(() => {
     initAuth()
-  }, [initAuth])
+    void initSettings()
+    return initMediaIntegration()
+  }, [initAuth, initSettings])
 
   // Carga la biblioteca cuando hay sesión; límpiala al cerrar sesión
   const loadLibrary = useLibrary((s) => s.load)
@@ -99,6 +107,13 @@ export default function App(): React.JSX.Element {
               )}
 
               <div className="topbar-right">
+                <button
+                  className="avatar-btn"
+                  title="Ajustes"
+                  onClick={() => navigate({ name: 'settings' })}
+                >
+                  <SettingsIcon size={18} />
+                </button>
                 {auth.status === 'signedIn' ? (
                   <button
                     className="avatar-btn"
@@ -136,12 +151,8 @@ export default function App(): React.JSX.Element {
                 {route.name === 'album' && <AlbumPage id={route.id} />}
                 {route.name === 'artist' && <ArtistPage id={route.id} />}
                 {route.name === 'library' && <LibraryPage />}
-                {route.name === 'lyrics' && (
-                  <div className="empty-state">Letras — llega en la fase F6</div>
-                )}
-                {route.name === 'settings' && (
-                  <div className="empty-state">Ajustes — llega en la fase F8</div>
-                )}
+                {route.name === 'lyrics' && <LyricsPage />}
+                {route.name === 'settings' && <SettingsPage />}
               </>
             )}
           </div>

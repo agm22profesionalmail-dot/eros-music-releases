@@ -3,9 +3,11 @@ import { electronAPI } from '@electron-toolkit/preload'
 import { IPC } from '../shared/types'
 import type {
   AlbumDetail,
+  AppSettings,
   ArtistDetail,
   AuthState,
   LibrarySnapshot,
+  LyricsData,
   PlaylistDetail,
   PreparedStream,
   SearchFilter,
@@ -42,8 +44,30 @@ const api = {
     artist: (id: string): Promise<ArtistDetail> => ipcRenderer.invoke(IPC.MUSIC_ARTIST, id),
     upNext: (videoId: string): Promise<{ tracks: unknown[]; playlistId?: string }> =>
       ipcRenderer.invoke(IPC.MUSIC_UP_NEXT, videoId),
-    ytLyrics: (videoId: string): Promise<{ text: string; footer?: string } | null> =>
-      ipcRenderer.invoke(IPC.MUSIC_LYRICS, videoId)
+    lyrics: (params: {
+      videoId: string
+      title: string
+      artists: string[]
+      album?: string
+      durationSec?: number
+    }): Promise<LyricsData | null> => ipcRenderer.invoke(IPC.MUSIC_LYRICS, params)
+  },
+
+  settings: {
+    get: (): Promise<AppSettings> => ipcRenderer.invoke(IPC.SETTINGS_GET),
+    set: (patch: Partial<AppSettings>): Promise<AppSettings> =>
+      ipcRenderer.invoke(IPC.SETTINGS_SET, patch),
+    changeDownloadsDir: (): Promise<{ dir: string; moved: number } | null> =>
+      ipcRenderer.invoke(IPC.DL_CHANGE_DIR),
+    openDownloadsDir: (): Promise<void> => ipcRenderer.invoke(IPC.DL_OPEN_DIR)
+  },
+
+  media: {
+    onCommand: (cb: (cmd: string) => void): (() => void) => {
+      const listener = (_e: unknown, cmd: string): void => cb(cmd)
+      ipcRenderer.on(IPC.MEDIA_COMMAND, listener)
+      return () => ipcRenderer.removeListener(IPC.MEDIA_COMMAND, listener)
+    }
   },
 
   player: {
@@ -70,6 +94,23 @@ const api = {
     add: (track: TrackSummary): Promise<void> => ipcRenderer.invoke(IPC.HISTORY_ADD, track),
     list: (limit?: number): Promise<TrackSummary[]> =>
       ipcRenderer.invoke(IPC.HISTORY_LIST, limit)
+  },
+
+  downloads: {
+    add: (track: TrackSummary): Promise<void> => ipcRenderer.invoke(IPC.DL_ADD, track),
+    remove: (videoId: string): Promise<void> => ipcRenderer.invoke(IPC.DL_REMOVE, videoId),
+    list: (): Promise<{ track: TrackSummary; filePath: string }[]> =>
+      ipcRenderer.invoke(IPC.DL_LIST),
+    onProgress: (
+      cb: (p: { videoId: string; state: string; progress?: number; error?: string }) => void
+    ): (() => void) => {
+      const listener = (
+        _e: unknown,
+        p: { videoId: string; state: string; progress?: number; error?: string }
+      ): void => cb(p)
+      ipcRenderer.on(IPC.DL_PROGRESS, listener)
+      return () => ipcRenderer.removeListener(IPC.DL_PROGRESS, listener)
+    }
   },
 
   win: {

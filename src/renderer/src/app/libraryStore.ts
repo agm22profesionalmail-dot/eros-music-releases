@@ -78,6 +78,7 @@ export function trackMenu(track: TrackSummary, opts?: { playlistId?: string }): 
       label: liked ? 'Quitar de Me gusta' : 'Me gusta',
       action: () => void library.toggleLike(track)
     },
+    { label: 'Descargar', action: () => void window.api.downloads.add(track) },
     {
       label: 'Añadir a playlist',
       submenu: [
