@@ -51,6 +51,7 @@ async function ensureConnected(): Promise<boolean> {
     })
     await client.login()
     connected = true
+    console.log('[discord] conectado como', client.user?.username ?? '(usuario)')
     return true
   } catch {
     client = null
@@ -61,16 +62,29 @@ async function ensureConnected(): Promise<boolean> {
   }
 }
 
+let lastKey = ''
+let lastStartMs = 0
+
 export async function updateDiscordPresence(info: NowPlayingInfo | null): Promise<void> {
   if (!enabled) return
   if (!info) {
     if (connected) await client?.user?.clearActivity().catch(() => undefined)
+    lastKey = ''
     return
   }
   if (!(await ensureConnected())) return
 
+  // Deduplicación: los timestamps hacen avanzar la barra solos en Discord;
+  // solo reenviamos si cambia la pista/estado o si hubo un seek (>3 s de desvío).
+  const key = `${info.title}|${info.artists}|${info.isPlaying}`
+  const expectedPos = (Date.now() - lastStartMs) / 1000
+  const seeked = info.isPlaying && Math.abs(expectedPos - info.positionSec) > 3
+  if (key === lastKey && !seeked) return
+  lastKey = key
+
   try {
     if (info.isPlaying) {
+      lastStartMs = Date.now() - info.positionSec * 1000
       const now = Date.now()
       const start = now - info.positionSec * 1000
       const end = start + info.durationSec * 1000
@@ -86,6 +100,7 @@ export async function updateDiscordPresence(info: NowPlayingInfo | null): Promis
         endTimestamp: info.durationSec > 0 ? end : undefined,
         instance: false
       })
+      console.log('[discord] presencia:', info.title, '·', info.artists)
     } else {
       await client!.user?.clearActivity()
     }

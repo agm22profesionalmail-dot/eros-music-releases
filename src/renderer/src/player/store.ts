@@ -92,6 +92,8 @@ function readPersistedQueue(): PersistedQueue | null {
 let pendingRestore: { videoId: string; seekTo: number } | null = null
 
 async function loadAndPlay(item: QueueItem, crossfade: boolean): Promise<void> {
+  // Cualquier carga explícita invalida la restauración perezosa pendiente
+  pendingRestore = null
   const prepared = engine.hasPreloaded(item.videoId)
     ? null
     : await window.api.player.prepare(item.videoId)
