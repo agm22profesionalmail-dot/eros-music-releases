@@ -31,6 +31,25 @@ function createWindow(): void {
     if (process.env.METROLIST_SMOKE === '1') {
       setTimeout(() => app.quit(), 3000)
     }
+    // Autocaptura para verificación visual: guarda un PNG de la ventana y sale
+    const shotPath = process.env.METROLIST_SHOT
+    if (shotPath) {
+      setTimeout(() => {
+        void (async () => {
+          try {
+            const image = await mainWindow!.webContents.capturePage()
+            const { promises: fs } = await import('fs')
+            await fs.writeFile(shotPath, image.toPNG())
+            console.log('[SHOT_OK]', shotPath)
+          } catch (err) {
+            console.error('[SHOT_FAIL]', err)
+            process.exitCode = 1
+          } finally {
+            if (process.env.METROLIST_SHOT_STAY !== '1') app.quit()
+          }
+        })()
+      }, Number(process.env.METROLIST_SHOT_DELAY ?? 3500))
+    }
   })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
@@ -71,6 +90,7 @@ if (!gotTheLock) {
 
     // Gancho de pruebas de humo: METROLIST_TEST_SEARCH="consulta" imprime
     // los primeros resultados y sale. Solo para verificación automatizada.
+    // Smoke de streaming: resuelve, descarga por spool y sirve por el proxy.
     const testStream = process.env.METROLIST_TEST_STREAM
     if (testStream) {
       void (async () => {
@@ -90,7 +110,6 @@ if (!gotTheLock) {
           const buf = await proxied.arrayBuffer()
           console.log('[SMOKE_STREAM_OK]', {
             status: proxied.status,
-            contentType: proxied.headers.get('content-type'),
             contentRange: proxied.headers.get('content-range'),
             bytes: buf.byteLength
           })

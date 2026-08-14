@@ -4,6 +4,7 @@ import { promises as fs } from 'fs'
 import { EventEmitter } from 'events'
 import { Innertube } from 'youtubei.js'
 import { EncryptedCache } from '../auth/encryptedCache'
+import { installJsEvaluator } from './evaluator'
 import { generatePoToken, type PoTokenResult } from './potoken'
 import type { AuthMethod, AuthState } from '@shared/types'
 
@@ -85,6 +86,7 @@ class SessionManager extends EventEmitter {
   }
 
   async #create(withPoToken: boolean): Promise<Innertube> {
+    installJsEvaluator()
     this.#cache = this.#cache ?? new EncryptedCache(join(this.#userDataDir(), 'ytcache'))
 
     let poToken: string | undefined
@@ -92,18 +94,36 @@ class SessionManager extends EventEmitter {
 
     if (withPoToken) {
       try {
-        if (!this.#poToken || Date.now() - this.#poToken.mintedAt > 6 * 3600_000) {
-          // Necesitamos un visitorData: lo tomamos de la sesión existente o de una mínima
-          let vd = this.#innertube?.session.context.client.visitorData
-          if (!vd) {
-            const probe = await Innertube.create({
-              retrieve_player: false,
-              generate_session_locally: true,
-              enable_session_cache: false
-            })
-            vd = probe.session.context.client.visitorData
+        if (!this.#poToken) {
+          // Intenta reutilizar el par visitor+token de arranques anteriores:
+          // crear un visitante nuevo en cada arranque dispara la sospecha de Google.
+          const cached = await this.#cache.get('metrolist_potoken')
+          if (cached) {
+            try {
+              const parsed = JSON.parse(Buffer.from(cached).toString('utf-8')) as PoTokenResult
+              if (parsed?.poToken && parsed?.visitorData) this.#poToken = parsed
+            } catch {
+              /* caché corrupta: se regenera */
+            }
           }
-          if (vd) this.#poToken = await generatePoToken(vd)
+        }
+        if (!this.#poToken || Date.now() - this.#poToken.mintedAt > 6 * 3600_000) {
+          // visitorData nuevo y estable para ligar el PoToken. No reutilizamos el
+          // de la caché de sesión: si el binding no coincide, googlevideo devuelve
+          // 403 a partir de ~2 MB (el token viaja pero no vale).
+          const probe = await Innertube.create({
+            retrieve_player: false,
+            generate_session_locally: true,
+            enable_session_cache: false
+          })
+          const vd = probe.session.context.client.visitorData
+          if (vd) {
+            this.#poToken = await generatePoToken(vd)
+            const buf = Buffer.from(JSON.stringify(this.#poToken), 'utf-8')
+            await this.#cache
+              .set('metrolist_potoken', buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength))
+              .catch(() => undefined)
+          }
         }
         poToken = this.#poToken?.poToken
         visitorData = this.#poToken?.visitorData
@@ -119,6 +139,10 @@ class SessionManager extends EventEmitter {
       cookie: this.#cookieHeader ?? undefined,
       po_token: poToken,
       visitor_data: visitorData,
+      // Con PoToken la sesión debe regenerarse para respetar visitor_data:
+      // la caché de sesión lo ignoraría y rompería el binding del token.
+      enable_session_cache: !withPoToken,
+      generate_session_locally: withPoToken ? true : undefined,
       retrieve_player: withPoToken // el player solo hace falta para streams
     })
 
@@ -148,6 +172,8 @@ class SessionManager extends EventEmitter {
   /** Sesión lista para streaming: con player y (si se puede) PoToken. */
   async ensureStreamingReady(): Promise<Innertube> {
     if (this.#streamingReady && this.#innertube) return this.#innertube
+    const { clearStreamCache } = await import('../stream/resolver')
+    clearStreamCache()
     const rebuilt = await this.#create(true)
     // Si había OAuth activo, engancha las credenciales también en la nueva sesión
     if (this.#authState.status === 'signedIn' && this.#authState.method === 'oauth') {

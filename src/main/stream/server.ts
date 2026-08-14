@@ -1,13 +1,14 @@
 import http from 'http'
 import { once } from 'events'
-import { resolveStream, invalidateStream } from './resolver'
+import { createReadStream } from 'fs'
+import { getSpool, waitForBytes } from './spool'
 
 /**
  * Proxy HTTP local para el <audio> del renderer.
  *
- * GET /stream/:videoId  -> hace proxy del audio de googlevideo con soporte
- * completo de Range (imprescindible para poder buscar posición sin cortes).
- * Ante 403 (URL caducada o IP rechazada) re-resuelve una vez y reintenta.
+ * Sirve los Range del reproductor desde el spool local (spool.ts), que
+ * descarga cada canción con una única petición secuencial — el único patrón
+ * que googlevideo acepta. Seeking instantáneo una vez descargado el tramo.
  *
  * Escucha solo en 127.0.0.1 con un token por sesión para que ningún otro
  * proceso local pueda usarlo como proxy abierto.
@@ -30,8 +31,8 @@ export async function startStreamServer(): Promise<string> {
 
   server = http.createServer((req, res) => {
     void handle(req, res).catch((err) => {
-      console.error('[stream] error no controlado:', err)
-      if (!res.headersSent) res.writeHead(500)
+      console.error('[stream] error:', String((err as Error)?.message ?? err))
+      if (!res.headersSent) res.writeHead(502)
       res.end()
     })
   })
@@ -57,59 +58,66 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse): Prom
   }
   const videoId = match[1]
 
-  for (let attempt = 0; attempt < 2; attempt++) {
-    const resolved = await resolveStream(videoId)
+  const spool = await getSpool(videoId)
 
-    const headers: Record<string, string> = {}
-    if (req.headers.range) headers.Range = String(req.headers.range)
-
-    const upstream = await fetch(resolved.url, { headers })
-
-    if (upstream.status === 403 || upstream.status === 410) {
-      // URL caducada: invalida y re-resuelve (solo un reintento)
-      invalidateStream(videoId)
-      continue
-    }
-
-    const passthrough = [
-      'content-type',
-      'content-length',
-      'content-range',
-      'accept-ranges'
-    ] as const
-    const outHeaders: Record<string, string> = {}
-    for (const h of passthrough) {
-      const v = upstream.headers.get(h)
-      if (v) outHeaders[h] = v
-    }
-    if (!outHeaders['content-type']) outHeaders['content-type'] = resolved.mimeType
-    outHeaders['cache-control'] = 'no-store'
-
-    res.writeHead(upstream.status, outHeaders)
-
-    if (!upstream.body) {
-      res.end()
-      return
-    }
-
-    const reader = upstream.body.getReader()
-    req.on('close', () => void reader.cancel().catch(() => undefined))
-    try {
-      for (;;) {
-        const { done, value } = await reader.read()
-        if (done) break
-        if (!res.write(value)) {
-          await once(res, 'drain')
-        }
-      }
-    } catch {
-      /* cliente desconectado o upstream cortado: normal al saltar de canción */
-    } finally {
-      res.end()
-    }
+  // Espera a conocer el tamaño total (llega con los primeros bytes)
+  await waitForBytes(spool, 0)
+  const total = spool.totalBytes
+  if (!total) {
+    res.writeHead(502)
+    res.end()
     return
   }
 
-  res.writeHead(502)
-  res.end('No se pudo obtener el stream')
+  // Range entrante
+  let start = 0
+  let end = total - 1
+  let partial = false
+  const rangeHeader = req.headers.range
+  if (rangeHeader) {
+    const m = rangeHeader.match(/bytes=(\d+)-(\d*)/)
+    if (m) {
+      start = Number(m[1])
+      if (m[2]) end = Math.min(Number(m[2]), total - 1)
+      partial = true
+    }
+  }
+  if (start >= total) {
+    res.writeHead(416, { 'Content-Range': `bytes */${total}` })
+    res.end()
+    return
+  }
+
+  const headers: Record<string, string> = {
+    'content-type': spool.mimeType,
+    'accept-ranges': 'bytes',
+    'cache-control': 'no-store',
+    'content-length': String(end - start + 1)
+  }
+  if (partial) headers['content-range'] = `bytes ${start}-${end}/${total}`
+  res.writeHead(partial ? 206 : 200, headers)
+
+  let clientGone = false
+  req.on('close', () => {
+    clientGone = true
+  })
+
+  // Sirve del fichero según crece
+  let pos = start
+  while (pos <= end && !clientGone) {
+    await waitForBytes(spool, pos)
+    const available = spool.done ? end : Math.min(spool.downloadedBytes - 1, end)
+    if (available < pos) continue
+
+    const stream = createReadStream(spool.path, { start: pos, end: available })
+    for await (const chunk of stream) {
+      if (clientGone) break
+      if (!res.write(chunk)) {
+        await once(res, 'drain')
+      }
+    }
+    pos = available + 1
+  }
+
+  res.end()
 }

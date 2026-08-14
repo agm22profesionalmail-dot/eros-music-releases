@@ -75,6 +75,9 @@ export class PlayerEngine {
     const el = new Audio()
     el.crossOrigin = 'anonymous'
     el.preload = 'auto'
+    // En el DOM (oculto) para que las pruebas E2E puedan observarlo
+    el.hidden = true
+    document.body.appendChild(el)
     const source = this.#ctx.createMediaElementSource(el)
     const fade = this.#ctx.createGain()
     source.connect(fade)

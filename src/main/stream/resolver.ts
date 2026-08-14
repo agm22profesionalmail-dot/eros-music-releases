@@ -22,14 +22,32 @@ export interface ResolvedStream {
   durationSec?: number
   expiresAt: number
   via: string
+  /** User-Agent que googlevideo espera para este cliente */
+  userAgent?: string
+  /** Tamaño total del fichero de audio, si el formato lo declara */
+  totalBytes?: number
 }
 
+// YTMUSIC primero: con PoToken de WEB es el único con acceso completo al fichero;
+// IOS/ANDROID solo sirven ~2 MB sin su propia atestación (medido 2026-08)
 const CLIENT_CHAIN = ['YTMUSIC', 'IOS', 'ANDROID', 'TV_EMBEDDED'] as const
+
+const CLIENT_UA: Record<string, string | undefined> = {
+  IOS: 'com.google.ios.youtube/20.11.6 (iPhone10,4; U; CPU iOS 16_7_7 like Mac OS X)',
+  ANDROID:
+    'com.google.android.youtube/21.03.36(Linux; U; Android 16; en_US; SM-S908E Build/TP1A.220624.014) gzip',
+  YTMUSIC: undefined, // usa el UA de navegador de la sesión
+  TV_EMBEDDED: 'Mozilla/5.0 (ChromiumStylePlatform) Cobalt/Version'
+}
 
 const cache = new Map<string, ResolvedStream>()
 
 export function invalidateStream(videoId: string): void {
   cache.delete(videoId)
+}
+
+export function clearStreamCache(): void {
+  cache.clear()
 }
 
 export async function resolveStream(videoId: string): Promise<ResolvedStream> {
@@ -58,6 +76,10 @@ export async function resolveStream(videoId: string): Promise<ResolvedStream> {
         lastError = new Error(`decipher vacío (${client})`)
         continue
       }
+      const u = new URL(url)
+      console.log(
+        `[resolver] ${client} ok: c=${u.searchParams.get('c')} pot=${u.searchParams.has('pot')} sabr=${u.searchParams.get('sabr') ?? '-'} n=${u.searchParams.has('n')} sig=${u.searchParams.has('sig') || u.searchParams.has('signature')}`
+      )
       const resolved: ResolvedStream = {
         url,
         mimeType: format.mime_type ?? 'audio/mp4',
@@ -65,11 +87,14 @@ export async function resolveStream(videoId: string): Promise<ResolvedStream> {
         durationSec: info.basic_info.duration,
         // las URLs llevan expire=; si no lo encontramos, asumimos 4 h
         expiresAt: extractExpiry(url) ?? Date.now() + 4 * 3600_000,
-        via: client
+        via: client,
+        userAgent: CLIENT_UA[client] ?? yt.session.context.client.userAgent,
+        totalBytes: format.content_length ? Number(format.content_length) : undefined
       }
       cache.set(videoId, resolved)
       return resolved
     } catch (err) {
+      console.warn(`[resolver] ${client} falló para ${videoId}:`, String((err as Error)?.message ?? err))
       lastError = err
     }
   }

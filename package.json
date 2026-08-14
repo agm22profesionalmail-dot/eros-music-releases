@@ -31,6 +31,7 @@
     "electron": "^43.4.0",
     "electron-builder": "^26.15.3",
     "electron-vite": "^5.0.0",
+    "playwright": "^1.62.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "typescript": "^5.9.0",
