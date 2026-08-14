@@ -3,6 +3,7 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { registerIpc } from './ipc'
 import { sessionManager } from './innertube/session'
+import { startStreamServer } from './stream/server'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -65,8 +66,44 @@ if (!gotTheLock) {
     // Restaura la sesión guardada (OAuth cacheado o cookies de la partición)
     void sessionManager.restore()
 
+    // Proxy local de audio
+    void startStreamServer()
+
     // Gancho de pruebas de humo: METROLIST_TEST_SEARCH="consulta" imprime
     // los primeros resultados y sale. Solo para verificación automatizada.
+    const testStream = process.env.METROLIST_TEST_STREAM
+    if (testStream) {
+      void (async () => {
+        try {
+          const { streamUrlFor } = await import('./stream/server')
+          const { resolveStream } = await import('./stream/resolver')
+          const resolved = await resolveStream(testStream)
+          console.log('[SMOKE_STREAM_RESOLVED]', {
+            via: resolved.via,
+            mime: resolved.mimeType,
+            bitrate: resolved.bitrate,
+            durationSec: resolved.durationSec
+          })
+          const proxied = await fetch(streamUrlFor(testStream), {
+            headers: { Range: 'bytes=0-1023' }
+          })
+          const buf = await proxied.arrayBuffer()
+          console.log('[SMOKE_STREAM_OK]', {
+            status: proxied.status,
+            contentType: proxied.headers.get('content-type'),
+            contentRange: proxied.headers.get('content-range'),
+            bytes: buf.byteLength
+          })
+          if (proxied.status !== 206 && proxied.status !== 200) process.exitCode = 1
+        } catch (err) {
+          console.error('[SMOKE_STREAM_FAIL]', err)
+          process.exitCode = 1
+        } finally {
+          app.quit()
+        }
+      })()
+    }
+
     if (process.env.METROLIST_TEST_POTOKEN === '1') {
       void (async () => {
         try {

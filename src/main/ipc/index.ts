@@ -1,8 +1,10 @@
 import { BrowserWindow, ipcMain } from 'electron'
-import { IPC, type SearchFilter } from '@shared/types'
+import { IPC, type PreparedStream, type SearchFilter } from '@shared/types'
 import { sessionManager } from '../innertube/session'
 import * as music from '../innertube/api'
 import { openCookieLogin } from '../auth/cookieLogin'
+import { resolveStream } from '../stream/resolver'
+import { streamUrlFor } from '../stream/server'
 
 /** Registra todos los handlers IPC. Llamar una sola vez en app.whenReady. */
 export function registerIpc(getMainWindow: () => BrowserWindow | null): void {
@@ -32,6 +34,18 @@ export function registerIpc(getMainWindow: () => BrowserWindow | null): void {
   ipcMain.handle(IPC.MUSIC_ARTIST, (_e, id: string) => music.getArtist(id))
   ipcMain.handle(IPC.MUSIC_UP_NEXT, (_e, videoId: string) => music.getUpNext(videoId))
   ipcMain.handle(IPC.MUSIC_LYRICS, (_e, videoId: string) => music.getYtLyrics(videoId))
+
+  // ---- Streaming ----
+  ipcMain.handle(IPC.STREAM_PREPARE, async (_e, videoId: string): Promise<PreparedStream> => {
+    const resolved = await resolveStream(videoId)
+    return {
+      url: streamUrlFor(videoId),
+      mimeType: resolved.mimeType,
+      durationSec: resolved.durationSec,
+      bitrate: resolved.bitrate,
+      via: resolved.via
+    }
+  })
 
   // ---- Ventana ----
   ipcMain.handle(IPC.WIN_MINIMIZE, () => getMainWindow()?.minimize())

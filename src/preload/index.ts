@@ -7,6 +7,7 @@ import type {
   AuthState,
   LibrarySnapshot,
   PlaylistDetail,
+  PreparedStream,
   SearchFilter,
   SearchResults,
   Shelf
@@ -41,6 +42,11 @@ const api = {
       ipcRenderer.invoke(IPC.MUSIC_UP_NEXT, videoId),
     ytLyrics: (videoId: string): Promise<{ text: string; footer?: string } | null> =>
       ipcRenderer.invoke(IPC.MUSIC_LYRICS, videoId)
+  },
+
+  player: {
+    prepare: (videoId: string): Promise<PreparedStream> =>
+      ipcRenderer.invoke(IPC.STREAM_PREPARE, videoId)
   },
 
   win: {

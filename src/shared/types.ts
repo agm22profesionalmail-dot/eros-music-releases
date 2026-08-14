@@ -128,6 +128,8 @@ export const IPC = {
   MUSIC_TRACK: 'music:track',
   MUSIC_UP_NEXT: 'music:upNext',
   MUSIC_LYRICS: 'music:lyrics',
+  // streaming
+  STREAM_PREPARE: 'stream:prepare',
   // ventana
   WIN_MINIMIZE: 'win:minimize',
   WIN_MAXIMIZE: 'win:maximize',
@@ -135,6 +137,16 @@ export const IPC = {
   WIN_IS_MAXIMIZED: 'win:isMaximized',
   WIN_MAXIMIZED_CHANGED: 'win:maximizedChanged'
 } as const
+
+export interface PreparedStream {
+  /** URL local (proxy 127.0.0.1) lista para asignar a <audio>.src */
+  url: string
+  mimeType: string
+  durationSec?: number
+  bitrate?: number
+  /** Cliente que resolvió el stream (diagnóstico) */
+  via: string
+}
 
 export interface LibrarySnapshot {
   playlists: MediaCard[]

@@ -19,7 +19,8 @@
     "@electron-toolkit/utils": "^4.0.0",
     "bgutils-js": "^4.0.3",
     "jsdom": "^27.0.0",
-    "youtubei.js": "^18.0.0"
+    "youtubei.js": "^18.0.0",
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@types/jsdom": "^30.0.0",
