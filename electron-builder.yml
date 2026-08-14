@@ -1,0 +1,31 @@
+appId: com.zero.metrolistpc
+productName: Metrolist PC
+directories:
+  output: release
+  buildResources: build
+files:
+  - out/**
+  - package.json
+extraResources:
+  - from: assets/icon-256.png
+    to: icon-256.png
+asarUnpack:
+  - node_modules/jsdom/**
+win:
+  icon: build/icon.ico
+  target:
+    - target: nsis
+      arch:
+        - x64
+nsis:
+  oneClick: true
+  perMachine: false
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Metrolist
+  artifactName: MetrolistPC-Setup-${version}.exe
+  deleteAppDataOnUninstall: false
+electronLanguages:
+  - es
+  - en-US
+npmRebuild: false
