@@ -25,6 +25,38 @@ import type {
  * para cruzar el IPC. Toda la lógica de parseo defensivo vive en mappers.ts.
  */
 
+/**
+ * MusicCardShelf del "Mejor resultado": estructura peculiar, `contents` son
+ * solo badges/textos. Los datos útiles están en la propia sección (title,
+ * subtitle, thumbnail) y la navegación en `on_tap.payload` — el prefijo del
+ * browseId o el videoId decide el tipo de tarjeta.
+ */
+function topResultCard(section: any): MediaCard | null {
+  const title = section?.title?.text ?? section?.title?.toString?.()
+  if (!title) return null
+  const subtitle = section?.subtitle?.text ?? section?.subtitle?.toString?.()
+  const thumb = upscaleThumb(bestThumbnail(section), 256)
+  // Navegación: la sección tiene `on_tap` para navegar. El PlayButton está en
+  // `thumbnail_overlay.content.endpoint` para reproducir directamente.
+  const tap = section?.on_tap?.payload ?? section?.thumbnail_overlay?.content?.endpoint?.payload
+  const browseId: string | undefined = tap?.browseId
+  const videoId: string | undefined = tap?.videoId
+  let kind: MediaCard['kind'] = 'unknown'
+  let id: string | undefined
+  if (videoId) {
+    kind = 'song'
+    id = videoId
+  } else if (browseId) {
+    id = browseId
+    if (browseId.startsWith('MPRE') || browseId.startsWith('MPLA')) kind = 'album'
+    else if (browseId.startsWith('UC')) kind = 'artist'
+    else if (browseId.startsWith('VL') || browseId.startsWith('PL') || browseId.startsWith('OLAK'))
+      kind = 'playlist'
+  }
+  if (!id) return null
+  return { kind, id, title, subtitle, thumbnailUrl: thumb }
+}
+
 export async function search(query: string, filter: SearchFilter): Promise<SearchResults> {
   const yt = await sessionManager.get()
   const filters =
@@ -38,8 +70,11 @@ export async function search(query: string, filter: SearchFilter): Promise<Searc
     const typeName = String(section?.type ?? '')
     const contents: any[] = section?.contents ?? []
     if (typeName.includes('MusicCardShelf')) {
-      // "Mejor resultado"
-      const card = mapToCard(section)
+      // "Mejor resultado" — MusicCardShelf tiene su propia estructura: los
+      // `contents` son solo badges/textos; los datos útiles están en la propia
+      // sección (title, subtitle, thumbnail) y la navegación en `on_tap` o en
+      // el PlayButton del overlay. Adaptamos manualmente.
+      const card = topResultCard(section)
       if (card) out.topResult = card
       continue
     }

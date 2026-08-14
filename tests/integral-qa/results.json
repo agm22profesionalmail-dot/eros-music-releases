@@ -1,0 +1,776 @@
+{
+  "elapsed": "135.2",
+  "settingsBefore": {
+    "downloadsDir": "F:\\MetrolistPC\\Music",
+    "theme": "dark",
+    "accent": "#ff8800",
+    "accentMode": "dynamic",
+    "bgMode": "reactive",
+    "ambientTint": 60,
+    "crossfadeSec": 0,
+    "autoplay": true,
+    "eqGains": [
+      6,
+      5,
+      4,
+      2,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "preampDb": 2,
+    "playbackRate": 1,
+    "preservePitch": true,
+    "closeToTray": true,
+    "discordRpc": true,
+    "miniCorner": "tl",
+    "miniKaraoke": false,
+    "miniScale": 0.85,
+    "miniX": 750,
+    "miniY": 4
+  },
+  "settingsAfter": {
+    "downloadsDir": "F:\\MetrolistPC\\Music",
+    "theme": "dark",
+    "accent": "#ff8800",
+    "accentMode": "fixed",
+    "bgMode": "ambient",
+    "ambientTint": 60,
+    "crossfadeSec": 0,
+    "autoplay": true,
+    "eqGains": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "preampDb": 0,
+    "playbackRate": 1,
+    "preservePitch": true,
+    "closeToTray": false,
+    "discordRpc": false,
+    "miniCorner": "br",
+    "miniKaraoke": false,
+    "miniScale": 1,
+    "miniX": 750,
+    "miniY": 4
+  },
+  "totals": {
+    "ok": 74,
+    "warn": 16,
+    "bug": 5,
+    "skip": 0
+  },
+  "bySection": {
+    "1-arranque": [
+      {
+        "section": "1-arranque",
+        "level": "ok",
+        "name": "main sin errores",
+        "detail": "0 líneas de error en stderr",
+        "at": "22:39:09.897"
+      },
+      {
+        "section": "1-arranque",
+        "level": "ok",
+        "name": "sesión iniciada",
+        "detail": "method=cookie name=\"Galaxy Chinpum\"",
+        "at": "22:39:09.900"
+      },
+      {
+        "section": "1-arranque",
+        "level": "ok",
+        "name": "foto de perfil",
+        "detail": "accountPhotoUrl presente",
+        "at": "22:39:09.900"
+      },
+      {
+        "section": "1-arranque",
+        "level": "warn",
+        "name": "refresco cookies (log)",
+        "detail": "sin trazas [auth] en el arranque",
+        "at": "22:39:09.900"
+      }
+    ],
+    "2-home": [
+      {
+        "section": "2-home",
+        "level": "bug",
+        "name": "estanterías",
+        "detail": "sin .shelf en Home",
+        "at": "22:39:11.482"
+      },
+      {
+        "section": "2-home",
+        "level": "warn",
+        "name": "shelf con >4 tarjetas",
+        "detail": "mayor shelf: 0",
+        "at": "22:39:11.483"
+      },
+      {
+        "section": "2-home",
+        "level": "ok",
+        "name": "tarjeta con carátula/título/subtítulo",
+        "detail": "gap título-subtítulo=4.0px",
+        "at": "22:39:11.484"
+      },
+      {
+        "section": "2-home",
+        "level": "warn",
+        "name": "hover-play en tarjetas",
+        "detail": "0 botones play-hover",
+        "at": "22:39:11.610"
+      }
+    ],
+    "3-busqueda": [
+      {
+        "section": "3-busqueda",
+        "level": "ok",
+        "name": "resultados «daft punk»",
+        "detail": "11 pistas",
+        "at": "22:39:13.931"
+      },
+      {
+        "section": "3-busqueda",
+        "level": "ok",
+        "name": "resultados «rosalía motomami»",
+        "detail": "8 pistas",
+        "at": "22:39:15.792"
+      },
+      {
+        "section": "3-busqueda",
+        "level": "ok",
+        "name": "resultados «bad bunny»",
+        "detail": "8 pistas",
+        "at": "22:39:17.527"
+      },
+      {
+        "section": "3-busqueda",
+        "level": "ok",
+        "name": "unicode «テストひらがな»",
+        "detail": "rows=13 spinner=false",
+        "at": "22:39:19.217"
+      },
+      {
+        "section": "3-busqueda",
+        "level": "ok",
+        "name": "reset búsqueda",
+        "detail": "emptyStateVisible=true",
+        "at": "22:39:19.935"
+      },
+      {
+        "section": "3-busqueda",
+        "level": "ok",
+        "name": "chip «Todo»",
+        "detail": "elementos=26",
+        "at": "22:39:22.197"
+      },
+      {
+        "section": "3-busqueda",
+        "level": "ok",
+        "name": "chip «Canciones»",
+        "detail": "elementos=20",
+        "at": "22:39:23.033"
+      },
+      {
+        "section": "3-busqueda",
+        "level": "ok",
+        "name": "chip «Vídeos»",
+        "detail": "elementos=20",
+        "at": "22:39:23.867"
+      },
+      {
+        "section": "3-busqueda",
+        "level": "ok",
+        "name": "chip «Álbumes»",
+        "detail": "elementos=20",
+        "at": "22:39:24.694"
+      },
+      {
+        "section": "3-busqueda",
+        "level": "ok",
+        "name": "chip «Artistas»",
+        "detail": "elementos=20",
+        "at": "22:39:25.532"
+      },
+      {
+        "section": "3-busqueda",
+        "level": "ok",
+        "name": "chip «Playlists»",
+        "detail": "elementos=20",
+        "at": "22:39:26.365"
+      },
+      {
+        "section": "3-busqueda",
+        "level": "bug",
+        "name": "sección Mejor resultado",
+        "detail": "no aparece con «daft punk get lucky»",
+        "at": "22:39:29.185"
+      },
+      {
+        "section": "3-busqueda",
+        "level": "ok",
+        "name": "sugerencias API",
+        "detail": "6 sugerencias",
+        "at": "22:39:29.268"
+      },
+      {
+        "section": "3-busqueda",
+        "level": "ok",
+        "name": "doble clic reproduce",
+        "detail": "barra: «Get Lucky (Official Audio) (con Nile Rodgers y Pharrell Williams)»",
+        "at": "22:39:33.890"
+      }
+    ],
+    "4-sidebar": [
+      {
+        "section": "4-sidebar",
+        "level": "ok",
+        "name": "sidebar con biblioteca real",
+        "detail": "filas=13",
+        "at": "22:39:33.892"
+      },
+      {
+        "section": "4-sidebar",
+        "level": "ok",
+        "name": "título/subtítulo library-row",
+        "detail": "gap=2.0px",
+        "at": "22:39:33.893"
+      },
+      {
+        "section": "4-sidebar",
+        "level": "ok",
+        "name": "chip lateral «Todo»",
+        "detail": "rows=13",
+        "at": "22:39:34.223"
+      },
+      {
+        "section": "4-sidebar",
+        "level": "ok",
+        "name": "chip lateral «Playlists»",
+        "detail": "rows=5",
+        "at": "22:39:34.551"
+      },
+      {
+        "section": "4-sidebar",
+        "level": "ok",
+        "name": "chip lateral «Álbumes»",
+        "detail": "rows=1",
+        "at": "22:39:34.877"
+      },
+      {
+        "section": "4-sidebar",
+        "level": "ok",
+        "name": "chip lateral «Artistas»",
+        "detail": "rows=7",
+        "at": "22:39:35.213"
+      },
+      {
+        "section": "4-sidebar",
+        "level": "bug",
+        "name": "modal Nueva playlist (custom)",
+        "detail": "no aparece",
+        "at": "22:39:36.178"
+      },
+      {
+        "section": "4-sidebar",
+        "level": "ok",
+        "name": "pestañas de biblioteca",
+        "detail": "Playlists, Álbumes, Artistas, Canciones, Historial, Descargas",
+        "at": "22:39:37.836"
+      },
+      {
+        "section": "4-sidebar",
+        "level": "ok",
+        "name": "historial ≥1 entrada",
+        "detail": "50 entradas",
+        "at": "22:39:38.739"
+      },
+      {
+        "section": "4-sidebar",
+        "level": "ok",
+        "name": "pestaña Descargas",
+        "detail": "2 descargas existentes",
+        "at": "22:39:39.282"
+      }
+    ],
+    "5-detalles": [
+      {
+        "section": "5-detalles",
+        "level": "ok",
+        "name": "playlist abre .detail-header",
+        "detail": "",
+        "at": "22:39:41.443"
+      },
+      {
+        "section": "5-detalles",
+        "level": "ok",
+        "name": "cover grande en cabecera",
+        "detail": "",
+        "at": "22:39:41.449"
+      },
+      {
+        "section": "5-detalles",
+        "level": "ok",
+        "name": "botón big-play",
+        "detail": "",
+        "at": "22:39:41.449"
+      },
+      {
+        "section": "5-detalles",
+        "level": "ok",
+        "name": "contadores sin duplicados",
+        "detail": "meta: «Lista creada automáticamente • 2026·11 canciones • 35 minutos»",
+        "at": "22:39:41.449"
+      },
+      {
+        "section": "5-detalles",
+        "level": "ok",
+        "name": "tabla de pistas",
+        "detail": "",
+        "at": "22:39:41.450"
+      },
+      {
+        "section": "5-detalles",
+        "level": "ok",
+        "name": "álbum: cabecera con cover grande",
+        "detail": "",
+        "at": "22:39:45.485"
+      },
+      {
+        "section": "5-detalles",
+        "level": "warn",
+        "name": "álbum: tabla sin thumbnails redundantes",
+        "detail": "filas con thumb=14",
+        "at": "22:39:45.486"
+      },
+      {
+        "section": "5-detalles",
+        "level": "warn",
+        "name": "artista: estanterías con carruseles",
+        "detail": "shelves=0",
+        "at": "22:39:50.192"
+      },
+      {
+        "section": "5-detalles",
+        "level": "ok",
+        "name": "botones atrás/adelante (.nav-circle)",
+        "detail": "",
+        "at": "22:39:51.159"
+      },
+      {
+        "section": "5-detalles",
+        "level": "warn",
+        "name": "menú contextual: faltan entradas",
+        "detail": "Ir a artista|Ir al artista",
+        "at": "22:39:53.345"
+      }
+    ],
+    "6-reproduccion": [
+      {
+        "section": "6-reproduccion",
+        "level": "ok",
+        "name": "siguiente cambia pista",
+        "detail": "títulos únicos=3 de 3",
+        "at": "22:40:12.494"
+      },
+      {
+        "section": "6-reproduccion",
+        "level": "ok",
+        "name": "audio avanza tras siguiente",
+        "detail": "[\"4.0\",\"4.0\",\"4.0\"]",
+        "at": "22:40:12.494"
+      },
+      {
+        "section": "6-reproduccion",
+        "level": "ok",
+        "name": "panel de cola abre",
+        "detail": "",
+        "at": "22:40:13.129"
+      },
+      {
+        "section": "6-reproduccion",
+        "level": "ok",
+        "name": "cola: sección Reproduciendo",
+        "detail": "",
+        "at": "22:40:13.130"
+      },
+      {
+        "section": "6-reproduccion",
+        "level": "ok",
+        "name": "cola: sección A continuación",
+        "detail": "",
+        "at": "22:40:13.130"
+      },
+      {
+        "section": "6-reproduccion",
+        "level": "ok",
+        "name": "aleatorio activo",
+        "detail": "active=true",
+        "at": "22:40:13.581"
+      },
+      {
+        "section": "6-reproduccion",
+        "level": "ok",
+        "name": "ciclo de repetición",
+        "detail": "[{\"active\":true,\"title\":\"Repetir\"},{\"active\":true,\"title\":\"Repetir\"},{\"active\":false,\"title\":\"Repetir\"}]",
+        "at": "22:40:14.872"
+      },
+      {
+        "section": "6-reproduccion",
+        "level": "ok",
+        "name": "seek al 50%/90%",
+        "detail": "[{\"targetSet\":164.35025,\"curr\":164.35025,\"dur\":328.7005},{\"targetSet\":295.83045,\"curr\":295.83045,\"dur\":328.7005}]",
+        "at": "22:40:15.094"
+      },
+      {
+        "section": "6-reproduccion",
+        "level": "ok",
+        "name": "autoplay/radio al acabar",
+        "detail": "barra tras fin: «Giorgio by Moroder»",
+        "at": "22:40:21.599"
+      },
+      {
+        "section": "6-reproduccion",
+        "level": "ok",
+        "name": "anterior con >3s reinicia",
+        "detail": "{\"curr\":0.563232,\"title\":\"Giorgio by Moroder\"}",
+        "at": "22:40:22.525"
+      }
+    ],
+    "7-descargas": [
+      {
+        "section": "7-descargas",
+        "level": "ok",
+        "name": "descarga completa",
+        "detail": "videoId=Jb6gcoR266U file=F:\\MetrolistPC\\Music\\Daft Punk - Around the World.opus size=8766844",
+        "at": "22:40:26.143"
+      },
+      {
+        "section": "7-descargas",
+        "level": "ok",
+        "name": "aparece en biblioteca → Descargas",
+        "detail": "filas=2",
+        "at": "22:40:27.503"
+      },
+      {
+        "section": "7-descargas",
+        "level": "warn",
+        "name": "sin traza via= en main log",
+        "detail": "no se pudo confirmar la ruta",
+        "at": "22:40:32.528"
+      }
+    ],
+    "8-letras": [
+      {
+        "section": "8-letras",
+        "level": "ok",
+        "name": "LyricsPage abierta",
+        "detail": "líneas visibles=80",
+        "at": "22:40:39.132"
+      },
+      {
+        "section": "8-letras",
+        "level": "ok",
+        "name": "líneas de letra ≥10",
+        "detail": "80 líneas",
+        "at": "22:40:39.132"
+      },
+      {
+        "section": "8-letras",
+        "level": "warn",
+        "name": "carátula difuminada de fondo",
+        "detail": "blur=false",
+        "at": "22:40:39.133"
+      },
+      {
+        "section": "8-letras",
+        "level": "warn",
+        "name": ".karaoke-fill en línea activa",
+        "detail": "{\"present\":false}",
+        "at": "22:40:39.134"
+      },
+      {
+        "section": "8-letras",
+        "level": "warn",
+        "name": "botones ±0.5s no encontrados",
+        "detail": "count=1",
+        "at": "22:40:39.138"
+      },
+      {
+        "section": "8-letras",
+        "level": "ok",
+        "name": "clic en línea salta el audio",
+        "detail": "4.5 → 48.0",
+        "at": "22:40:39.869"
+      },
+      {
+        "section": "8-letras",
+        "level": "warn",
+        "name": "karaoke por palabra (KRC)",
+        "detail": ".words/.word=0",
+        "at": "22:40:46.424"
+      }
+    ],
+    "9-visualizador": [
+      {
+        "section": "9-visualizador",
+        "level": "ok",
+        "name": "vinilo girando (animation)",
+        "detail": "{\"spinning\":true,\"canvasCount\":2}",
+        "at": "22:40:52.234"
+      },
+      {
+        "section": "9-visualizador",
+        "level": "ok",
+        "name": "espectro (canvas presente)",
+        "detail": "canvas=2",
+        "at": "22:40:52.234"
+      }
+    ],
+    "10-mini": [
+      {
+        "section": "10-mini",
+        "level": "ok",
+        "name": "mini-player abre ventana",
+        "detail": "url=file:///F:/MetrolistPC/out/renderer/index.html#/mini",
+        "at": "22:40:54.279"
+      },
+      {
+        "section": "10-mini",
+        "level": "ok",
+        "name": "mini refleja título",
+        "detail": "«Muskel»",
+        "at": "22:40:54.285"
+      },
+      {
+        "section": "10-mini",
+        "level": "ok",
+        "name": "mini sincroniza en <1.5s",
+        "detail": "main:«Dj Akshay Na Duff ( Vani Gad Special Part 01 )» mini:«Dj Akshay Na Duff ( Vani Gad Special Part 01 )»",
+        "at": "22:40:55.829"
+      },
+      {
+        "section": "10-mini",
+        "level": "ok",
+        "name": "ajustes mini: 4 esquinas",
+        "detail": "botones=6",
+        "at": "22:40:57.133"
+      },
+      {
+        "section": "10-mini",
+        "level": "ok",
+        "name": "setScale 0.8/1.3/1.0",
+        "detail": "",
+        "at": "22:40:58.362"
+      },
+      {
+        "section": "10-mini",
+        "level": "ok",
+        "name": "mini re-tinta al cambiar tema",
+        "detail": "data-theme=black",
+        "at": "22:40:59.693"
+      }
+    ],
+    "11-ajustes": [
+      {
+        "section": "11-ajustes",
+        "level": "ok",
+        "name": "tema dark",
+        "detail": "data-theme=dark",
+        "at": "22:41:01.518"
+      },
+      {
+        "section": "11-ajustes",
+        "level": "bug",
+        "name": "tema black",
+        "detail": "data-theme=dark",
+        "at": "22:41:01.924"
+      },
+      {
+        "section": "11-ajustes",
+        "level": "bug",
+        "name": "tema light",
+        "detail": "data-theme=dark",
+        "at": "22:41:02.331"
+      },
+      {
+        "section": "11-ajustes",
+        "level": "ok",
+        "name": "tema light contraste (visual)",
+        "detail": "{\"color\":\"rgb(179, 179, 179)\",\"background\":\"rgba(0, 0, 0, 0)\"}",
+        "at": "22:41:02.332"
+      },
+      {
+        "section": "11-ajustes",
+        "level": "ok",
+        "name": "bgMode off",
+        "detail": "actual=off",
+        "at": "22:41:02.943"
+      },
+      {
+        "section": "11-ajustes",
+        "level": "ok",
+        "name": "bgMode ambient",
+        "detail": "actual=ambient",
+        "at": "22:41:03.249"
+      },
+      {
+        "section": "11-ajustes",
+        "level": "ok",
+        "name": "bgMode reactive",
+        "detail": "actual=reactive",
+        "at": "22:41:03.556"
+      },
+      {
+        "section": "11-ajustes",
+        "level": "warn",
+        "name": "swatches de acento ≥7",
+        "detail": "count=0",
+        "at": "22:41:03.563"
+      },
+      {
+        "section": "11-ajustes",
+        "level": "warn",
+        "name": "input color picker",
+        "detail": "count=0",
+        "at": "22:41:03.564"
+      },
+      {
+        "section": "11-ajustes",
+        "level": "ok",
+        "name": "EQ escribe una banda",
+        "detail": "[0]=3",
+        "at": "22:41:03.869"
+      },
+      {
+        "section": "11-ajustes",
+        "level": "warn",
+        "name": "audio.playbackRate=1.5",
+        "detail": "actual=1",
+        "at": "22:41:04.280"
+      },
+      {
+        "section": "11-ajustes",
+        "level": "ok",
+        "name": "Discord RPC activa (log del main)",
+        "detail": "19 líneas: «[22:40:54.477] [discord] presencia: Dj Akshay Na Duff ( Vani Gad Special Part 01 ) · DJ Akshay Chali»",
+        "at": "22:41:06.787"
+      },
+      {
+        "section": "11-ajustes",
+        "level": "warn",
+        "name": "cambiar carpeta de descargas",
+        "detail": "no automatizable (diálogo nativo) — skip",
+        "at": "22:41:07.292"
+      },
+      {
+        "section": "11-ajustes",
+        "level": "warn",
+        "name": "like/clear",
+        "detail": "sin videoId accesible desde renderer",
+        "at": "22:41:19.909"
+      }
+    ],
+    "12-windows": [
+      {
+        "section": "12-windows",
+        "level": "ok",
+        "name": "SMTC metadata",
+        "detail": "{\"title\":\"Dj Akshay Na Duff ( Vani Gad Special Part 01 )\",\"artist\":\"DJ Akshay Chalisgaon\",\"album\":\"\",\"artwork\":1}",
+        "at": "22:41:07.298"
+      },
+      {
+        "section": "12-windows",
+        "level": "ok",
+        "name": "app metadata alcanzable",
+        "detail": "{\"hasQuit\":true}",
+        "at": "22:41:07.300"
+      },
+      {
+        "section": "12-windows",
+        "level": "ok",
+        "name": "teclas multimedia registradas",
+        "detail": "{\"playpause\":true,\"next\":true,\"prev\":true}",
+        "at": "22:41:07.301"
+      }
+    ],
+    "13-robustez": [
+      {
+        "section": "13-robustez",
+        "level": "ok",
+        "name": "navegación rápida sin pantalla blanca",
+        "detail": "",
+        "at": "22:41:09.234"
+      },
+      {
+        "section": "13-robustez",
+        "level": "ok",
+        "name": "spam siguiente x5 no rompe (crossfade 0)",
+        "detail": "título tras spam: «Veridis Quo (Edit)»",
+        "at": "22:41:18.724"
+      },
+      {
+        "section": "13-robustez",
+        "level": "ok",
+        "name": "viewport 900x600 sin overflow horizontal",
+        "detail": "{\"overflowH\":false,\"npVisible\":true,\"volumeVisible\":false}",
+        "at": "22:41:19.234"
+      },
+      {
+        "section": "13-robustez",
+        "level": "ok",
+        "name": "viewport 1600x1000",
+        "detail": "{\"cards\":15}",
+        "at": "22:41:19.804"
+      },
+      {
+        "section": "13-robustez",
+        "level": "ok",
+        "name": "errores renderer",
+        "detail": "0 errores; primeros 5: ",
+        "at": "22:41:19.901"
+      },
+      {
+        "section": "13-robustez",
+        "level": "ok",
+        "name": "errores main (filtrando ruido conocido youtubei.js)",
+        "detail": "0 líneas; primeros 5: ",
+        "at": "22:41:19.901"
+      }
+    ],
+    "cleanup": [
+      {
+        "section": "cleanup",
+        "level": "ok",
+        "name": "descarga de prueba eliminada",
+        "detail": "videoId=Jb6gcoR266U",
+        "at": "22:41:20.418"
+      },
+      {
+        "section": "cleanup",
+        "level": "ok",
+        "name": "ajustes restaurados",
+        "detail": "",
+        "at": "22:41:20.926"
+      }
+    ]
+  },
+  "mainErrLogSample": [
+    "[22:39:56.330] [YOUTUBEJS][Text]: Unable to find matching run for attachment run. Skipping... {\n  attachment_run: {\n    startIndex: 18,\n    element: { type: [Object], properties: [Object] },\n    alignment: 'ALIGNMENT_VERTICAL_CENTER'\n  },\n  input_data: {\n    content: 'Much Rewind y MUCH',\n    styleRuns: [ [Object], [Object] ],\n    attachmentRuns: [ [Object] ]\n  },\n  parsed_runs: [ { text: 'Much Rewind y MUCH', startIndex: 0 } ]\n}",
+    "[22:40:43.514] [YOUTUBEJS][Text]: Unable to find matching run for attachment run. Skipping... {\n  attachment_run: {\n    startIndex: 12,\n    element: { type: [Object], properties: [Object] },\n    alignment: 'ALIGNMENT_VERTICAL_CENTER'\n  },\n  input_data: {\n    content: 'Connor Price y 2 más',\n    styleRuns: [ [Object], [Object] ],\n    attachmentRuns: [ [Object] ]\n  },\n  parsed_runs: [ { text: 'Connor Price y 2 más', startIndex: 0 } ]\n}",
+    "[22:40:49.108] [YOUTUBEJS][Parser]: ParsingError: Type mismatch, got Message expected SectionList | MusicQueue | RichGrid.\n    at ERROR_HANDLER (file:///F:/MetrolistPC/node_modules/youtubei.js/dist/src/parser/parser.js:59:27)\n    at Module.parseItem (file:///F:/MetrolistPC/node_modules/youtubei.js/dist/src/parser/parser.js:409:25)\n    at new Tab (file:///F:/MetrolistPC/node_modules/youtubei.js/dist/src/parser/classes/Tab.js:18:31)\n    at parseItem (file:///F:/MetrolistPC/node_modules/youtubei.js/dist/src/parser/parser.js:428:28)\n    at Module.parseArray (file:///F:/MetrolistPC/node_modules/youtubei.js/dist/src/parser/parser.js:448:28)\n    at new TwoColumnBrowseResults (file:///F:/MetrolistPC/node_modules/youtubei.js/dist/src/parser/classes/TwoColumnBrowseResults.js:14:28)\n    at new WatchNextTabbedResults (file:///F:/MetrolistPC/node_modules/youtubei.js/dist/src/parser/classes/WatchNextTabbedResults.js:5:9)\n    at parseItem (file:///F:/MetrolistPC/node_modules/youtubei.js/dist/src/parser/parser.js:428:28)\n    at Module.parse (file:///F:/MetrolistPC/node_modules/youtubei.js/dist/src/parser/parser.js:477:34)\n    at new Tabbed (file:///F:/MetrolistPC/node_modules/youtubei.js/dist/src/parser/classes/Tabbed.js:8:32) {\n  date: 2026-08-14T22:40:49.107Z,\n  version: '18.0.0',\n  info: {\n    text: { runs: [Array] },\n    trackingParams: 'CBIQljsiEwidodqYmKGWAxUOwNsBHfoNG1k='\n  }\n}",
+    "[22:40:54.498] [YOUTUBEJS][Parser]: ParsingError: Type mismatch, got Message expected SectionList | MusicQueue | RichGrid.\n    at ERROR_HANDLER (file:///F:/MetrolistPC/node_modules/youtubei.js/dist/src/parser/parser.js:59:27)\n    at Module.parseItem (file:///F:/MetrolistPC/node_modules/youtubei.js/dist/src/parser/parser.js:409:25)\n    at new Tab (file:///F:/MetrolistPC/node_modules/youtubei.js/dist/src/parser/classes/Tab.js:18:31)\n    at parseItem (file:///F:/MetrolistPC/node_modules/youtubei.js/dist/src/parser/parser.js:428:28)\n    at Module.parseArray (file:///F:/MetrolistPC/node_modules/youtubei.js/dist/src/parser/parser.js:448:28)\n    at new TwoColumnBrowseResults (file:///F:/MetrolistPC/node_modules/youtubei.js/dist/src/parser/classes/TwoColumnBrowseResults.js:14:28)\n    at new WatchNextTabbedResults (file:///F:/MetrolistPC/node_modules/youtubei.js/dist/src/parser/classes/WatchNextTabbedResults.js:5:9)\n    at parseItem (file:///F:/MetrolistPC/node_modules/youtubei.js/dist/src/parser/parser.js:428:28)\n    at Module.parse (file:///F:/MetrolistPC/node_modules/youtubei.js/dist/src/parser/parser.js:477:34)\n    at new Tabbed (file:///F:/MetrolistPC/node_modules/youtubei.js/dist/src/parser/classes/Tabbed.js:8:32) {\n  date: 2026-08-14T22:40:54.498Z,\n  version: '18.0.0',\n  info: {\n    text: { runs: [Array] },\n    trackingParams: 'CBIQljsiEwjHmaabmKGWAxWfCYwGHTrvCjg='\n  }\n}",
+    "[22:40:59.271] [YOUTUBEJS][Parser]: ParsingError: Type mismatch, got Message expected SectionList | MusicQueue | RichGrid.\n    at ERROR_HANDLER (file:///F:/MetrolistPC/node_modules/youtubei.js/dist/src/parser/parser.js:59:27)\n    at Module.parseItem (file:///F:/MetrolistPC/node_modules/youtubei.js/dist/src/parser/parser.js:409:25)\n    at new Tab (file:///F:/MetrolistPC/node_modules/youtubei.js/dist/src/parser/classes/Tab.js:18:31)\n    at parseItem (file:///F:/MetrolistPC/node_modules/youtubei.js/dist/src/parser/parser.js:428:28)\n    at Module.parseArray (file:///F:/MetrolistPC/node_modules/youtubei.js/dist/src/parser/parser.js:448:28)\n    at new TwoColumnBrowseResults (file:///F:/MetrolistPC/node_modules/youtubei.js/dist/src/parser/classes/TwoColumnBrowseResults.js:14:28)\n    at new WatchNextTabbedResults (file:///F:/MetrolistPC/node_modules/youtubei.js/dist/src/parser/classes/WatchNextTabbedResults.js:5:9)\n    at parseItem (file:///F:/MetrolistPC/node_modules/youtubei.js/dist/src/parser/parser.js:428:28)\n    at Module.parse (file:///F:/MetrolistPC/node_modules/youtubei.js/dist/src/parser/parser.js:477:34)\n    at new Tabbed (file:///F:/MetrolistPC/node_modules/youtubei.js/dist/src/parser/classes/Tabbed.js:8:32) {\n  date: 2026-08-14T22:40:59.271Z,\n  version: '18.0.0',\n  info: {\n    text: { runs: [Array] },\n    trackingParams: 'CBIQljsiEwi9y8mdmKGWAxV0c0ECHZLNFkA='\n  }\n}"
+  ],
+  "rendererErrsAll": []
+}

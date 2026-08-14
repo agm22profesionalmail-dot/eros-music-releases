@@ -80,6 +80,7 @@ export function TextModalHost(): React.JSX.Element | null {
 
   return (
     <div
+      className="text-modal-overlay"
       style={{
         position: 'fixed',
         inset: 0,
@@ -91,7 +92,7 @@ export function TextModalHost(): React.JSX.Element | null {
       onClick={() => close(null)}
     >
       <div
-        className="login-card"
+        className="text-modal login-card"
         style={{ width: 380, padding: 28, gap: 14, textAlign: 'left' }}
         onClick={(e) => e.stopPropagation()}
       >

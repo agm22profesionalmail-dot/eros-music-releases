@@ -87,6 +87,17 @@ export const useSettings = create<SettingsState>((set, get) => ({
     } catch {
       set({ loaded: true })
     }
+    // Escucha cambios que vienen del main (ventana de ajustes del mini,
+    // otros procesos, o llamadas directas a window.api.settings.set desde
+    // fuera del store). Sin esto, el <html> del main no se re-tinta ni el
+    // motor de audio adopta cambios de EQ/tempo/crossfade hechos por otros.
+    window.api.settings.onChanged((s) => {
+      const same = JSON.stringify(s) === JSON.stringify(get().settings)
+      if (same) return
+      set({ settings: s })
+      applyToEngine(s)
+      applyTheme(s)
+    })
   },
 
   update: async (patch) => {

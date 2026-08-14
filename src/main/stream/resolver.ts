@@ -1,4 +1,7 @@
 import { spawn } from 'child_process'
+import { app } from 'electron'
+import { existsSync } from 'fs'
+import { join } from 'path'
 import { sessionManager } from '../innertube/session'
 
 /**
@@ -116,10 +119,19 @@ function extractExpiry(url: string): number | null {
   return m ? Number(m[1]) * 1000 : null
 }
 
+/** Ruta al yt-dlp empaquetado (o al del PATH si no hay bundle). */
+function ytDlpBin(): string {
+  const exe = process.platform === 'win32' ? 'yt-dlp.exe' : 'yt-dlp'
+  const packaged = app.isPackaged
+    ? join(process.resourcesPath, 'bin', exe)
+    : join(app.getAppPath(), 'resources', 'bin', exe)
+  return existsSync(packaged) ? packaged : 'yt-dlp'
+}
+
 function resolveWithYtDlp(videoId: string): Promise<ResolvedStream> {
   return new Promise((resolve, reject) => {
     const proc = spawn(
-      'yt-dlp',
+      ytDlpBin(),
       ['-f', 'bestaudio', '--no-playlist', '-j', `https://music.youtube.com/watch?v=${videoId}`],
       { windowsHide: true }
     )

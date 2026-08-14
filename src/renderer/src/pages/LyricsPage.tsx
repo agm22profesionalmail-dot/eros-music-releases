@@ -96,6 +96,7 @@ export function LyricsPage(): React.JSX.Element {
       {current.thumbnailUrl && (
         <div
           key={current.videoId}
+          className="lyrics-bg"
           style={{
             position: 'absolute',
             inset: 0,

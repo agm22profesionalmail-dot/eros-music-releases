@@ -9,7 +9,7 @@ interface ShelfProps {
 
 export function ShelfRow({ shelf, onPlayItem, limit = 7 }: ShelfProps): React.JSX.Element {
   return (
-    <section>
+    <section className="shelf">
       <div className="shelf-header">
         <h2>{shelf.title}</h2>
       </div>

@@ -9,6 +9,11 @@ files:
 extraResources:
   - from: assets/icon-256.png
     to: icon-256.png
+  # Binarios empaquetados para descargas offline sin dependencias externas
+  - from: resources/bin/ffmpeg.exe
+    to: bin/ffmpeg.exe
+  - from: resources/bin/yt-dlp.exe
+    to: bin/yt-dlp.exe
 asarUnpack:
   - node_modules/jsdom/**
 win:

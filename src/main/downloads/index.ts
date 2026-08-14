@@ -1,9 +1,23 @@
 import { app, net, BrowserWindow } from 'electron'
 import { spawn } from 'child_process'
-import { promises as fs } from 'fs'
+import { existsSync, promises as fs } from 'fs'
 import { join } from 'path'
 import { recordDownload, removeDownload, readDownloads, getDownloadPath, getSetting } from '../db'
 import type { TrackSummary } from '@shared/types'
+
+/**
+ * Resuelve la ruta de un binario preferentemente empaquetado con la app,
+ * cayendo al que haya en el PATH del sistema si no. En dev usa `resources/bin`
+ * del repo; en producción usa `process.resourcesPath\bin` (donde
+ * electron-builder copia extraResources).
+ */
+function bundledBin(name: 'ffmpeg' | 'yt-dlp'): string {
+  const exe = process.platform === 'win32' ? `${name}.exe` : name
+  const packaged = app.isPackaged
+    ? join(process.resourcesPath, 'bin', exe)
+    : join(app.getAppPath(), 'resources', 'bin', exe)
+  return existsSync(packaged) ? packaged : name
+}
 
 /**
  * Descargas permanentes: canción del spool -> ffmpeg (remux + etiquetas +
@@ -104,7 +118,7 @@ async function downloadOne(track: TrackSummary): Promise<void> {
   args.push(outPath)
 
   await new Promise<void>((resolve, reject) => {
-    const proc = spawn('ffmpeg', args, { windowsHide: true })
+    const proc = spawn(bundledBin('ffmpeg'), args, { windowsHide: true })
     let stderr = ''
     proc.stderr.on('data', (d) => (stderr += d))
     proc.on('error', reject)
@@ -131,7 +145,7 @@ function ytDlpDownload(
   return new Promise((resolve, reject) => {
     const outTemplate = `${outBase}.%(ext)s`
     const proc = spawn(
-      'yt-dlp',
+      bundledBin('yt-dlp'),
       [
         '-f', 'bestaudio',
         '--no-playlist',
