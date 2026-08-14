@@ -57,6 +57,11 @@ const api = {
     get: (): Promise<AppSettings> => ipcRenderer.invoke(IPC.SETTINGS_GET),
     set: (patch: Partial<AppSettings>): Promise<AppSettings> =>
       ipcRenderer.invoke(IPC.SETTINGS_SET, patch),
+    onChanged: (cb: (settings: AppSettings) => void): (() => void) => {
+      const listener = (_e: unknown, s: AppSettings): void => cb(s)
+      ipcRenderer.on(IPC.SETTINGS_CHANGED, listener)
+      return () => ipcRenderer.removeListener(IPC.SETTINGS_CHANGED, listener)
+    },
     changeDownloadsDir: (): Promise<{ dir: string; moved: number } | null> =>
       ipcRenderer.invoke(IPC.DL_CHANGE_DIR),
     openDownloadsDir: (): Promise<void> => ipcRenderer.invoke(IPC.DL_OPEN_DIR)
@@ -82,8 +87,10 @@ const api = {
       return () => ipcRenderer.removeListener(IPC.MINI_STATE, listener)
     },
     /** Envía un comando de control (ventana mini -> ventana principal) */
-    command: (cmd: 'playpause' | 'next' | 'previous'): Promise<void> =>
-      ipcRenderer.invoke(IPC.MINI_COMMAND, cmd)
+    command: (cmd: string): Promise<void> => ipcRenderer.invoke(IPC.MINI_COMMAND, cmd),
+    /** Ancla el mini a una esquina o lo deja en posición libre */
+    setCorner: (corner: 'tl' | 'tr' | 'bl' | 'br' | 'free'): Promise<void> =>
+      ipcRenderer.invoke(IPC.MINI_SET_CORNER, corner)
   },
 
   player: {

@@ -43,6 +43,10 @@ export function initMediaIntegration(): () => void {
     else if (cmd === 'next') void p.next()
     else if (cmd === 'previous') void p.previous()
     else if (cmd === 'pause' && p.isPlaying) p.togglePlay()
+    else if (cmd.startsWith('seek:')) {
+      const t = Number(cmd.slice(5))
+      if (Number.isFinite(t)) p.seek(t)
+    }
   })
 
   // Publica el estado al main (alimenta mini-player y Discord RPC), 1 Hz máx.

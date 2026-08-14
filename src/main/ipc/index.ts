@@ -88,6 +88,11 @@ export function registerIpc(getMainWindow: () => BrowserWindow | null): void {
       const { setDiscordEnabled } = await import('../integrations/discord')
       setDiscordEnabled(Boolean(patch.discordRpc))
     }
+    // Notifica a todas las ventanas (la principal Y el mini) para que
+    // tema/acento se mantengan sincronizados en vivo.
+    for (const w of BrowserWindow.getAllWindows()) {
+      w.webContents.send(IPC.SETTINGS_CHANGED, merged)
+    }
     return merged
   })
 

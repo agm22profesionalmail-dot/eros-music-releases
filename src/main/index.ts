@@ -1,15 +1,76 @@
-import { app, shell, BrowserWindow, ipcMain, Tray, Menu, globalShortcut, nativeImage } from 'electron'
+import {
+  app,
+  shell,
+  BrowserWindow,
+  ipcMain,
+  Tray,
+  Menu,
+  globalShortcut,
+  nativeImage,
+  screen
+} from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { registerIpc } from './ipc'
 import { sessionManager } from './innertube/session'
 import { startStreamServer } from './stream/server'
-import { getAllSettings } from './settings'
-import { IPC } from '@shared/types'
+import { getAllSettings, updateSettings } from './settings'
+import { IPC, type MiniCorner } from '@shared/types'
 
 let tray: Tray | null = null
 let isQuitting = false
 let miniWindow: BrowserWindow | null = null
+const MINI_W = 400
+const MINI_H = 84
+const MINI_MARGIN = 12
+const SNAP_DIST = 64
+
+/** Coordenadas de cada esquina dentro del área útil (sin barra de tareas). */
+function cornerPositions(win: BrowserWindow): Record<Exclude<MiniCorner, 'free'>, [number, number]> {
+  const wa = screen.getDisplayMatching(win.getBounds()).workArea
+  const [w, h] = win.getSize()
+  return {
+    tl: [wa.x + MINI_MARGIN, wa.y + MINI_MARGIN],
+    tr: [wa.x + wa.width - w - MINI_MARGIN, wa.y + MINI_MARGIN],
+    bl: [wa.x + MINI_MARGIN, wa.y + wa.height - h - MINI_MARGIN],
+    br: [wa.x + wa.width - w - MINI_MARGIN, wa.y + wa.height - h - MINI_MARGIN]
+  }
+}
+
+function placeMiniAtCorner(corner: MiniCorner): void {
+  if (!miniWindow || miniWindow.isDestroyed()) return
+  if (corner === 'free') {
+    const s = getAllSettings()
+    if (s.miniX != null && s.miniY != null) miniWindow.setPosition(s.miniX, s.miniY)
+    return
+  }
+  const [x, y] = cornerPositions(miniWindow)[corner]
+  miniWindow.setPosition(x, y)
+  updateSettings({ miniCorner: corner })
+}
+
+/** Imán: al soltar cerca de una esquina, engancha; si no, guarda posición libre. */
+let snapTimer: NodeJS.Timeout | null = null
+function onMiniMoved(): void {
+  if (!miniWindow || miniWindow.isDestroyed()) return
+  if (snapTimer) clearTimeout(snapTimer)
+  snapTimer = setTimeout(() => {
+    if (!miniWindow || miniWindow.isDestroyed()) return
+    const [x, y] = miniWindow.getPosition()
+    const corners = cornerPositions(miniWindow)
+    for (const [corner, [cx, cy]] of Object.entries(corners) as [
+      Exclude<MiniCorner, 'free'>,
+      [number, number]
+    ][]) {
+      if (Math.abs(x - cx) < SNAP_DIST && Math.abs(y - cy) < SNAP_DIST) {
+        miniWindow.setPosition(cx, cy)
+        updateSettings({ miniCorner: corner })
+        return
+      }
+    }
+    updateSettings({ miniCorner: 'free', miniX: x, miniY: y })
+  }, 350)
+}
 
 function toggleMiniPlayer(): void {
   if (miniWindow && !miniWindow.isDestroyed()) {
@@ -18,8 +79,8 @@ function toggleMiniPlayer(): void {
     return
   }
   miniWindow = new BrowserWindow({
-    width: 360,
-    height: 100,
+    width: MINI_W,
+    height: MINI_H,
     frame: false,
     alwaysOnTop: true,
     resizable: false,
@@ -35,9 +96,12 @@ function toggleMiniPlayer(): void {
     }
   })
   miniWindow.setAlwaysOnTop(true, 'screen-saver')
+  miniWindow.on('moved', onMiniMoved)
   miniWindow.on('closed', () => {
     miniWindow = null
   })
+  // Coloca en la esquina recordada (por defecto abajo-derecha, sobre la barra de tareas)
+  placeMiniAtCorner(getAllSettings().miniCorner)
   if (is.dev && process.env.ELECTRON_RENDERER_URL) {
     void miniWindow.loadURL(`${process.env.ELECTRON_RENDERER_URL}#/mini`)
   } else {
@@ -206,6 +270,7 @@ if (!gotTheLock) {
       )
     })
     ipcMain.handle(IPC.MINI_COMMAND, (_e, cmd: string) => sendMedia(cmd))
+    ipcMain.handle(IPC.MINI_SET_CORNER, (_e, corner: MiniCorner) => placeMiniAtCorner(corner))
 
     // Discord RPC según ajustes (y reaccionando a cambios)
     void import('./integrations/discord').then(({ setDiscordEnabled }) => {

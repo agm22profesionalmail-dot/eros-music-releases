@@ -147,6 +147,7 @@ export const IPC = {
   // ajustes
   SETTINGS_GET: 'settings:get',
   SETTINGS_SET: 'settings:set',
+  SETTINGS_CHANGED: 'settings:changed', // main -> todas las ventanas (evento)
   // control remoto (teclas multimedia globales) main -> renderer
   MEDIA_COMMAND: 'media:command',
   // mini-player y estado de reproducción
@@ -154,6 +155,7 @@ export const IPC = {
   MINI_STATE: 'mini:state', // renderer principal -> main -> mini
   MINI_COMMAND: 'mini:command', // mini -> main -> renderer principal
   MINI_SHOW_MAIN: 'mini:showMain',
+  MINI_SET_CORNER: 'mini:setCorner',
   // streaming
   STREAM_PREPARE: 'stream:prepare',
   // ventana
@@ -206,7 +208,14 @@ export interface AppSettings {
   closeToTray: boolean
   /** Mostrar lo que escuchas en Discord */
   discordRpc: boolean
+  /** Esquina del mini-player: tl/tr/bl/br o posición libre */
+  miniCorner: 'tl' | 'tr' | 'bl' | 'br' | 'free'
+  /** Posición libre del mini-player (si miniCorner = 'free') */
+  miniX?: number
+  miniY?: number
 }
+
+export type MiniCorner = AppSettings['miniCorner']
 
 export const DEFAULT_SETTINGS: AppSettings = {
   downloadsDir: '',
@@ -220,7 +229,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   playbackRate: 1,
   preservePitch: true,
   closeToTray: false,
-  discordRpc: false
+  discordRpc: false,
+  miniCorner: 'br'
 }
 
 export interface LyricsData {

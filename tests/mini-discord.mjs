@@ -88,7 +88,58 @@ if (miniPage) {
   })
   check('reanudar desde el mini', resumed)
 
-  // 5. Cierra el mini con su botón
+  // 5. Línea de tiempo visible con tiempos
+  const hasTimes = await miniPage.evaluate(() => {
+    const spans = [...document.querySelectorAll('span')]
+    return spans.filter((s) => /^\d+:\d\d$/.test(s.textContent ?? '')).length >= 2
+  })
+  check('línea de tiempo con tiempos', hasTimes)
+
+  // 6. Seek desde el mini: clic al 50% de la barra
+  const posBefore = await win.evaluate(() => {
+    const audios = [...document.querySelectorAll('audio')]
+    return Math.max(...audios.map((a) => a.currentTime), 0)
+  })
+  const bar = miniPage.locator('div[style*="cursor: pointer"]').filter({ hasNot: miniPage.locator('b') }).first()
+  const barBox = await bar.boundingBox()
+  if (barBox) {
+    await miniPage.mouse.click(barBox.x + barBox.width * 0.5, barBox.y + barBox.height / 2)
+    await win.waitForTimeout(1500)
+    const posAfter = await win.evaluate(() => {
+      const audios = [...document.querySelectorAll('audio')]
+      return Math.max(...audios.map((a) => a.currentTime), 0)
+    })
+    console.log(`  seek: ${posBefore.toFixed(1)}s -> ${posAfter.toFixed(1)}s`)
+    check('seek desde el mini', Math.abs(posAfter - posBefore) > 15)
+  } else {
+    check('seek desde el mini (barra no encontrada)', false)
+  }
+
+  // 7. Esquinas: ruedita -> elegir "Arriba izquierda" y verificar posición real
+  await miniPage.hover('body')
+  await miniPage.locator('[title="Posición del mini-player"]').click()
+  await miniPage.locator('.context-menu button', { hasText: 'Arriba izquierda' }).click()
+  await win.waitForTimeout(800)
+  const miniBounds = await app.evaluate(({ BrowserWindow }) => {
+    const mini = BrowserWindow.getAllWindows().find((w) => w.webContents.getURL().includes('#/mini'))
+    return mini ? mini.getBounds() : null
+  })
+  console.log('  bounds tras esquina TL:', JSON.stringify(miniBounds))
+  check('anclado arriba-izquierda', Boolean(miniBounds && miniBounds.x < 40 && miniBounds.y < 40))
+
+  // Modo libre: deben aparecer los puntitos de arrastre
+  await miniPage.locator('[title="Posición del mini-player"]').click()
+  await miniPage.locator('.context-menu button', { hasText: 'Posición libre' }).click()
+  await miniPage.waitForTimeout(400)
+  check('agarre de puntitos en modo libre', await miniPage.locator('[title="Arrastra para mover"]').isVisible())
+  await miniPage.screenshot({ path: join(shots, 'miniplayer-v2.png') })
+
+  // Vuelve a abajo-derecha (deja el ajuste por defecto)
+  await miniPage.locator('[title="Posición del mini-player"]').click()
+  await miniPage.locator('.context-menu button', { hasText: 'Abajo derecha' }).click()
+
+  // 8. Cierra el mini con su botón
+  await miniPage.hover('body')
   await miniPage.locator('[title="Cerrar mini-player"]').click()
   await win.waitForTimeout(1000)
   const stillOpen = app.windows().some((w) => w.url().includes('#/mini'))
