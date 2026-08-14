@@ -82,7 +82,14 @@ export function registerIpc(getMainWindow: () => BrowserWindow | null): void {
 
   // ---- Ajustes ----
   ipcMain.handle(IPC.SETTINGS_GET, () => getAllSettings())
-  ipcMain.handle(IPC.SETTINGS_SET, (_e, patch: Partial<AppSettings>) => updateSettings(patch))
+  ipcMain.handle(IPC.SETTINGS_SET, async (_e, patch: Partial<AppSettings>) => {
+    const merged = updateSettings(patch)
+    if ('discordRpc' in patch) {
+      const { setDiscordEnabled } = await import('../integrations/discord')
+      setDiscordEnabled(Boolean(patch.discordRpc))
+    }
+    return merged
+  })
 
   // ---- Streaming ----
   ipcMain.handle(IPC.STREAM_PREPARE, async (_e, videoId: string): Promise<PreparedStream> => {

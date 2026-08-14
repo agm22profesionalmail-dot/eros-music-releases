@@ -9,6 +9,41 @@ import { IPC } from '@shared/types'
 
 let tray: Tray | null = null
 let isQuitting = false
+let miniWindow: BrowserWindow | null = null
+
+function toggleMiniPlayer(): void {
+  if (miniWindow && !miniWindow.isDestroyed()) {
+    miniWindow.close()
+    miniWindow = null
+    return
+  }
+  miniWindow = new BrowserWindow({
+    width: 360,
+    height: 100,
+    frame: false,
+    alwaysOnTop: true,
+    resizable: false,
+    maximizable: false,
+    fullscreenable: false,
+    skipTaskbar: true,
+    backgroundColor: '#121212',
+    webPreferences: {
+      preload: join(__dirname, '../preload/index.js'),
+      sandbox: false,
+      contextIsolation: true,
+      nodeIntegration: false
+    }
+  })
+  miniWindow.setAlwaysOnTop(true, 'screen-saver')
+  miniWindow.on('closed', () => {
+    miniWindow = null
+  })
+  if (is.dev && process.env.ELECTRON_RENDERER_URL) {
+    void miniWindow.loadURL(`${process.env.ELECTRON_RENDERER_URL}#/mini`)
+  } else {
+    void miniWindow.loadFile(join(__dirname, '../renderer/index.html'), { hash: '/mini' })
+  }
+}
 
 let mainWindow: BrowserWindow | null = null
 
@@ -154,6 +189,28 @@ if (!gotTheLock) {
 
     createTray()
     registerMediaKeys()
+
+    // Mini-player: toggle, relé de estado (principal -> mini) y de comandos (mini -> principal)
+    ipcMain.handle(IPC.MINI_TOGGLE, () => toggleMiniPlayer())
+    ipcMain.handle(IPC.MINI_SHOW_MAIN, () => {
+      mainWindow?.show()
+      mainWindow?.focus()
+    })
+    ipcMain.on(IPC.MINI_STATE, (_e, state) => {
+      if (miniWindow && !miniWindow.isDestroyed()) {
+        miniWindow.webContents.send(IPC.MINI_STATE, state)
+      }
+      // El mismo flujo alimenta la presencia de Discord
+      void import('./integrations/discord').then(({ updateDiscordPresence }) =>
+        updateDiscordPresence(state)
+      )
+    })
+    ipcMain.handle(IPC.MINI_COMMAND, (_e, cmd: string) => sendMedia(cmd))
+
+    // Discord RPC según ajustes (y reaccionando a cambios)
+    void import('./integrations/discord').then(({ setDiscordEnabled }) => {
+      setDiscordEnabled(getAllSettings().discordRpc)
+    })
 
     // Gancho de pruebas de humo: METROLIST_TEST_SEARCH="consulta" imprime
     // los primeros resultados y sale. Solo para verificación automatizada.

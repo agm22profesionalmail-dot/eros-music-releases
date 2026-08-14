@@ -149,6 +149,11 @@ export const IPC = {
   SETTINGS_SET: 'settings:set',
   // control remoto (teclas multimedia globales) main -> renderer
   MEDIA_COMMAND: 'media:command',
+  // mini-player y estado de reproducción
+  MINI_TOGGLE: 'mini:toggle',
+  MINI_STATE: 'mini:state', // renderer principal -> main -> mini
+  MINI_COMMAND: 'mini:command', // mini -> main -> renderer principal
+  MINI_SHOW_MAIN: 'mini:showMain',
   // streaming
   STREAM_PREPARE: 'stream:prepare',
   // ventana
@@ -183,6 +188,8 @@ export interface AppSettings {
   theme: 'dark' | 'black' | 'light'
   /** Color de acento (hex) */
   accent: string
+  /** 'fixed' usa el acento elegido; 'dynamic' lo saca de la carátula en reproducción */
+  accentMode: 'fixed' | 'dynamic'
   /** Segundos de crossfade entre pistas (0 = desactivado) */
   crossfadeSec: number
   /** Continuar con radio al agotar la cola */
@@ -197,19 +204,23 @@ export interface AppSettings {
   preservePitch: boolean
   /** Cerrar a la bandeja en vez de salir */
   closeToTray: boolean
+  /** Mostrar lo que escuchas en Discord */
+  discordRpc: boolean
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
   downloadsDir: '',
   theme: 'dark',
   accent: '#f43f4f',
+  accentMode: 'fixed',
   crossfadeSec: 0,
   autoplay: true,
   eqGains: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
   preampDb: 0,
   playbackRate: 1,
   preservePitch: true,
-  closeToTray: false
+  closeToTray: false,
+  discordRpc: false
 }
 
 export interface LyricsData {

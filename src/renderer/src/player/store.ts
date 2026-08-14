@@ -49,6 +49,48 @@ function toQueueItem(t: TrackSummary): QueueItem {
   return { ...t, queueId: `q${++queueCounter}` }
 }
 
+// ---------- Cola persistente entre sesiones ----------
+
+const QUEUE_KEY = 'metrolist.queue.v1'
+
+interface PersistedQueue {
+  queue: QueueItem[]
+  index: number
+  currentTime: number
+}
+
+let persistTimer = 0
+function schedulePersist(state: { queue: QueueItem[]; index: number }): void {
+  window.clearTimeout(persistTimer)
+  persistTimer = window.setTimeout(() => {
+    try {
+      const payload: PersistedQueue = {
+        queue: state.queue,
+        index: state.index,
+        currentTime: engine.currentTime
+      }
+      localStorage.setItem(QUEUE_KEY, JSON.stringify(payload))
+    } catch {
+      /* almacenamiento lleno o similar: no es crítico */
+    }
+  }, 1500)
+}
+
+function readPersistedQueue(): PersistedQueue | null {
+  try {
+    const raw = localStorage.getItem(QUEUE_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as PersistedQueue
+    if (!Array.isArray(parsed.queue) || !parsed.queue.length) return null
+    return parsed
+  } catch {
+    return null
+  }
+}
+
+/** Pista restaurada pendiente de cargar en el motor (carga perezosa al dar play). */
+let pendingRestore: { videoId: string; seekTo: number } | null = null
+
 async function loadAndPlay(item: QueueItem, crossfade: boolean): Promise<void> {
   const prepared = engine.hasPreloaded(item.videoId)
     ? null
@@ -231,7 +273,21 @@ export const usePlayer = create<PlayerState>((set, get) => {
     },
 
     togglePlay: () => {
-      if (get().index < 0) return
+      const { index, queue } = get()
+      if (index < 0) return
+      // Cola restaurada de la sesión anterior: carga perezosa al primer play
+      if (pendingRestore && queue[index]?.videoId === pendingRestore.videoId) {
+        const { seekTo } = pendingRestore
+        pendingRestore = null
+        set({ isBuffering: true })
+        void loadAndPlay(queue[index], false)
+          .then(() => {
+            if (seekTo > 2) engine.seek(seekTo)
+            void preloadUpcoming({ queue, index })
+          })
+          .catch((err) => set({ error: String((err as Error)?.message ?? err), isBuffering: false }))
+        return
+      }
       if (engine.paused) engine.play()
       else engine.pause()
     },
@@ -280,6 +336,31 @@ export const usePlayer = create<PlayerState>((set, get) => {
     clearQueue: () => {
       engine.stop()
       set({ queue: [], index: -1, isPlaying: false, currentTime: 0, duration: 0 })
+      localStorage.removeItem(QUEUE_KEY)
     }
   }
 })
+
+// Persistencia: guarda la cola al cambiar y restaura al arrancar (en pausa)
+usePlayer.subscribe((state) => {
+  if (state.queue.length) schedulePersist(state)
+})
+
+{
+  const persisted = readPersistedQueue()
+  if (persisted) {
+    const maxQ = Math.max(...persisted.queue.map((q) => Number(q.queueId.slice(1)) || 0))
+    queueCounter = Math.max(queueCounter, maxQ)
+    const index = Math.min(Math.max(0, persisted.index), persisted.queue.length - 1)
+    pendingRestore = {
+      videoId: persisted.queue[index]?.videoId ?? '',
+      seekTo: persisted.currentTime || 0
+    }
+    usePlayer.setState({
+      queue: persisted.queue,
+      index,
+      currentTime: persisted.currentTime || 0,
+      duration: persisted.queue[index]?.durationSec ?? 0
+    })
+  }
+}

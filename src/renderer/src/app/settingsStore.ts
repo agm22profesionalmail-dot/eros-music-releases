@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { DEFAULT_SETTINGS, type AppSettings } from '@shared/types'
 import { engine } from '../player/engine'
 import { usePlayer } from '../player/store'
+import { extractAccent } from './artworkColor'
 
 /**
  * Ajustes de la app: se hidratan del main (SQLite), se aplican al motor de
@@ -23,13 +24,41 @@ function applyToEngine(s: AppSettings): void {
   usePlayer.getState().setAutoplay(s.autoplay)
 }
 
-function applyTheme(s: AppSettings): void {
+function setAccentVars(accent: string): void {
   const root = document.documentElement
-  root.dataset.theme = s.theme
-  root.style.setProperty('--accent', s.accent)
-  // Variantes derivadas del acento
-  root.style.setProperty('--accent-hover', s.accent + 'dd')
-  root.style.setProperty('--accent-press', s.accent + 'bb')
+  root.style.setProperty('--accent', accent)
+  root.style.setProperty('--accent-hover', accent + 'dd')
+  root.style.setProperty('--accent-press', accent + 'bb')
+}
+
+function applyTheme(s: AppSettings): void {
+  document.documentElement.dataset.theme = s.theme
+  if (s.accentMode === 'fixed') setAccentVars(s.accent)
+  else applyDynamicAccent()
+}
+
+/** Acento dinámico: sigue la carátula de la pista en reproducción. */
+let dynamicWired = false
+function applyDynamicAccent(): void {
+  const current = usePlayer.getState().current()
+  if (current?.thumbnailUrl) {
+    void extractAccent(current.thumbnailUrl).then((c) => {
+      if (c && useSettings.getState().settings.accentMode === 'dynamic') setAccentVars(c)
+    })
+  }
+  if (!dynamicWired) {
+    dynamicWired = true
+    let lastUrl: string | undefined
+    usePlayer.subscribe((state) => {
+      const url = state.current()?.thumbnailUrl
+      if (url === lastUrl) return
+      lastUrl = url
+      if (useSettings.getState().settings.accentMode !== 'dynamic' || !url) return
+      void extractAccent(url).then((c) => {
+        if (c && useSettings.getState().settings.accentMode === 'dynamic') setAccentVars(c)
+      })
+    })
+  }
 }
 
 export const useSettings = create<SettingsState>((set, get) => ({

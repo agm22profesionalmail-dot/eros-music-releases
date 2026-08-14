@@ -70,6 +70,22 @@ const api = {
     }
   },
 
+  mini: {
+    toggle: (): Promise<void> => ipcRenderer.invoke(IPC.MINI_TOGGLE),
+    showMain: (): Promise<void> => ipcRenderer.invoke(IPC.MINI_SHOW_MAIN),
+    /** Publica el estado de reproducción (ventana principal -> main) */
+    publishState: (state: unknown): void => ipcRenderer.send(IPC.MINI_STATE, state),
+    /** Recibe el estado (ventana mini) */
+    onState: (cb: (state: unknown) => void): (() => void) => {
+      const listener = (_e: unknown, state: unknown): void => cb(state)
+      ipcRenderer.on(IPC.MINI_STATE, listener)
+      return () => ipcRenderer.removeListener(IPC.MINI_STATE, listener)
+    },
+    /** Envía un comando de control (ventana mini -> ventana principal) */
+    command: (cmd: 'playpause' | 'next' | 'previous'): Promise<void> =>
+      ipcRenderer.invoke(IPC.MINI_COMMAND, cmd)
+  },
+
   player: {
     prepare: (videoId: string): Promise<PreparedStream> =>
       ipcRenderer.invoke(IPC.STREAM_PREPARE, videoId)

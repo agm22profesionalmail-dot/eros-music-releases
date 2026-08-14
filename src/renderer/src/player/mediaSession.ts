@@ -45,8 +45,38 @@ export function initMediaIntegration(): () => void {
     else if (cmd === 'pause' && p.isPlaying) p.togglePlay()
   })
 
+  // Publica el estado al main (alimenta mini-player y Discord RPC), 1 Hz máx.
+  let lastPublish = 0
+  let lastKey = ''
+  const publish = (): void => {
+    const state = usePlayer.getState()
+    const current = state.current()
+    const key = `${current?.videoId ?? ''}|${state.isPlaying}`
+    const now = Date.now()
+    if (key === lastKey && now - lastPublish < 1000) return
+    lastKey = key
+    lastPublish = now
+    window.api.mini.publishState(
+      current
+        ? {
+            title: current.title,
+            artists: current.artists.map((a) => a.name).join(', '),
+            album: current.album?.name,
+            thumbnailUrl: current.thumbnailUrl,
+            isPlaying: state.isPlaying,
+            positionSec: state.currentTime,
+            durationSec: state.duration || current.durationSec || 0
+          }
+        : null
+    )
+  }
+  const unsubPublish = usePlayer.subscribe(publish)
+  const publishTimer = window.setInterval(publish, 1000)
+
   return () => {
     unsubscribe()
     offCommand()
+    unsubPublish()
+    window.clearInterval(publishTimer)
   }
 }

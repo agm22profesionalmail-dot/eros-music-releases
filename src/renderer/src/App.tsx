@@ -13,6 +13,7 @@ import { LibraryPage } from './pages/LibraryPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { LyricsPage } from './pages/LyricsPage'
 import { ContextMenuHost } from './components/ContextMenu'
+import { TextModalHost } from './components/TextModal'
 import { useLibrary } from './app/libraryStore'
 import { useSettings } from './app/settingsStore'
 import { initMediaIntegration } from './player/mediaSession'
@@ -161,6 +162,7 @@ export default function App(): React.JSX.Element {
       </div>
       <NowPlayingBar queueOpen={queueOpen} onToggleQueue={() => setQueueOpen((v) => !v)} />
       <ContextMenuHost />
+      <TextModalHost />
     </div>
   )
 }

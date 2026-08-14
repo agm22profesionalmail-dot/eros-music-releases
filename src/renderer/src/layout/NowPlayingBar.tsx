@@ -184,6 +184,17 @@ export function NowPlayingBar({
         </button>
         <button
           className="np-ctrl"
+          aria-label="Mini-player"
+          title="Mini-player flotante"
+          onClick={() => void window.api.mini.toggle()}
+        >
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M1 3.75A1.75 1.75 0 0 1 2.75 2h10.5A1.75 1.75 0 0 1 15 3.75v8.5A1.75 1.75 0 0 1 13.25 14H2.75A1.75 1.75 0 0 1 1 12.25v-8.5zm1.75-.25a.25.25 0 0 0-.25.25v8.5c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25v-8.5a.25.25 0 0 0-.25-.25H2.75z" />
+            <rect x="8" y="8" width="5" height="4" rx="0.75" />
+          </svg>
+        </button>
+        <button
+          className="np-ctrl"
           aria-label="Silenciar"
           onClick={() => setVolume(volume > 0 ? 0 : 0.8)}
         >

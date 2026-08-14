@@ -70,6 +70,30 @@ export function Sidebar(): React.JSX.Element {
           >
             <LibraryIcon size={24} /> Tu biblioteca
           </button>
+          {auth.status === 'signedIn' && (
+            <button
+              className="icon-btn"
+              title="Crear playlist"
+              style={{ fontSize: 22, lineHeight: 1, width: 32, height: 32, borderRadius: '50%' }}
+              onClick={() => {
+                void import('../components/TextModal').then(({ askText }) =>
+                  askText({
+                    title: 'Nueva playlist',
+                    placeholder: 'Nombre de la playlist',
+                    confirmLabel: 'Crear'
+                  }).then((title) => {
+                    if (title) {
+                      void window.api.library
+                        .playlistCreate(title, [])
+                        .then(() => useLibrary.getState().refresh())
+                    }
+                  })
+                )
+              }}
+            >
+              +
+            </button>
+          )}
         </div>
 
         {auth.status === 'signedIn' && (

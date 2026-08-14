@@ -47,10 +47,18 @@ const check = (name, cond) => {
 if (scenario === 'login' || scenario === 'all') {
   console.log('[login]')
   check('sidebar Inicio visible', await win.locator('text=Inicio').first().isVisible())
-  check(
-    'botón Vincular con el móvil',
-    await win.getByRole('button', { name: 'Vincular con el móvil' }).isVisible()
-  )
+  const authState = await win.evaluate(() => window.api.auth.getState())
+  if (authState.status === 'signedIn') {
+    // Con sesión: debe verse la biblioteca en el sidebar, no el login
+    await win.locator('.library-row').first().waitFor({ state: 'visible', timeout: 15000 }).catch(() => undefined)
+    const rows = await win.locator('.library-row').count()
+    check(`sesión iniciada: biblioteca en sidebar (${rows} filas)`, rows > 0)
+  } else {
+    check(
+      'botón Vincular con el móvil',
+      await win.getByRole('button', { name: 'Vincular con el móvil' }).isVisible()
+    )
+  }
   check('barra de reproducción', await win.locator('.nowplaying').isVisible())
   await win.screenshot({ path: join(shots, 'login.png') })
 }

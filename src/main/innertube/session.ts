@@ -37,6 +37,28 @@ class SessionManager extends EventEmitter {
   #setAuthState(state: AuthState): void {
     this.#authState = state
     this.emit('auth-state', state)
+    // Completa nombre y foto de perfil en segundo plano
+    if (state.status === 'signedIn' && !state.accountName) {
+      void this.#fetchAccountInfo()
+    }
+  }
+
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  async #fetchAccountInfo(): Promise<void> {
+    try {
+      const yt = await this.get()
+      const info: any = await yt.account.getInfo()
+      const item: any = info?.contents?.contents?.at?.(0) ?? info?.contents?.contents?.[0]
+      const name = item?.account_name?.toString?.()
+      const photos: any[] = item?.account_photo ?? []
+      const photoUrl = photos.at?.(-1)?.url ?? photos[0]?.url
+      if (name || photoUrl) {
+        this.#authState = { ...this.#authState, accountName: name, accountPhotoUrl: photoUrl }
+        this.emit('auth-state', this.#authState)
+      }
+    } catch {
+      /* sin nombre/foto: no es crítico */
+    }
   }
 
   #userDataDir(): string {

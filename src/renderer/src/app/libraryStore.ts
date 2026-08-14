@@ -85,8 +85,19 @@ export function trackMenu(track: TrackSummary, opts?: { playlistId?: string }): 
         {
           label: '+ Nueva playlist…',
           action: () => {
-            const title = prompt('Nombre de la playlist nueva:', track.title)
-            if (title) void window.api.library.playlistCreate(title, [track.videoId])
+            void import('../components/TextModal').then(({ askText }) =>
+              askText({
+                title: 'Nueva playlist',
+                placeholder: 'Nombre de la playlist',
+                confirmLabel: 'Crear'
+              }).then((title) => {
+                if (title) {
+                  void window.api.library
+                    .playlistCreate(title, [track.videoId])
+                    .then(() => library.refresh())
+                }
+              })
+            )
           }
         },
         ...playlists.map((p) => ({

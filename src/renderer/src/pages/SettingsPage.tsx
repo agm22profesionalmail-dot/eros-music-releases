@@ -221,22 +221,59 @@ export function SettingsPage(): React.JSX.Element {
         ))}
       </Row>
       <Row label="Color de acento">
+        <button
+          className={`chip ${settings.accentMode === 'dynamic' ? 'active' : ''}`}
+          title="El acento sigue la carátula de la canción en reproducción"
+          onClick={() =>
+            void update({ accentMode: settings.accentMode === 'dynamic' ? 'fixed' : 'dynamic' })
+          }
+        >
+          ✨ Dinámico
+        </button>
         {ACCENTS.map((a) => (
           <button
             key={a.value}
             title={a.name}
-            onClick={() => void update({ accent: a.value })}
+            onClick={() => void update({ accent: a.value, accentMode: 'fixed' })}
             style={{
               width: 26,
               height: 26,
               borderRadius: '50%',
               background: a.value,
               border:
-                settings.accent === a.value ? '3px solid var(--text-primary)' : '3px solid transparent'
+                settings.accentMode === 'fixed' && settings.accent === a.value
+                  ? '3px solid var(--text-primary)'
+                  : '3px solid transparent'
             }}
           />
         ))}
+        <input
+          type="color"
+          title="Color personalizado"
+          value={settings.accent}
+          onChange={(e) => void update({ accent: e.target.value, accentMode: 'fixed' })}
+          style={{
+            width: 32,
+            height: 32,
+            border: 'none',
+            background: 'transparent',
+            cursor: 'pointer'
+          }}
+        />
       </Row>
+
+      <h2>Integraciones</h2>
+      <Row label="Discord Rich Presence (mostrar lo que escuchas en Discord)">
+        <input
+          type="checkbox"
+          checked={settings.discordRpc}
+          onChange={(e) => void update({ discordRpc: e.target.checked })}
+        />
+      </Row>
+      <p style={{ color: 'var(--text-subdued)', fontSize: 12, padding: '4px 0 0' }}>
+        Requiere tener la app de Discord abierta. Aparece como «Escuchando YouTube Music» con
+        título, artista, carátula y progreso.
+      </p>
 
       <h2>Sistema</h2>
       <Row label="Al cerrar la ventana, seguir en la bandeja del sistema">

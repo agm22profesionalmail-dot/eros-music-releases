@@ -5,6 +5,7 @@ import { usePlayer } from '../player/store'
 import { useRouter } from '../app/router'
 import { openContextMenu } from '../components/ContextMenu'
 import { trackMenu } from '../app/libraryStore'
+import { useArtworkColor } from '../app/artworkColor'
 import { MusicNoteIcon, PauseIcon, PlayIcon } from '../components/Icons'
 
 export function AlbumPage({ id }: { id: string }): React.JSX.Element {
@@ -34,6 +35,7 @@ export function AlbumPage({ id }: { id: string }): React.JSX.Element {
   }, [id])
 
   const isThisPlaying = isPlaying && album?.tracks.some((t) => t.videoId === current?.videoId)
+  const tint = useArtworkColor(album?.thumbnailUrl)
 
   if (error) {
     return (
@@ -58,7 +60,10 @@ export function AlbumPage({ id }: { id: string }): React.JSX.Element {
 
   return (
     <>
-      <div className="detail-header">
+      <div
+        className="detail-header"
+        style={tint ? { ['--header-tint' as string]: `linear-gradient(${tint}, ${tint}55)` } : undefined}
+      >
         {album.thumbnailUrl ? (
           <img className="cover" src={album.thumbnailUrl} alt="" />
         ) : (

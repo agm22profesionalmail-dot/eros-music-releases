@@ -4,6 +4,7 @@ import { TrackTable } from '../components/TrackTable'
 import { usePlayer } from '../player/store'
 import { openContextMenu } from '../components/ContextMenu'
 import { trackMenu } from '../app/libraryStore'
+import { useArtworkColor } from '../app/artworkColor'
 import { MusicNoteIcon, PauseIcon, PlayIcon } from '../components/Icons'
 
 export function PlaylistPage({ id }: { id: string }): React.JSX.Element {
@@ -32,6 +33,7 @@ export function PlaylistPage({ id }: { id: string }): React.JSX.Element {
   }, [id])
 
   const isThisPlaying = isPlaying && pl?.tracks.some((t) => t.videoId === current?.videoId)
+  const tint = useArtworkColor(pl?.thumbnailUrl)
 
   if (error) {
     return (
@@ -56,7 +58,10 @@ export function PlaylistPage({ id }: { id: string }): React.JSX.Element {
 
   return (
     <>
-      <div className="detail-header">
+      <div
+        className="detail-header"
+        style={tint ? { ['--header-tint' as string]: `linear-gradient(${tint}, ${tint}55)` } : undefined}
+      >
         {pl.thumbnailUrl ? (
           <img className="cover" src={pl.thumbnailUrl} alt="" />
         ) : (
