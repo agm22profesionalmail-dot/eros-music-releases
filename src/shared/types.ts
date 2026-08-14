@@ -1,0 +1,152 @@
+// Tipos de dominio compartidos entre main y renderer.
+// Todo debe ser serializable por structured clone (IPC).
+
+export interface ArtistRef {
+  name: string
+  id?: string
+}
+
+export interface TrackSummary {
+  kind: 'song' | 'video'
+  videoId: string
+  title: string
+  artists: ArtistRef[]
+  album?: { name: string; id?: string }
+  durationSec?: number
+  durationText?: string
+  thumbnailUrl?: string
+  isExplicit?: boolean
+}
+
+export interface MediaCard {
+  kind: 'song' | 'video' | 'album' | 'playlist' | 'artist' | 'unknown'
+  /** videoId para canciones/vídeos, browseId para álbumes/artistas/playlists */
+  id: string
+  title: string
+  subtitle?: string
+  thumbnailUrl?: string
+}
+
+export interface Shelf {
+  title: string
+  items: MediaCard[]
+}
+
+export interface PlaylistDetail {
+  id: string
+  title: string
+  author?: string
+  description?: string
+  thumbnailUrl?: string
+  trackCount?: number
+  durationText?: string
+  tracks: TrackSummary[]
+  /** Cursor opaco para paginación (si hay más pistas) */
+  hasContinuation?: boolean
+  isEditable?: boolean
+}
+
+export interface AlbumDetail {
+  id: string
+  title: string
+  artists: ArtistRef[]
+  year?: string
+  thumbnailUrl?: string
+  trackCount?: number
+  durationText?: string
+  tracks: TrackSummary[]
+  playlistId?: string
+}
+
+export interface ArtistDetail {
+  id: string
+  name: string
+  description?: string
+  thumbnailUrl?: string
+  subscribers?: string
+  isSubscribed?: boolean
+  shelves: Shelf[]
+  /** videoId de arranque para "reproducir radio" */
+  radioPlaylistId?: string
+  shufflePlaylistId?: string
+}
+
+export interface SearchResults {
+  topResult?: MediaCard
+  songs: TrackSummary[]
+  videos: TrackSummary[]
+  albums: MediaCard[]
+  artists: MediaCard[]
+  playlists: MediaCard[]
+}
+
+export type SearchFilter = 'all' | 'song' | 'video' | 'album' | 'artist' | 'playlist'
+
+export interface TrackDetail extends TrackSummary {
+  lyricsBrowseId?: string
+  likeStatus?: 'LIKE' | 'DISLIKE' | 'INDIFFERENT'
+}
+
+export interface QueueItem extends TrackSummary {
+  /** id único dentro de la cola (una misma canción puede repetirse) */
+  queueId: string
+}
+
+// ---------- Autenticación ----------
+
+export type AuthMethod = 'oauth' | 'cookie'
+
+export interface AuthState {
+  status: 'signedOut' | 'pendingDeviceCode' | 'signingIn' | 'signedIn' | 'error'
+  method?: AuthMethod
+  /** Código para mostrar al usuario durante el device flow */
+  userCode?: string
+  verificationUrl?: string
+  accountName?: string
+  accountPhotoUrl?: string
+  error?: string
+}
+
+// ---------- Canales IPC ----------
+
+export const IPC = {
+  // auth
+  AUTH_GET_STATE: 'auth:getState',
+  AUTH_START_DEVICE: 'auth:startDeviceCode',
+  AUTH_CANCEL_DEVICE: 'auth:cancelDeviceCode',
+  AUTH_OPEN_COOKIE_LOGIN: 'auth:openCookieLogin',
+  AUTH_SIGN_OUT: 'auth:signOut',
+  AUTH_STATE_CHANGED: 'auth:stateChanged', // main -> renderer (evento)
+  // música
+  MUSIC_SEARCH: 'music:search',
+  MUSIC_SUGGESTIONS: 'music:suggestions',
+  MUSIC_HOME: 'music:home',
+  MUSIC_LIBRARY: 'music:library',
+  MUSIC_PLAYLIST: 'music:playlist',
+  MUSIC_ALBUM: 'music:album',
+  MUSIC_ARTIST: 'music:artist',
+  MUSIC_TRACK: 'music:track',
+  MUSIC_UP_NEXT: 'music:upNext',
+  MUSIC_LYRICS: 'music:lyrics',
+  // ventana
+  WIN_MINIMIZE: 'win:minimize',
+  WIN_MAXIMIZE: 'win:maximize',
+  WIN_CLOSE: 'win:close',
+  WIN_IS_MAXIMIZED: 'win:isMaximized',
+  WIN_MAXIMIZED_CHANGED: 'win:maximizedChanged'
+} as const
+
+export interface LibrarySnapshot {
+  playlists: MediaCard[]
+  albums: MediaCard[]
+  artists: MediaCard[]
+  songs: TrackSummary[]
+}
+
+export interface LyricsData {
+  source: string
+  /** Texto plano (no sincronizado) */
+  plain?: string
+  /** Líneas sincronizadas si existen */
+  synced?: { timeMs: number; text: string }[]
+}
