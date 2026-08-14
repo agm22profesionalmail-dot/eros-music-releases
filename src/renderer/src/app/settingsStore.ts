@@ -24,11 +24,22 @@ function applyToEngine(s: AppSettings): void {
   usePlayer.getState().setAutoplay(s.autoplay)
 }
 
+function contrastForHex(hex: string): string {
+  if (!hex.startsWith('#') || (hex.length !== 7 && hex.length !== 4)) return '#000'
+  const full = hex.length === 4 ? '#' + hex.slice(1).split('').map((c) => c + c).join('') : hex
+  const r = parseInt(full.slice(1, 3), 16) / 255
+  const g = parseInt(full.slice(3, 5), 16) / 255
+  const b = parseInt(full.slice(5, 7), 16) / 255
+  const l = 0.299 * r + 0.587 * g + 0.114 * b
+  return l > 0.62 ? '#000' : '#fff'
+}
+
 function setAccentVars(accent: string): void {
   const root = document.documentElement
   root.style.setProperty('--accent', accent)
   root.style.setProperty('--accent-hover', accent + 'dd')
   root.style.setProperty('--accent-press', accent + 'bb')
+  root.style.setProperty('--accent-fg', contrastForHex(accent))
 }
 
 function applyTheme(s: AppSettings): void {

@@ -114,6 +114,33 @@ button {
   cursor: pointer;
 }
 
+/* Todos los controles nativos (range, checkbox, radio, color) heredan el acento
+   de la app en vez del azul del sistema. Es una línea que arregla decenas de
+   sliders y checkboxes de golpe. */
+input[type='range'],
+input[type='checkbox'],
+input[type='radio'],
+input[type='color'] {
+  accent-color: var(--accent);
+}
+input[type='range'] {
+  cursor: pointer;
+}
+input[type='color'] {
+  border: none;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 50%;
+}
+input[type='color']::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+input[type='color']::-webkit-color-swatch {
+  border: 3px solid transparent;
+  border-radius: 50%;
+}
+
 img {
   -webkit-user-drag: none;
 }
@@ -245,12 +272,18 @@ a:hover {
   font-weight: 700;
   font-size: 15px;
   border-radius: 4px;
-  transition: color 0.15s;
+  transition: color 0.15s, background 0.15s;
 }
 
-.sidebar-nav-item:hover,
+.sidebar-nav-item:hover {
+  color: var(--text-primary);
+}
+
 .sidebar-nav-item.active {
   color: var(--text-primary);
+}
+.sidebar-nav-item.active svg {
+  color: var(--accent);
 }
 
 .sidebar-library {
@@ -306,8 +339,15 @@ a:hover {
   color: var(--bg-base);
 }
 
+/* El chip activo con degradado del acento — visible en filtros de biblioteca */
+.chip.active-accent {
+  background: var(--accent);
+  color: var(--accent-fg, #000);
+}
+
 .sidebar-library-list {
   overflow-y: auto;
+  overflow-x: hidden;
   flex: 1;
   padding: 0 8px 8px;
 }
@@ -351,9 +391,11 @@ a:hover {
 
 .library-row .meta {
   min-width: 0;
+  overflow: hidden;
 }
 
 .library-row .title {
+  display: block;
   font-size: 15px;
   color: var(--text-primary);
   white-space: nowrap;
@@ -362,11 +404,13 @@ a:hover {
 }
 
 .library-row .subtitle {
+  display: block;
   font-size: 13px;
   color: var(--text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  margin-top: 2px;
 }
 
 /* ---------- Contenido principal ---------- */
@@ -387,6 +431,7 @@ a:hover {
 
 .main-scroll {
   overflow-y: auto;
+  overflow-x: hidden;
   flex: 1;
   min-height: 0;
 }
@@ -716,7 +761,7 @@ a:hover {
 }
 
 .detail-body {
-  padding: 16px 24px 40px;
+  padding: 16px 24px 48px;
   background: linear-gradient(rgba(0, 0, 0, 0.25), transparent 200px);
 }
 
@@ -742,6 +787,8 @@ a:hover {
 .big-play {
   transition: transform 0.18s var(--ease-spring), background 0.2s, box-shadow 0.2s;
   box-shadow: 0 8px 20px -6px var(--amb-glow, rgba(0, 0, 0, 0.4));
+  /* Icono contrastado con el acento (--accent-fg lo pinta ambientStore/settingsStore) */
+  color: var(--accent-fg, #000);
 }
 
 .big-play:hover {
@@ -867,6 +914,7 @@ a:hover {
 }
 
 .track-row .title-text {
+  display: block;
   font-size: 15px;
   color: var(--text-primary);
   white-space: nowrap;
@@ -876,11 +924,13 @@ a:hover {
 
 .track-row .artists-text,
 .track-row .album-text {
+  display: block;
   font-size: 13px;
   color: var(--text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  margin-top: 2px;
 }
 
 .track-row .artists-text a:hover,
@@ -992,7 +1042,8 @@ a:hover {
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  width: clamp(300px, 40vw, 640px);
+  width: clamp(260px, 40vw, 640px);
+  min-width: 0;
 }
 
 .np-controls {
@@ -1147,6 +1198,16 @@ a:hover {
 
 .np-right .volume {
   width: 100px;
+  min-width: 60px;
+  flex-shrink: 1;
+}
+
+/* Viewport pequeño: oculta el slider de volumen (deja el botón mute) para que
+   la barra de progreso no se comprima ni se corte la duración. */
+@media (max-width: 960px) {
+  .np-right .volume {
+    display: none;
+  }
 }
 
 /* ---------- Panel de cola ---------- */
@@ -1372,21 +1433,21 @@ a:hover {
   border-radius: 50%;
 }
 
-/* Halo de acento pulsante alrededor del play grande cuando suena */
+/* Halo de acento pulsante alrededor del play grande cuando suena — sutil */
 @keyframes play-pulse {
   0%,
   100% {
     box-shadow: 0 8px 20px -6px var(--amb-glow, rgba(0, 0, 0, 0.4)),
-      0 0 0 0 color-mix(in srgb, var(--accent) 45%, transparent);
+      0 0 0 0 color-mix(in srgb, var(--accent) 30%, transparent);
   }
   50% {
     box-shadow: 0 8px 20px -6px var(--amb-glow, rgba(0, 0, 0, 0.4)),
-      0 0 0 12px color-mix(in srgb, var(--accent) 0%, transparent);
+      0 0 0 8px color-mix(in srgb, var(--accent) 0%, transparent);
   }
 }
 
 .big-play.is-playing {
-  animation: play-pulse 2.2s ease-out infinite;
+  animation: play-pulse 2.6s ease-out infinite;
 }
 
 /* ---------- Utilidades ---------- */
@@ -1454,6 +1515,11 @@ a:hover {
   background-clip: text;
   color: transparent;
   transition: background-size 0.25s linear;
+  /* Evita que la línea activa provoque scroll horizontal cuando es muy larga */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: normal;
+  word-break: break-word;
 }
 
 .error-banner {

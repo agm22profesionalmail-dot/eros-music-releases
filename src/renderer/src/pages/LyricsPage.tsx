@@ -112,12 +112,17 @@ export function LyricsPage(): React.JSX.Element {
       )}
       <div
         className="page"
-        style={{ maxWidth: 820, margin: '0 auto', position: 'relative', zIndex: 1 }}
+        style={{
+          maxWidth: 820,
+          margin: '0 auto',
+          position: 'relative',
+          zIndex: 1,
+          overflowX: 'hidden'
+        }}
       >
-      <h1 style={{ fontSize: 20 }}>
-        {current.title}
+      <h1 style={{ fontSize: 20, display: 'flex', flexWrap: 'wrap', gap: '0 8px' }}>
+        <span>{current.title}</span>
         <span style={{ color: 'var(--text-secondary)', fontWeight: 400 }}>
-          {' '}
           · {current.artists.map((a) => a.name).join(', ')}
         </span>
       </h1>
@@ -158,7 +163,7 @@ export function LyricsPage(): React.JSX.Element {
               </button>
             )}
           </div>
-          <div style={{ padding: '20vh 0 30vh' }}>
+          <div style={{ padding: '2vh 0 40vh' }}>
             {synced.map((line, i) => (
               <button
                 key={i}

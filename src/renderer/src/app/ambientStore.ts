@@ -20,6 +20,23 @@ interface AmbientState {
   init: () => void
 }
 
+/** Devuelve #000 o #fff según cuál contrasta mejor con el color hex/hsl dado. */
+function contrastFor(bg: string): string {
+  // Extrae luminosidad aproximada
+  let l = 0.5
+  const hslMatch = bg.match(/hsl\(\s*[\d.]+\s*[,\s]\s*[\d.]+%?\s*[,\s]\s*([\d.]+)%/)
+  if (hslMatch) {
+    l = Number(hslMatch[1]) / 100
+  } else if (bg.startsWith('#') && (bg.length === 7 || bg.length === 4)) {
+    const hex = bg.length === 4 ? '#' + bg.slice(1).split('').map((c) => c + c).join('') : bg
+    const r = parseInt(hex.slice(1, 3), 16) / 255
+    const g = parseInt(hex.slice(3, 5), 16) / 255
+    const b = parseInt(hex.slice(5, 7), 16) / 255
+    l = 0.299 * r + 0.587 * g + 0.114 * b
+  }
+  return l > 0.62 ? '#000' : '#fff'
+}
+
 function paintPalette(p: ArtPalette | null, dynamicAccent: boolean): void {
   const root = document.documentElement.style
   if (!p) {
@@ -27,6 +44,7 @@ function paintPalette(p: ArtPalette | null, dynamicAccent: boolean): void {
     root.removeProperty('--amb-30')
     root.removeProperty('--amb-glow')
     root.removeProperty('--amb-30-hue')
+    if (dynamicAccent) root.removeProperty('--accent-fg')
     return
   }
   // 60 %: base oscura pero con el tinte del disco (no negro plano)
@@ -42,6 +60,7 @@ function paintPalette(p: ArtPalette | null, dynamicAccent: boolean): void {
     root.setProperty('--accent', p.accent)
     root.setProperty('--accent-hover', hslCss(p.accentHue, 0.72, 0.66))
     root.setProperty('--accent-press', hslCss(p.accentHue, 0.72, 0.5))
+    root.setProperty('--accent-fg', contrastFor(p.accent))
   }
 }
 

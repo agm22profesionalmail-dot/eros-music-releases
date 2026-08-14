@@ -73,19 +73,31 @@ export function PlaylistPage({ id }: { id: string }): React.JSX.Element {
           <div className="kind">Playlist</div>
           <h1 className="name">{pl.title}</h1>
           <div className="meta">
+            {/* El backend ya suele meter «X canciones» dentro de author/durationText;
+               evitamos duplicados quedándonos solo con el más informativo. */}
             {pl.author && <b>{pl.author}</b>}
-            {pl.trackCount != null && (
-              <>
-                <span>·</span>
-                <span>{pl.trackCount} canciones</span>
-              </>
-            )}
-            {pl.durationText && (
-              <>
-                <span>·</span>
-                <span>{pl.durationText}</span>
-              </>
-            )}
+            {(() => {
+              const hasCountInAuthor = pl.author?.toLowerCase().includes('canci')
+              const hasCountInDur = pl.durationText?.toLowerCase().includes('canci')
+              // trackCount solo si nadie más lo lleva
+              const showCount = pl.trackCount != null && !hasCountInAuthor && !hasCountInDur
+              return (
+                <>
+                  {showCount && (
+                    <>
+                      <span>·</span>
+                      <span>{pl.trackCount} canciones</span>
+                    </>
+                  )}
+                  {pl.durationText && !hasCountInAuthor && (
+                    <>
+                      <span>·</span>
+                      <span>{pl.durationText}</span>
+                    </>
+                  )}
+                </>
+              )
+            })()}
           </div>
         </div>
       </div>

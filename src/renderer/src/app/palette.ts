@@ -100,13 +100,14 @@ export async function extractPalette(url: string): Promise<ArtPalette | null> {
     const binHue = (b: number): number => (b + 0.5) * (360 / BINS)
     const binSat = (b: number): number => (count[b] ? Math.min(0.9, satSum[b] / count[b]) : 0.3)
 
-    // Acento utilizable: fuerza saturación y luminosidad de control
+    // Acento utilizable: fuerza saturación y luminosidad para que se vea vibrante.
+    // Sin candidato saturado (carátula B/N) usamos el tono base con boost.
     let accentHue = bestAccent?.h ?? binHue(baseBin)
-    let accentSat = Math.max(0.62, bestAccent?.s ?? 0.62)
+    let accentSat = Math.max(0.7, bestAccent?.s ?? 0)
     let accentLum = 0.58
-    if (!bestAccent) {
-      // Carátula gris: acento neutro cálido, no inventamos color chillón
-      accentSat = 0.08
+    if (!bestAccent && satSum[baseBin] / Math.max(1, count[baseBin]) < 0.15) {
+      // Realmente gris: acento neutro cálido, no inventamos color chillón
+      accentSat = 0.1
       accentLum = 0.72
       accentHue = 40
     }
