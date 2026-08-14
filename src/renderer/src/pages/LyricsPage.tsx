@@ -91,7 +91,29 @@ export function LyricsPage(): React.JSX.Element {
   }
 
   return (
-    <div className="page" style={{ maxWidth: 820, margin: '0 auto' }}>
+    <div style={{ position: 'relative', minHeight: '100%' }}>
+      {/* Carátula gigante difuminada como fondo (Apple Music "concert mode") */}
+      {current.thumbnailUrl && (
+        <div
+          key={current.videoId}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            backgroundImage: `url(${current.thumbnailUrl.replace(/=w\d+-h\d+/, '=w1080-h1080')})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            filter: 'blur(72px) saturate(1.35) brightness(0.55)',
+            transform: 'scale(1.25)',
+            opacity: 0,
+            animation: 'lyrics-bg-in 1.2s var(--ease-out) forwards',
+            zIndex: 0
+          }}
+        />
+      )}
+      <div
+        className="page"
+        style={{ maxWidth: 820, margin: '0 auto', position: 'relative', zIndex: 1 }}
+      >
       <h1 style={{ fontSize: 20 }}>
         {current.title}
         <span style={{ color: 'var(--text-secondary)', fontWeight: 400 }}>
@@ -183,6 +205,7 @@ export function LyricsPage(): React.JSX.Element {
           </p>
         </div>
       )}
+      </div>
     </div>
   )
 }

@@ -1,0 +1,228 @@
+{
+  "rows": [
+    {
+      "id": "2a",
+      "name": "Mini abierto pausado con estado correcto",
+      "result": "OK",
+      "detail": "título=\"♪Like the legend of the phoenix, huh\"",
+      "shot": "01-open-paused.png"
+    },
+    {
+      "id": "3a",
+      "name": "Play desde el mini reanuda audio principal",
+      "result": "OK",
+      "detail": "wasPaused=true nowPlaying=true",
+      "shot": ""
+    },
+    {
+      "id": "3b",
+      "name": "Pausa desde el mini pausa audio principal",
+      "result": "OK",
+      "detail": "",
+      "shot": ""
+    },
+    {
+      "id": "2b",
+      "name": "Mini abierto reproduciendo con botón pausa",
+      "result": "BUG",
+      "detail": "rects=0 title=\"♪Like the legend of the phoenix, huh\"",
+      "shot": "02-open-playing.png"
+    },
+    {
+      "id": "4",
+      "name": "Seek al 30/60/90% desde la barra",
+      "result": "BUG",
+      "detail": "0/1 seeks precisos",
+      "shot": ""
+    },
+    {
+      "id": "5",
+      "name": "Clic en título abre/enfoca ventana principal",
+      "result": "OK",
+      "detail": "wasMin=true visible=true min=false",
+      "shot": ""
+    },
+    {
+      "id": "6",
+      "name": "Cambiar canción principal se refleja en <1.5s",
+      "result": "OK",
+      "detail": "dt=2ms before=\"I'm up all night to get someSh\" after=\"Yellow · Coldplay · sin letra \"",
+      "shot": ""
+    },
+    {
+      "id": "7a",
+      "name": "Ajustes del mini se abre con ruedita",
+      "result": "OK",
+      "detail": "",
+      "shot": ""
+    },
+    {
+      "id": "7b",
+      "name": "Cerrar ajustes con ✕",
+      "result": "OK",
+      "detail": "",
+      "shot": ""
+    },
+    {
+      "id": "8",
+      "name": "Cambio de esquina (TL/TR/BL/BR)",
+      "result": "OK",
+      "detail": "tl=ok tr=ok bl=ok br=ok",
+      "shot": ""
+    },
+    {
+      "id": "9",
+      "name": "Modo libre muestra puntitos",
+      "result": "OK",
+      "detail": "",
+      "shot": ""
+    },
+    {
+      "id": "10",
+      "name": "Slider de escala redimensiona ventana",
+      "result": "OK",
+      "detail": "0.8=>320px(ok) 1.3=>520px(ok) 1.6=>640px(ok) 1=>400px(ok)",
+      "shot": ""
+    },
+    {
+      "id": "11a",
+      "name": "Karaoke ON: aparece letra sincronizada",
+      "result": "WARN",
+      "detail": "has=false text=\"\"",
+      "shot": ""
+    },
+    {
+      "id": "11b",
+      "name": "Karaoke OFF: vuelve título+timeline",
+      "result": "OK",
+      "detail": "hasFill=false title=\"Yellow\" bar=true",
+      "shot": ""
+    },
+    {
+      "id": "12",
+      "name": "Acento dinámico cambia con la carátula",
+      "result": "OK",
+      "detail": "1=\"#b4640c\" 2=\"#797169\"",
+      "shot": ""
+    },
+    {
+      "id": "13",
+      "name": "Fondo teñido con linear-gradient",
+      "result": "OK",
+      "detail": "bgImage=\"linear-gradient(90deg, rgba(121, 113, 105, 0.25), rgb(18, 18, 18) 55%)\"",
+      "shot": ""
+    },
+    {
+      "id": "14",
+      "name": "Cambio de tema se re-tinta el mini al instante",
+      "result": "OK",
+      "detail": "light=light black=black",
+      "shot": ""
+    },
+    {
+      "id": "15",
+      "name": "Barra de tiempo del mini (accent)",
+      "result": "OK",
+      "detail": "rail=true fill=true bg=\"rgb(121, 113, 105)\"",
+      "shot": ""
+    },
+    {
+      "id": "16",
+      "name": "Animación del play (transition no vacía)",
+      "result": "OK",
+      "detail": "transition=\"transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1)\"",
+      "shot": ""
+    },
+    {
+      "id": "17",
+      "name": "Karaoke: --fill cambia con el tiempo",
+      "result": "OK",
+      "detail": "r1=\"0.0%\" r2=\"25.0%\"",
+      "shot": ""
+    },
+    {
+      "id": "18",
+      "name": "Layout íntegro: carátula 84px, 3 botones, sin desbordamiento",
+      "result": "OK",
+      "detail": "img=84x84 btns=3 overflow={\"x\":false,\"y\":false} align=true",
+      "shot": ""
+    },
+    {
+      "id": "1a",
+      "name": "Cerrar mini con botón ✕",
+      "result": "OK",
+      "detail": "",
+      "shot": ""
+    },
+    {
+      "id": "1b",
+      "name": "Reabrir mini con icono de la app",
+      "result": "OK",
+      "detail": "",
+      "shot": ""
+    },
+    {
+      "id": "1c",
+      "name": "Toggle cierra el mini desde la app",
+      "result": "OK",
+      "detail": "",
+      "shot": ""
+    }
+  ],
+  "mainLog": [
+    "[18:44:39.578] [main] [stream] proxy escuchando en http://127.0.0.1:58695",
+    "[18:44:40.036] [main] [discord] conectado como _zerosplat",
+    "[18:44:43.457] [main] [resolver] YTMUSIC ok: c=WEB_REMIX pot=true sabr=- n=true sig=true",
+    "[18:44:43.547] [main] [discord] presencia: Get Lucky (feat. Pharrell Williams and Nile Rodgers) · Daft Punk, Pharrell Williams, Nile Rodgers",
+    "[18:44:44.667] [main] [resolver] YTMUSIC ok: c=WEB_REMIX pot=true sabr=- n=true sig=true",
+    "[18:44:46.078] [main] [auth] cookies rotadas y sesión reconstruida",
+    "[18:44:46.995] [main] [discord] presencia: Get Lucky (feat. Pharrell Williams and Nile Rodgers) · Daft Punk, Pharrell Williams, Nile Rodgers",
+    "[18:44:50.830] [main] [discord] presencia: Get Lucky (feat. Pharrell Williams and Nile Rodgers) · Daft Punk, Pharrell Williams, Nile Rodgers",
+    "[18:45:02.525] [main] [discord] presencia: Get Lucky (feat. Pharrell Williams and Nile Rodgers) · Daft Punk, Pharrell Williams, Nile Rodgers",
+    "[18:45:05.793] [main] [discord] presencia: Get Lucky (feat. Pharrell Williams and Nile Rodgers) · Daft Punk, Pharrell Williams, Nile Rodgers",
+    "[18:45:28.317] [main] [discord] presencia: Yellow · Coldplay",
+    "[18:45:29.207] [main] [resolver] YTMUSIC ok: c=WEB_REMIX pot=true sabr=- n=true sig=true",
+    "[18:45:30.112] [main] [resolver] YTMUSIC ok: c=WEB_REMIX pot=true sabr=- n=true sig=true",
+    "[18:45:30.308] [main] [discord] presencia: Yellow · Coldplay",
+    "[18:45:52.463] [main] [discord] presencia: bad guy · Billie Eilish",
+    "[18:45:53.183] [main] [resolver] YTMUSIC ok: c=WEB_REMIX pot=true sabr=- n=true sig=true",
+    "[18:45:53.350] [main] [discord] presencia: bad guy · Billie Eilish",
+    "[18:45:54.397] [main] [resolver] YTMUSIC ok: c=WEB_REMIX pot=true sabr=- n=true sig=true"
+  ],
+  "duration": "94.6",
+  "okCount": 21,
+  "bugCount": 2,
+  "warnCount": 1,
+  "finalSettings": {
+    "downloadsDir": "F:\\MetrolistPC\\Music",
+    "theme": "dark",
+    "accent": "#b45cf0",
+    "accentMode": "fixed",
+    "bgMode": "ambient",
+    "ambientTint": 60,
+    "crossfadeSec": 0,
+    "autoplay": true,
+    "eqGains": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "preampDb": 0,
+    "playbackRate": 1,
+    "preservePitch": true,
+    "closeToTray": false,
+    "discordRpc": false,
+    "miniCorner": "br",
+    "miniKaraoke": false,
+    "miniScale": 1,
+    "miniX": 1114,
+    "miniY": 639
+  }
+}

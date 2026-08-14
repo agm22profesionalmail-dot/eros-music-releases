@@ -97,7 +97,12 @@ export function NowPlayingBar({
         {current ? (
           <>
             {current.thumbnailUrl ? (
-              <img src={current.thumbnailUrl} alt="" />
+              <img
+                key={current.videoId}
+                src={current.thumbnailUrl}
+                alt=""
+                className="np-cover"
+              />
             ) : (
               <span className="ph">
                 <MusicNoteIcon size={24} />

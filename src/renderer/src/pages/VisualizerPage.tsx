@@ -10,6 +10,7 @@ import { engine } from '../player/engine'
 
 export function VisualizerPage(): React.JSX.Element {
   const current = usePlayer((s) => s.current())
+  const isPlaying = usePlayer((s) => s.isPlaying)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const freq = useRef(new Uint8Array(engine.analyserBins))
 
@@ -87,18 +88,57 @@ export function VisualizerPage(): React.JSX.Element {
       }}
     >
       {current?.thumbnailUrl && (
-        <img
-          src={current.thumbnailUrl}
-          alt=""
+        <div
           style={{
+            position: 'relative',
             width: 'min(38vh, 340px)',
             height: 'min(38vh, 340px)',
-            objectFit: 'cover',
-            borderRadius: 16,
-            boxShadow: '0 24px 80px -20px var(--amb-glow, rgba(0,0,0,0.6))',
             animation: 'detail-in 0.5s var(--ease-spring) both'
           }}
-        />
+        >
+          {/* Halo radial del acento */}
+          <div
+            style={{
+              position: 'absolute',
+              inset: '-24%',
+              borderRadius: '50%',
+              background:
+                'radial-gradient(closest-side, color-mix(in srgb, var(--accent) 45%, transparent), transparent 70%)',
+              filter: 'blur(40px)',
+              pointerEvents: 'none'
+            }}
+          />
+          {/* Disco de vinilo girando */}
+          <img
+            src={current.thumbnailUrl}
+            alt=""
+            style={{
+              position: 'relative',
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              borderRadius: '50%',
+              boxShadow:
+                '0 30px 90px -20px var(--amb-glow, rgba(0,0,0,0.7)), inset 0 0 0 6px rgba(0,0,0,0.6)',
+              animation: 'vinyl-spin 24s linear infinite',
+              animationPlayState: isPlaying ? 'running' : 'paused'
+            }}
+          />
+          {/* Agujero central */}
+          <div
+            style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              width: 18,
+              height: 18,
+              borderRadius: '50%',
+              background: 'var(--amb-60, #111)',
+              boxShadow: 'inset 0 0 0 3px rgba(255,255,255,0.15)'
+            }}
+          />
+        </div>
       )}
       <div style={{ textAlign: 'center' }}>
         <div style={{ fontSize: 26, fontWeight: 800 }}>{current?.title ?? 'Nada sonando'}</div>

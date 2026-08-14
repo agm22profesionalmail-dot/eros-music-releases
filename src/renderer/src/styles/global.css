@@ -926,14 +926,40 @@ a:hover {
 
 .np-left img,
 .np-left .ph {
-  width: 56px;
-  height: 56px;
+  width: 60px;
+  height: 60px;
   border-radius: 6px;
   object-fit: cover;
   background: var(--bg-elevated);
   display: grid;
   place-items: center;
   color: var(--text-subdued);
+  box-shadow: 0 4px 14px -4px var(--amb-glow, rgba(0, 0, 0, 0.5));
+  transition:
+    transform 0.25s var(--ease-spring),
+    box-shadow 0.35s var(--ease-out);
+}
+
+/* Crossfade + blur al cambiar de canción */
+@keyframes cover-swap {
+  from {
+    opacity: 0;
+    filter: blur(12px);
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: scale(1);
+  }
+}
+
+.np-cover {
+  animation: cover-swap 0.5s var(--ease-out);
+}
+
+.np-left img:hover {
+  transform: scale(1.06);
 }
 
 .np-left .meta {
@@ -1403,6 +1429,18 @@ a:hover {
 
 /* Karaoke: el texto se ilumina de izquierda a derecha mientras se canta.
    --fill controla el porcentaje relleno con el color de acento. */
+/* Carátula difuminada de la vista de letras: fade-in largo y suave */
+@keyframes lyrics-bg-in {
+  from {
+    opacity: 0;
+    transform: scale(1.4);
+  }
+  to {
+    opacity: 0.9;
+    transform: scale(1.25);
+  }
+}
+
 .karaoke-fill {
   --fill: 0%;
   background-image:
