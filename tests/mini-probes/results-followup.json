@@ -1,0 +1,25 @@
+{
+  "rows": [
+    {
+      "id": "2b",
+      "name": "Mini reproduciendo muestra icono de PAUSA",
+      "result": "OK",
+      "detail": "pauseIcon=true playing=true d=\"M5.7 3a.7.7 0 0 0-.7.7v16.6a.7.7 0 0 0 .\"",
+      "shot": ""
+    },
+    {
+      "id": "4",
+      "name": "Seek al 30/60/90% desde la barra",
+      "result": "OK",
+      "detail": "30%=ok 60%=ok 90%=ok",
+      "shot": ""
+    },
+    {
+      "id": "11a",
+      "name": "Karaoke ON muestra letra sincronizada",
+      "result": "OK",
+      "detail": "has=true text=\"♪\"",
+      "shot": ""
+    }
+  ]
+}

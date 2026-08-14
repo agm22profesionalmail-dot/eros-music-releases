@@ -356,7 +356,13 @@ export default function MiniPlayer(): React.JSX.Element {
                 }}
               >
                 <div
-                  style={{ width: `${pct}%`, height: '100%', borderRadius: 2, background: 'var(--accent)' }}
+                  style={{
+                    width: `${pct}%`,
+                    height: '100%',
+                    borderRadius: 2,
+                    background: 'linear-gradient(90deg, var(--accent-press), var(--accent))',
+                    boxShadow: '0 0 8px -1px var(--amb-glow, transparent)'
+                  }}
                 />
               </div>
             </div>
