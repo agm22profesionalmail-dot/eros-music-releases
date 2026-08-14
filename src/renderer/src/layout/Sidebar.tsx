@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
-import type { LibrarySnapshot, MediaCard } from '@shared/types'
+import { useState } from 'react'
+import type { MediaCard } from '@shared/types'
 import { useRouter } from '../app/router'
 import { useAuth } from '../app/authStore'
+import { useLibrary } from '../app/libraryStore'
 import {
   HomeIcon,
   LibraryIcon,
@@ -16,25 +17,8 @@ export function Sidebar(): React.JSX.Element {
   const route = useRouter((s) => s.route())
   const navigate = useRouter((s) => s.navigate)
   const auth = useAuth((s) => s.state)
-  const [library, setLibrary] = useState<LibrarySnapshot | null>(null)
+  const library = useLibrary((s) => s.library)
   const [filter, setFilter] = useState<Filter>('all')
-
-  useEffect(() => {
-    if (auth.status !== 'signedIn') {
-      setLibrary(null)
-      return
-    }
-    let cancelled = false
-    void window.api.music
-      .library()
-      .then((lib) => {
-        if (!cancelled) setLibrary(lib)
-      })
-      .catch(() => undefined)
-    return () => {
-      cancelled = true
-    }
-  }, [auth.status])
 
   const rows: { card: MediaCard; sub: string }[] = []
   if (library) {
@@ -79,9 +63,13 @@ export function Sidebar(): React.JSX.Element {
 
       <div className="sidebar-library">
         <div className="sidebar-library-header">
-          <span className="left">
+          <button
+            className="left"
+            style={{ display: 'flex', alignItems: 'center', gap: 12, color: 'inherit', fontWeight: 700, fontSize: 15 }}
+            onClick={() => navigate({ name: 'library' })}
+          >
             <LibraryIcon size={24} /> Tu biblioteca
-          </span>
+          </button>
         </div>
 
         {auth.status === 'signedIn' && (

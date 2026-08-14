@@ -9,6 +9,9 @@ import { PlaylistPage } from './pages/PlaylistPage'
 import { AlbumPage } from './pages/AlbumPage'
 import { ArtistPage } from './pages/ArtistPage'
 import { LoginPage } from './pages/LoginPage'
+import { LibraryPage } from './pages/LibraryPage'
+import { ContextMenuHost } from './components/ContextMenu'
+import { useLibrary } from './app/libraryStore'
 import { useRouter } from './app/router'
 import { useAuth } from './app/authStore'
 import {
@@ -36,6 +39,14 @@ export default function App(): React.JSX.Element {
   useEffect(() => {
     initAuth()
   }, [initAuth])
+
+  // Carga la biblioteca cuando hay sesión; límpiala al cerrar sesión
+  const loadLibrary = useLibrary((s) => s.load)
+  const clearLibrary = useLibrary((s) => s.clear)
+  useEffect(() => {
+    if (auth.status === 'signedIn') void loadLibrary()
+    else clearLibrary()
+  }, [auth.status, loadLibrary, clearLibrary])
 
   // Restablece el scroll al cambiar de página
   useEffect(() => {
@@ -124,7 +135,7 @@ export default function App(): React.JSX.Element {
                 {route.name === 'playlist' && <PlaylistPage id={route.id} />}
                 {route.name === 'album' && <AlbumPage id={route.id} />}
                 {route.name === 'artist' && <ArtistPage id={route.id} />}
-                {route.name === 'library' && <HomePage />}
+                {route.name === 'library' && <LibraryPage />}
                 {route.name === 'lyrics' && (
                   <div className="empty-state">Letras — llega en la fase F6</div>
                 )}
@@ -138,6 +149,7 @@ export default function App(): React.JSX.Element {
         {queueOpen && <QueuePanel onClose={() => setQueueOpen(false)} />}
       </div>
       <NowPlayingBar queueOpen={queueOpen} onToggleQueue={() => setQueueOpen((v) => !v)} />
+      <ContextMenuHost />
     </div>
   )
 }

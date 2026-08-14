@@ -128,6 +128,15 @@ export const IPC = {
   MUSIC_TRACK: 'music:track',
   MUSIC_UP_NEXT: 'music:upNext',
   MUSIC_LYRICS: 'music:lyrics',
+  // biblioteca (escrituras) e historial
+  LIB_REFRESH: 'library:refresh',
+  LIB_RATE: 'library:rate',
+  LIB_PLAYLIST_ADD: 'library:playlistAdd',
+  LIB_PLAYLIST_REMOVE: 'library:playlistRemove',
+  LIB_PLAYLIST_CREATE: 'library:playlistCreate',
+  LIB_SUBSCRIBE: 'library:subscribe',
+  HISTORY_ADD: 'history:add',
+  HISTORY_LIST: 'history:list',
   // streaming
   STREAM_PREPARE: 'stream:prepare',
   // ventana

@@ -22,6 +22,10 @@ interface PlayerState {
   /** Pistas del orden original cuando shuffle está activo */
   originalQueue: QueueItem[] | null
   error: string | null
+  /** Al agotar la cola, sigue con recomendaciones (radio de YT Music) */
+  autoplay: boolean
+  setAutoplay: (v: boolean) => void
+  startRadio: (track: TrackSummary) => Promise<void>
 
   current: () => QueueItem | null
   playTracks: (tracks: TrackSummary[], startIndex?: number) => Promise<void>
@@ -52,6 +56,8 @@ async function loadAndPlay(item: QueueItem, crossfade: boolean): Promise<void> {
   const url = prepared?.url ?? preloadUrls.get(item.videoId)
   if (!url) throw new Error('Sin URL de stream')
   await engine.load(url, { crossfadeFrom: crossfade })
+  // Historial local + sincronizado (mejor-esfuerzo)
+  void window.api.history.add({ ...item, queueId: undefined } as never).catch(() => undefined)
 }
 
 const preloadUrls = new Map<string, string>()
@@ -93,6 +99,23 @@ export const usePlayer = create<PlayerState>((set, get) => {
     shuffle: false,
     originalQueue: null,
     error: null,
+    autoplay: true,
+
+    setAutoplay: (v) => set({ autoplay: v }),
+
+    startRadio: async (track) => {
+      set({ isBuffering: true })
+      try {
+        const upNext = await window.api.music.upNext(track.videoId)
+        const radioTracks = (upNext.tracks as TrackSummary[]) ?? []
+        const all = radioTracks.length && radioTracks[0].videoId === track.videoId
+          ? radioTracks
+          : [track, ...radioTracks]
+        await get().playTracks(all, 0)
+      } catch {
+        await get().playTracks([track], 0)
+      }
+    },
 
     current: () => {
       const { queue, index } = get()
@@ -148,7 +171,7 @@ export const usePlayer = create<PlayerState>((set, get) => {
     },
 
     next: async () => {
-      const { queue, index, repeat } = get()
+      const { queue, index, repeat, autoplay } = get()
       if (repeat === 'one' && index >= 0) {
         engine.seek(0)
         engine.play()
@@ -157,15 +180,34 @@ export const usePlayer = create<PlayerState>((set, get) => {
       let nextIndex = index + 1
       if (nextIndex >= queue.length) {
         if (repeat === 'all' && queue.length) nextIndex = 0
-        else {
+        else if (autoplay && queue.length) {
+          // Radio: amplía la cola con recomendaciones a partir de la última pista
+          try {
+            const last = queue[queue.length - 1]
+            const upNext = await window.api.music.upNext(last.videoId)
+            const inQueue = new Set(queue.map((q) => q.videoId))
+            const fresh = ((upNext.tracks as TrackSummary[]) ?? []).filter(
+              (t) => !inQueue.has(t.videoId)
+            )
+            if (!fresh.length) {
+              set({ isPlaying: false })
+              return
+            }
+            set({ queue: [...queue, ...fresh.map(toQueueItem)] })
+          } catch {
+            set({ isPlaying: false })
+            return
+          }
+        } else {
           set({ isPlaying: false })
           return
         }
       }
+      const liveQueue = get().queue // puede haber crecido con la radio
       set({ index: nextIndex, isBuffering: true, currentTime: 0 })
       try {
-        await loadAndPlay(queue[nextIndex], true)
-        void preloadUpcoming({ queue, index: nextIndex })
+        await loadAndPlay(liveQueue[nextIndex], true)
+        void preloadUpcoming({ queue: liveQueue, index: nextIndex })
       } catch (err) {
         set({ error: String((err as Error)?.message ?? err), isBuffering: false })
       }

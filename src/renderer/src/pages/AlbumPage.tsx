@@ -3,6 +3,8 @@ import type { AlbumDetail } from '@shared/types'
 import { TrackTable } from '../components/TrackTable'
 import { usePlayer } from '../player/store'
 import { useRouter } from '../app/router'
+import { openContextMenu } from '../components/ContextMenu'
+import { trackMenu } from '../app/libraryStore'
 import { MusicNoteIcon, PauseIcon, PlayIcon } from '../components/Icons'
 
 export function AlbumPage({ id }: { id: string }): React.JSX.Element {
@@ -112,6 +114,7 @@ export function AlbumPage({ id }: { id: string }): React.JSX.Element {
           tracks={album.tracks}
           showArt={false}
           onPlayIndex={(i) => void playTracks(album.tracks, i)}
+          onContextMenu={(e, t) => openContextMenu(e, trackMenu(t))}
         />
       </div>
     </>

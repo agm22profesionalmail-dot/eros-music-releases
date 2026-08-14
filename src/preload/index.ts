@@ -10,7 +10,8 @@ import type {
   PreparedStream,
   SearchFilter,
   SearchResults,
-  Shelf
+  Shelf,
+  TrackSummary
 } from '../shared/types'
 
 const api = {
@@ -34,7 +35,8 @@ const api = {
     suggestions: (input: string): Promise<string[]> =>
       ipcRenderer.invoke(IPC.MUSIC_SUGGESTIONS, input),
     home: (): Promise<Shelf[]> => ipcRenderer.invoke(IPC.MUSIC_HOME),
-    library: (): Promise<LibrarySnapshot> => ipcRenderer.invoke(IPC.MUSIC_LIBRARY),
+    library: (): Promise<LibrarySnapshot & { fromCache: boolean; updatedAt: number }> =>
+      ipcRenderer.invoke(IPC.MUSIC_LIBRARY),
     playlist: (id: string): Promise<PlaylistDetail> => ipcRenderer.invoke(IPC.MUSIC_PLAYLIST, id),
     album: (id: string): Promise<AlbumDetail> => ipcRenderer.invoke(IPC.MUSIC_ALBUM, id),
     artist: (id: string): Promise<ArtistDetail> => ipcRenderer.invoke(IPC.MUSIC_ARTIST, id),
@@ -47,6 +49,27 @@ const api = {
   player: {
     prepare: (videoId: string): Promise<PreparedStream> =>
       ipcRenderer.invoke(IPC.STREAM_PREPARE, videoId)
+  },
+
+  library: {
+    refresh: (): Promise<LibrarySnapshot & { fromCache: boolean; updatedAt: number }> =>
+      ipcRenderer.invoke(IPC.LIB_REFRESH),
+    rate: (videoId: string, action: 'like' | 'dislike' | 'clear'): Promise<void> =>
+      ipcRenderer.invoke(IPC.LIB_RATE, videoId, action),
+    playlistAdd: (playlistId: string, videoIds: string[]): Promise<void> =>
+      ipcRenderer.invoke(IPC.LIB_PLAYLIST_ADD, playlistId, videoIds),
+    playlistRemove: (playlistId: string, videoIds: string[]): Promise<void> =>
+      ipcRenderer.invoke(IPC.LIB_PLAYLIST_REMOVE, playlistId, videoIds),
+    playlistCreate: (title: string, videoIds: string[]): Promise<string | null> =>
+      ipcRenderer.invoke(IPC.LIB_PLAYLIST_CREATE, title, videoIds),
+    subscribe: (channelId: string, subscribed: boolean): Promise<void> =>
+      ipcRenderer.invoke(IPC.LIB_SUBSCRIBE, channelId, subscribed)
+  },
+
+  history: {
+    add: (track: TrackSummary): Promise<void> => ipcRenderer.invoke(IPC.HISTORY_ADD, track),
+    list: (limit?: number): Promise<TrackSummary[]> =>
+      ipcRenderer.invoke(IPC.HISTORY_LIST, limit)
   },
 
   win: {

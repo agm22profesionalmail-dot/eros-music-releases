@@ -3,6 +3,8 @@ import type { SearchFilter, SearchResults } from '@shared/types'
 import { TrackTable } from '../components/TrackTable'
 import { Card } from '../components/Card'
 import { usePlayer } from '../player/store'
+import { openContextMenu } from '../components/ContextMenu'
+import { trackMenu } from '../app/libraryStore'
 import { cardToTrack } from './HomePage'
 
 const FILTERS: { key: SearchFilter; label: string }[] = [
@@ -74,6 +76,7 @@ export function SearchPage({ query }: { query: string }): React.JSX.Element {
               <TrackTable
                 tracks={results.songs}
                 onPlayIndex={(i) => void playTracks(results.songs, i)}
+                onContextMenu={(e, t) => openContextMenu(e, trackMenu(t))}
               />
             </>
           )}
@@ -83,6 +86,7 @@ export function SearchPage({ query }: { query: string }): React.JSX.Element {
               <TrackTable
                 tracks={results.videos}
                 onPlayIndex={(i) => void playTracks(results.videos, i)}
+                onContextMenu={(e, t) => openContextMenu(e, trackMenu(t))}
               />
             </>
           )}

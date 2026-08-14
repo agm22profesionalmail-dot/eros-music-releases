@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import type { PlaylistDetail } from '@shared/types'
 import { TrackTable } from '../components/TrackTable'
 import { usePlayer } from '../player/store'
+import { openContextMenu } from '../components/ContextMenu'
+import { trackMenu } from '../app/libraryStore'
 import { MusicNoteIcon, PauseIcon, PlayIcon } from '../components/Icons'
 
 export function PlaylistPage({ id }: { id: string }): React.JSX.Element {
@@ -99,6 +101,7 @@ export function PlaylistPage({ id }: { id: string }): React.JSX.Element {
           tracks={pl.tracks}
           showAlbum
           onPlayIndex={(i) => void playTracks(pl.tracks, i)}
+          onContextMenu={(e, t) => openContextMenu(e, trackMenu(t, { playlistId: id }))}
         />
         {!pl.tracks.length && <div className="empty-state">Esta playlist está vacía</div>}
       </div>

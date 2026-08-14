@@ -2,7 +2,9 @@ import { useCallback, useRef } from 'react'
 import { usePlayer } from '../player/store'
 import { formatTime } from '../app/authStore'
 import { useRouter } from '../app/router'
+import { useLibrary } from '../app/libraryStore'
 import {
+  HeartIcon,
   MicIcon,
   MusicNoteIcon,
   PauseIcon,
@@ -83,8 +85,11 @@ export function NowPlayingBar({
   const cycleRepeat = usePlayer((s) => s.cycleRepeat)
   const navigate = useRouter((s) => s.navigate)
   const route = useRouter((s) => s.route())
+  const likedIds = useLibrary((s) => s.likedIds)
+  const toggleLike = useLibrary((s) => s.toggleLike)
 
   const effDuration = duration || current?.durationSec || 0
+  const isLiked = current ? likedIds.has(current.videoId) : false
 
   return (
     <footer className="nowplaying">
@@ -99,9 +104,23 @@ export function NowPlayingBar({
               </span>
             )}
             <div className="meta">
-              <div className="title">{current.title}</div>
+              <div
+                className="title"
+                onClick={() => {
+                  if (current.album?.id) navigate({ name: 'album', id: current.album.id })
+                }}
+              >
+                {current.title}
+              </div>
               <div className="artist">{current.artists.map((a) => a.name).join(', ')}</div>
             </div>
+            <button
+              className={`icon-btn ${isLiked ? 'accent' : ''}`}
+              aria-label="Me gusta"
+              onClick={() => void toggleLike(current)}
+            >
+              <HeartIcon size={16} filled={isLiked} />
+            </button>
           </>
         ) : (
           <span style={{ color: 'var(--text-subdued)', fontSize: 13 }}>Nada en reproducción</span>
