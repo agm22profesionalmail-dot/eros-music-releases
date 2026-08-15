@@ -1,7 +1,19 @@
 import { sessionManager } from './session'
 import { getLibrary } from './api'
-import { cacheLibrarySection, readLibrarySection, recordPlay, readHistory } from '../db'
-import type { LibrarySnapshot, TrackSummary } from '@shared/types'
+import {
+  cacheLibrarySection,
+  readLibrarySection,
+  recordPlay,
+  readHistory,
+  setPlaylistOverride,
+  getPlaylistOverride
+} from '../db'
+import type {
+  LibrarySnapshot,
+  PlaylistEditPatch,
+  PlaylistOverride,
+  TrackSummary
+} from '@shared/types'
 
 /**
  * Biblioteca con caché: sirve al instante la última instantánea guardada en
@@ -87,6 +99,59 @@ export async function createPlaylist(title: string, videoIds: string[]): Promise
   const res = await yt.playlist.create(title, videoIds)
   void refreshLibrary().catch(() => undefined)
   return (res as { playlist_id?: string })?.playlist_id ?? null
+}
+
+/**
+ * Edita título y/o carátula de una playlist propia (F22).
+ *
+ * - El **título** se intenta cambiar en la cuenta con `yt.playlist.setName()`;
+ *   si la llamada falla o no existe se guarda solo como override local, y aun
+ *   así se aplica en toda la UI la próxima vez que se pinte la playlist.
+ * - La **carátula** NO tiene endpoint público en YT Music, así que siempre se
+ *   guarda como override local (data URL). El resto de la UI usa
+ *   `applyPlaylistOverrides()` para pintar el override encima del backend.
+ *
+ * Devuelve `{ remoteTitleOk, override }` para que la UI sepa si el título llegó
+ * al servidor. `override` es `null` si el usuario quitó tanto título como
+ * carátula (equivalente a "restaurar la playlist original").
+ */
+export async function editPlaylist(
+  id: string,
+  patch: PlaylistEditPatch
+): Promise<{ remoteTitleOk: boolean; override: PlaylistOverride | null }> {
+  let remoteTitleOk = false
+  if (typeof patch.title === 'string' && patch.title.trim().length) {
+    try {
+      const yt = await sessionManager.get()
+      await yt.playlist.setName(normalizePlaylistId(id), patch.title.trim())
+      remoteTitleOk = true
+    } catch {
+      // Si YT rechaza (playlist ajena, sesión sin permisos, endpoint eliminado)
+      // seguimos con el override local — el usuario ve su cambio igualmente.
+      remoteTitleOk = false
+    }
+  }
+
+  // Persistimos el override con el id normalizado para que casen las lecturas
+  // desde `getPlaylist(VL…)` y desde el sidebar.
+  const nid = normalizePlaylistId(id)
+  const override = setPlaylistOverride(nid, {
+    // Título: si vino y se envió al servidor, seguimos guardando el override
+    // igualmente porque la caché de la biblioteca aún tendrá el nombre viejo.
+    title: patch.title === undefined ? undefined : patch.title ?? null,
+    thumbnailDataUrl:
+      patch.thumbnailDataUrl === undefined ? undefined : patch.thumbnailDataUrl ?? null
+  })
+
+  // Invalida la caché para que el próximo `getLibrary()` traiga datos frescos
+  // y aplique los overrides encima.
+  void refreshLibrary().catch(() => undefined)
+  return { remoteTitleOk, override }
+}
+
+/** Consulta el override local aplicado a una playlist (para debug/tests). */
+export function readPlaylistOverride(id: string): PlaylistOverride | null {
+  return getPlaylistOverride(id) ?? getPlaylistOverride(normalizePlaylistId(id))
 }
 
 export async function setSubscribed(channelId: string, subscribed: boolean): Promise<void> {

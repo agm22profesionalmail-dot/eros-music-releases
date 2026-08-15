@@ -16,6 +16,7 @@ import { LyricsPage } from './pages/LyricsPage'
 import { VisualizerPage } from './pages/VisualizerPage'
 import { ContextMenuHost } from './components/ContextMenu'
 import { TextModalHost } from './components/TextModal'
+import { ToastHost } from './components/Toast'
 import { AmbientBackground } from './components/AmbientBackground'
 import { useLibrary } from './app/libraryStore'
 import { useSettings } from './app/settingsStore'
@@ -181,6 +182,7 @@ export default function App(): React.JSX.Element {
       <NowPlayingBar queueOpen={queueOpen} onToggleQueue={() => setQueueOpen((v) => !v)} />
       <ContextMenuHost />
       <TextModalHost />
+      <ToastHost />
     </div>
   )
 }

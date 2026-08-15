@@ -1,5 +1,12 @@
 appId: com.zero.metrolistpc
 productName: Metrolist PC
+# F22: deep-link `metrolist://` para abrir playlists/álbumes desde el navegador
+# u otras apps. Registro declarado aquí; el handler `open-url` se implementará
+# más adelante (TODO: F22-follow-up).
+protocols:
+  - name: Metrolist
+    schemes:
+      - metrolist
 directories:
   output: release
   buildResources: build

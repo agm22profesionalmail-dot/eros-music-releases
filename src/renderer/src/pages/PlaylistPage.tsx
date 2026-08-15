@@ -4,10 +4,13 @@ import { TrackTable } from '../components/TrackTable'
 import { ListSearchInput } from '../components/ListSearchInput'
 import { usePlayer } from '../player/store'
 import { openContextMenu } from '../components/ContextMenu'
-import { trackMenu } from '../app/libraryStore'
+import { trackMenu, useLibrary } from '../app/libraryStore'
 import { useArtworkColor } from '../app/artworkColor'
 import { matchesTrack, useDebouncedValue } from '../app/listFilter'
 import { MusicNoteIcon, PauseIcon, PlayIcon } from '../components/Icons'
+import { TrackPickerModal } from '../components/TrackPickerModal'
+import { PlaylistEditModal } from '../components/PlaylistEditModal'
+import { pushToast } from '../components/Toast'
 
 export function PlaylistPage({ id }: { id: string }): React.JSX.Element {
   const [pl, setPl] = useState<PlaylistDetail | null>(null)
@@ -15,10 +18,24 @@ export function PlaylistPage({ id }: { id: string }): React.JSX.Element {
   // F21: filtro local (no persistente) con debounce de 150 ms.
   const [filter, setFilter] = useState('')
   const debounced = useDebouncedValue(filter, 150)
+  // F22: modales de acción (añadir canciones / editar).
+  const [showPicker, setShowPicker] = useState(false)
+  const [showEdit, setShowEdit] = useState(false)
   const playTracks = usePlayer((s) => s.playTracks)
   const isPlaying = usePlayer((s) => s.isPlaying)
   const togglePlay = usePlayer((s) => s.togglePlay)
   const current = usePlayer((s) => s.current())
+  const refreshLibrary = useLibrary((s) => s.refresh)
+
+  // Recarga la playlist actual (tras editar/añadir) sin salir de la vista.
+  const reload = async (): Promise<void> => {
+    try {
+      const data = await window.api.music.playlist(id)
+      setPl(data)
+    } catch (err) {
+      setError(String((err as Error)?.message ?? err))
+    }
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -70,6 +87,27 @@ export function PlaylistPage({ id }: { id: string }): React.JSX.Element {
     )
   }
 
+  // F22: ¿editable? Heurística permisiva. El backend a veces no marca
+  // `isEditable=true` aunque la playlist sea del usuario (el parser de
+  // youtubei.js no siempre reconoce el header editable), así que si el prefijo
+  // es PL sin ser LM/OLAK, damos por editable y dejamos que el backend
+  // devuelva error si de verdad no lo es (mostramos toast entonces).
+  const rawId = id.startsWith('VL') ? id.slice(2) : id
+  const canEditByPrefix =
+    rawId.startsWith('PL') && !rawId.startsWith('PLLM') && !rawId.startsWith('OLAK')
+  const isEditable = pl.isEditable === true || canEditByPrefix
+  const canAdd = isEditable // añadir requiere ser dueño
+
+  const shareUrl = `https://music.youtube.com/playlist?list=${rawId}`
+  const share = async (): Promise<void> => {
+    try {
+      await navigator.clipboard.writeText(shareUrl)
+      pushToast('Enlace copiado')
+    } catch {
+      pushToast('No se pudo copiar el enlace')
+    }
+  }
+
   return (
     <>
       <div
@@ -117,9 +155,9 @@ export function PlaylistPage({ id }: { id: string }): React.JSX.Element {
       </div>
       <div className="detail-body">
         {/* F21: la fila de acciones incluye ahora el buscador anclado a la
-            derecha con `margin-left: auto`. F22 podrá insertar sus tres
-            botones circulares (+ / ↗ / ✎) justo tras el big-play sin
-            colisionar. */}
+            derecha con `margin-left: auto`. F22 mete sus tres botones
+            circulares (+ / ↗ / ✎) justo tras el big-play y el buscador
+            se queda a la derecha por el margin-left auto. */}
         <div className="detail-actions">
           <button
             className={`big-play ${isThisPlaying ? 'is-playing' : ''}`}
@@ -131,7 +169,36 @@ export function PlaylistPage({ id }: { id: string }): React.JSX.Element {
           >
             {isThisPlaying ? <PauseIcon size={22} /> : <PlayIcon size={22} />}
           </button>
-          {/* Hueco reservado para F22 (botones «+ ↗ ✎») */}
+          {/* F22 · Añadir canciones (solo playlists propias) */}
+          <button
+            className="action-circle"
+            aria-label="Añadir canciones a la playlist"
+            title="Añadir canciones"
+            disabled={!canAdd}
+            onClick={() => setShowPicker(true)}
+          >
+            +
+          </button>
+          {/* F22 · Compartir enlace de la playlist */}
+          <button
+            className="action-circle"
+            aria-label="Compartir enlace de la playlist"
+            title="Compartir"
+            onClick={() => void share()}
+          >
+            ↗
+          </button>
+          {/* F22 · Editar título y carátula (solo playlists propias) */}
+          {isEditable && (
+            <button
+              className="action-circle"
+              aria-label="Editar título y carátula"
+              title="Editar"
+              onClick={() => setShowEdit(true)}
+            >
+              ✎
+            </button>
+          )}
           {pl.tracks.length > 0 && (
             <ListSearchInput
               value={filter}
@@ -151,6 +218,37 @@ export function PlaylistPage({ id }: { id: string }): React.JSX.Element {
           <div className="empty-state">Sin resultados para «{filter}»</div>
         )}
       </div>
+
+      {showPicker && (
+        <TrackPickerModal
+          playlistId={id}
+          playlistTitle={pl.title}
+          onClose={(added) => {
+            setShowPicker(false)
+            if (added > 0) {
+              pushToast(added === 1 ? '1 canción añadida' : `${added} canciones añadidas`)
+              void reload()
+              void refreshLibrary()
+            }
+          }}
+        />
+      )}
+
+      {showEdit && isEditable && (
+        <PlaylistEditModal
+          playlistId={id}
+          currentTitle={pl.title}
+          currentThumbnailUrl={pl.thumbnailUrl}
+          onClose={(saved) => {
+            setShowEdit(false)
+            if (saved) {
+              pushToast('Playlist actualizada')
+              void reload()
+              void refreshLibrary()
+            }
+          }}
+        />
+      )}
     </>
   )
 }

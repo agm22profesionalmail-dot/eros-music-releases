@@ -9,7 +9,7 @@ import {
   nativeImage,
   screen
 } from 'electron'
-import { join } from 'path'
+import { join, resolve as pathResolve } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { registerIpc } from './ipc'
 import { sessionManager } from './innertube/session'
@@ -329,6 +329,21 @@ if (!gotTheLock) {
 
   app.whenReady().then(() => {
     electronApp.setAppUserModelId('com.zero.metrolistpc')
+
+    // F22: registro del protocolo `metrolist://` para deep-links.
+    // Solo el registro; el handler `open-url` (Windows: segundo argv) se
+    // implementará cuando lleguen los deep-link. TODO F22-follow-up.
+    try {
+      if (process.defaultApp && process.argv.length >= 2) {
+        app.setAsDefaultProtocolClient('metrolist', process.execPath, [
+          pathResolve(process.argv[1])
+        ])
+      } else {
+        app.setAsDefaultProtocolClient('metrolist')
+      }
+    } catch {
+      /* algunos entornos (sandboxed, portables) no admiten el registro */
+    }
 
     ipcMain.handle('app:ping', () => 'pong')
 

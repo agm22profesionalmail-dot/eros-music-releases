@@ -9,6 +9,8 @@ import type {
   LibrarySnapshot,
   LyricsData,
   PlaylistDetail,
+  PlaylistEditPatch,
+  PlaylistOverride,
   PreparedStream,
   SearchFilter,
   SearchResults,
@@ -125,6 +127,11 @@ const api = {
       ipcRenderer.invoke(IPC.LIB_PLAYLIST_REMOVE, playlistId, videoIds),
     playlistCreate: (title: string, videoIds: string[]): Promise<string | null> =>
       ipcRenderer.invoke(IPC.LIB_PLAYLIST_CREATE, title, videoIds),
+    playlistEdit: (
+      id: string,
+      patch: PlaylistEditPatch
+    ): Promise<{ remoteTitleOk: boolean; override: PlaylistOverride | null }> =>
+      ipcRenderer.invoke(IPC.LIB_PLAYLIST_EDIT, id, patch),
     subscribe: (channelId: string, subscribed: boolean): Promise<void> =>
       ipcRenderer.invoke(IPC.LIB_SUBSCRIBE, channelId, subscribed),
     likedIds: (): Promise<string[]> => ipcRenderer.invoke(IPC.LIB_LIKED_IDS)

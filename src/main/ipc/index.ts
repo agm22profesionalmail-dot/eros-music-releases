@@ -16,7 +16,12 @@ import {
   getProfile,
   setProfile
 } from '../settings'
-import type { AppSettings, TrackSummary, UserProfile } from '@shared/types'
+import type {
+  AppSettings,
+  PlaylistEditPatch,
+  TrackSummary,
+  UserProfile
+} from '@shared/types'
 
 /** Registra todos los handlers IPC. Llamar una sola vez en app.whenReady. */
 export function registerIpc(getMainWindow: () => BrowserWindow | null): void {
@@ -72,6 +77,9 @@ export function registerIpc(getMainWindow: () => BrowserWindow | null): void {
   )
   ipcMain.handle(IPC.LIB_PLAYLIST_CREATE, (_e, title: string, videoIds: string[]) =>
     lib.createPlaylist(title, videoIds)
+  )
+  ipcMain.handle(IPC.LIB_PLAYLIST_EDIT, (_e, id: string, patch: PlaylistEditPatch) =>
+    lib.editPlaylist(id, patch)
   )
   ipcMain.handle(IPC.LIB_SUBSCRIBE, (_e, channelId: string, subscribed: boolean) =>
     lib.setSubscribed(channelId, subscribed)

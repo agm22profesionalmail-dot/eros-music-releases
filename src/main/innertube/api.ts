@@ -6,6 +6,7 @@ import {
   mapToCard,
   upscaleThumb
 } from './mappers'
+import { getAllPlaylistOverrides, getPlaylistOverride } from '../db'
 import type {
   AlbumDetail,
   ArtistDetail,
@@ -158,7 +159,30 @@ export async function getLibrary(): Promise<LibrarySnapshot> {
       consume([section])
     }
   }
+
+  // F22: aplica los overrides locales encima de las cards de playlist antes de
+  // devolver la instantánea. Así el sidebar y la biblioteca muestran el título
+  // y la carátula que el usuario eligió.
+  applyPlaylistOverrides(snapshot.playlists)
   return snapshot
+}
+
+/**
+ * Aplica los overrides locales de F22 a un array de MediaCard de playlist,
+ * sustituyendo `title` y `thumbnailUrl` cuando hay un override guardado.
+ * Comprueba tanto el id "tal cual" como el normalizado (sin prefijo VL) porque
+ * la escritura usa PL y la biblioteca suele traer VLPL.
+ */
+export function applyPlaylistOverrides(cards: MediaCard[]): void {
+  const map = getAllPlaylistOverrides()
+  if (!map.size) return
+  for (const card of cards) {
+    if (card.kind !== 'playlist') continue
+    const o = map.get(card.id) ?? map.get(normalizePlaylistId(card.id))
+    if (!o) continue
+    if (o.title) card.title = o.title
+    if (o.thumbnailDataUrl) card.thumbnailUrl = o.thumbnailDataUrl
+  }
 }
 
 export async function getPlaylist(id: string): Promise<PlaylistDetail> {
@@ -172,17 +196,38 @@ export async function getPlaylist(id: string): Promise<PlaylistDetail> {
   }
 
   const header = pl?.header
+  // Detección de "editable": youtubei.js expone una clase específica cuando la
+  // cuenta actual es dueña de la playlist. Fallback: prefijo `PL` del id.
+  const headerType = String(header?.type ?? '')
+  const isEditable =
+    headerType.includes('EditablePlaylist') ||
+    Boolean((header as any)?.edit_header) ||
+    (typeof id === 'string' && !id.startsWith('VL') && id.startsWith('PL'))
+
+  // Override local (F22): si el usuario editó título/carátula, mándalo sobre
+  // lo que llega de la red.
+  const override = getPlaylistOverride(id) ?? getPlaylistOverride(normalizePlaylistId(id))
+  const backendTitle =
+    header?.title?.toString?.() ?? pl?.title?.toString?.() ?? 'Playlist'
+  const backendThumb = upscaleThumb(bestThumbnail(header) ?? bestThumbnail(pl))
+
   return {
     id,
-    title: header?.title?.toString?.() ?? pl?.title?.toString?.() ?? 'Playlist',
+    title: override?.title ?? backendTitle,
     author: header?.author?.name ?? header?.subtitle?.toString?.(),
     description: header?.description?.toString?.(),
-    thumbnailUrl: upscaleThumb(bestThumbnail(header) ?? bestThumbnail(pl)),
+    thumbnailUrl: override?.thumbnailDataUrl ?? backendThumb,
     trackCount: tracks.length,
     durationText: header?.duration?.toString?.() ?? header?.second_subtitle?.toString?.(),
     tracks,
-    hasContinuation: Boolean(pl?.has_continuation)
+    hasContinuation: Boolean(pl?.has_continuation),
+    isEditable
   }
+}
+
+/** Los browseId de playlist llegan como VLPL...; los ids de escritura son PL... */
+function normalizePlaylistId(id: string): string {
+  return id.startsWith('VL') ? id.slice(2) : id
 }
 
 export async function getAlbum(id: string): Promise<AlbumDetail> {

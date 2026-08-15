@@ -107,6 +107,27 @@ export interface AuthState {
   error?: string
 }
 
+// ---------- Playlist (F22): parches de edición y overrides locales ----------
+
+/**
+ * Parche parcial para editar una playlist: título y/o carátula. La carátula
+ * llega como data URL (JPEG/PNG en base64) — YT Music no expone endpoint
+ * para cambiarla, así que se guarda solo como override local. `null` en
+ * `thumbnailDataUrl` significa "quitar override y volver a la original".
+ */
+export interface PlaylistEditPatch {
+  title?: string
+  thumbnailDataUrl?: string | null
+}
+
+/** Override local (SQLite) para una playlist — sobreescribe la del backend al mapear. */
+export interface PlaylistOverride {
+  id: string
+  title?: string
+  thumbnailDataUrl?: string
+  updatedAt: number
+}
+
 // ---------- Perfil de usuario (F20) ----------
 
 /** Referencia a un artista favorito en el perfil del usuario. */
@@ -173,6 +194,7 @@ export const IPC = {
   LIB_PLAYLIST_ADD: 'library:playlistAdd',
   LIB_PLAYLIST_REMOVE: 'library:playlistRemove',
   LIB_PLAYLIST_CREATE: 'library:playlistCreate',
+  LIB_PLAYLIST_EDIT: 'library:playlistEdit',
   LIB_SUBSCRIBE: 'library:subscribe',
   LIB_LIKED_IDS: 'library:likedIds',
   HISTORY_ADD: 'history:add',
