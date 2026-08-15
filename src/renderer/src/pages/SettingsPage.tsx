@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useSettings } from '../app/settingsStore'
 import { useAuth } from '../app/authStore'
 import { EQ_BANDS } from '../player/engine'
 import {
+  DEFAULT_HOME_QUICK_PICKS,
   DEFAULT_LYRICS_PROVIDERS,
   DEFAULT_STREAMING_SOURCES,
+  HOME_QUICK_PICK_CATEGORIES,
   type LyricsProvider,
   type StreamingSource
 } from '@shared/types'
@@ -99,6 +101,220 @@ function Row({ label, children }: { label: string; children: React.ReactNode }):
     >
       <span>{label}</span>
       <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>{children}</span>
+    </div>
+  )
+}
+
+/**
+ * F32 · Editor de las selecciones rápidas de Inicio. Presenta las categorías
+ * conocidas como checkboxes y persiste el array `homeQuickPicks` respetando
+ * el orden del catálogo (así el usuario ve siempre los chips en el mismo
+ * orden aunque active/desactive).
+ */
+function HomeQuickPicksEditor(): React.JSX.Element {
+  const { settings, update } = useSettings()
+  const active = new Set(settings.homeQuickPicks ?? [])
+
+  const toggle = (id: string, on: boolean): void => {
+    const next = HOME_QUICK_PICK_CATEGORIES
+      .map((c) => c.id)
+      .filter((cid) => (cid === id ? on : active.has(cid)))
+    void update({ homeQuickPicks: next })
+  }
+
+  return (
+    <div style={{ padding: '10px 0 6px' }}>
+      <div style={{ fontSize: 13, color: 'var(--text-secondary)', paddingBottom: 6 }}>
+        Selecciones rápidas (chips que aparecen encima de las tarjetas grandes)
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+        {HOME_QUICK_PICK_CATEGORIES.map((cat) => {
+          const on = active.has(cat.id)
+          return (
+            <label
+              key={cat.id}
+              className={`chip ${on ? 'active' : ''}`}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
+            >
+              <input
+                type="checkbox"
+                checked={on}
+                onChange={(e) => toggle(cat.id, e.target.checked)}
+                style={{ margin: 0 }}
+              />
+              <span aria-hidden="true">{cat.emoji}</span>
+              <span>{cat.label}</span>
+            </label>
+          )
+        })}
+      </div>
+      <div style={{ paddingTop: 8 }}>
+        <button
+          className="btn btn-secondary"
+          onClick={() => void update({ homeQuickPicks: DEFAULT_HOME_QUICK_PICKS })}
+        >
+          Restaurar predeterminados
+        </button>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * F32 · Editor de orden/ocultación de estanterías. Pide al main la lista
+ * actual con `homeShelfIndex()` y presenta un modal-lite (panel expandible)
+ * con checkbox "Mostrar" y flechas ↑/↓ por estantería. Las estanterías
+ * conocidas por `homeShelvesOrder` que no aparezcan hoy se conservan al
+ * final para no perder configuración.
+ */
+function HomeShelvesEditor(): React.JSX.Element {
+  const { settings, update } = useSettings()
+  const [open, setOpen] = useState(false)
+  const [rows, setRows] = useState<{ id: string; title: string }[] | null>(null)
+  const [err, setErr] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!open) return
+    let cancelled = false
+    setRows(null)
+    setErr(null)
+    void window.api.music
+      .homeShelfIndex()
+      .then((data) => {
+        if (cancelled) return
+        // Mantén el orden custom actual arriba (respetando su posición); el
+        // resto va detrás en el orden natural del proveedor.
+        const known = new Map(data.map((r) => [r.id, r] as const))
+        const orderIds = settings.homeShelvesOrder ?? []
+        const arranged: { id: string; title: string }[] = []
+        for (const id of orderIds) {
+          const r = known.get(id)
+          if (r) {
+            arranged.push({ id: r.id, title: r.title })
+            known.delete(id)
+          } else {
+            arranged.push({ id, title: `(no detectada) ${id}` })
+          }
+        }
+        for (const r of data) {
+          if (known.has(r.id)) arranged.push({ id: r.id, title: r.title })
+        }
+        setRows(arranged)
+      })
+      .catch((e) => {
+        if (!cancelled) setErr(String(e?.message ?? e))
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [open, settings.homeShelvesOrder])
+
+  const hidden = new Set(settings.homeHiddenShelves ?? [])
+
+  const toggleHidden = (id: string, show: boolean): void => {
+    const next = new Set(hidden)
+    if (show) next.delete(id)
+    else next.add(id)
+    void update({ homeHiddenShelves: Array.from(next) })
+  }
+
+  const move = (index: number, dir: -1 | 1): void => {
+    if (!rows) return
+    const j = index + dir
+    if (j < 0 || j >= rows.length) return
+    const next = [...rows]
+    ;[next[index], next[j]] = [next[j], next[index]]
+    setRows(next)
+    void update({ homeShelvesOrder: next.map((r) => r.id) })
+  }
+
+  return (
+    <div style={{ padding: '10px 0' }}>
+      <div style={{ fontSize: 13, color: 'var(--text-secondary)', paddingBottom: 6 }}>
+        Reordenar y ocultar estanterías
+      </div>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <button className="btn btn-secondary" onClick={() => setOpen((v) => !v)}>
+          {open ? 'Cerrar editor' : 'Ver últimas estanterías detectadas'}
+        </button>
+        <button
+          className="btn btn-secondary"
+          onClick={() => void update({ homeShelvesOrder: [], homeHiddenShelves: [] })}
+        >
+          Restaurar orden natural
+        </button>
+      </div>
+      {open && (
+        <div
+          style={{
+            marginTop: 10,
+            border: '1px solid var(--divider)',
+            borderRadius: 10,
+            padding: '10px 12px',
+            background: 'var(--bg-elevated)'
+          }}
+        >
+          {err && <div className="error-banner">{err}</div>}
+          {!rows && !err && (
+            <div style={{ padding: '8px 0', color: 'var(--text-subdued)' }}>Cargando…</div>
+          )}
+          {rows && rows.length === 0 && (
+            <div style={{ padding: '8px 0', color: 'var(--text-subdued)' }}>
+              Inicio no devolvió estanterías (¿sin sesión?).
+            </div>
+          )}
+          {rows?.map((r, i) => {
+            const show = !hidden.has(r.id)
+            return (
+              <div
+                key={r.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 10,
+                  padding: '8px 0',
+                  borderBottom: '1px solid var(--divider)'
+                }}
+              >
+                <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {r.title}
+                </span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
+                    <input
+                      type="checkbox"
+                      checked={show}
+                      onChange={(e) => toggleHidden(r.id, e.target.checked)}
+                    />
+                    Mostrar
+                  </label>
+                  <button
+                    className="btn btn-secondary"
+                    onClick={() => move(i, -1)}
+                    disabled={i === 0}
+                    aria-label="Subir"
+                    title="Subir"
+                    style={{ padding: '2px 8px' }}
+                  >
+                    ↑
+                  </button>
+                  <button
+                    className="btn btn-secondary"
+                    onClick={() => move(i, 1)}
+                    disabled={i === rows.length - 1}
+                    aria-label="Bajar"
+                    title="Bajar"
+                    style={{ padding: '2px 8px' }}
+                  >
+                    ↓
+                  </button>
+                </span>
+              </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }
@@ -562,6 +778,22 @@ export function SettingsPage(): React.JSX.Element {
           onChange={(e) => void update({ wrappedTopN: Number(e.target.value) })}
         />
       </Row>
+
+      <h2>Personalizar Inicio</h2>
+      <p style={{ color: 'var(--text-subdued)', fontSize: 12, padding: '0 0 8px' }}>
+        Ajusta cómo se ve la pantalla de Inicio: barajar estanterías, elegir qué
+        chips de selecciones rápidas aparecen arriba y reordenar u ocultar las
+        estanterías que devuelve YouTube Music.
+      </p>
+      <Row label="Barajar estanterías al abrir Inicio">
+        <input
+          type="checkbox"
+          checked={settings.homeShuffleShelves}
+          onChange={(e) => void update({ homeShuffleShelves: e.target.checked })}
+        />
+      </Row>
+      <HomeQuickPicksEditor />
+      <HomeShelvesEditor />
 
       <h2>Página del Artista</h2>
       <Row label="Mostrar descripción del artista">

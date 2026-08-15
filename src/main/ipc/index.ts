@@ -45,6 +45,17 @@ export function registerIpc(getMainWindow: () => BrowserWindow | null): void {
   )
   ipcMain.handle(IPC.MUSIC_SUGGESTIONS, (_e, input: string) => music.getSuggestions(input))
   ipcMain.handle(IPC.MUSIC_HOME, () => music.getHome())
+  // F32 · Devuelve el índice ligero de estanterías (id + título + categoría)
+  // que la UI de Ajustes necesita para mostrar el editor de orden/ocultas.
+  ipcMain.handle(IPC.HOME_SHELF_INDEX, async () => {
+    const { shelfId, categorizeShelf } = await import('../home/categorize')
+    const shelves = await music.getHome()
+    return shelves.map((s) => ({
+      id: shelfId(s.title),
+      title: s.title,
+      category: categorizeShelf(s)
+    }))
+  })
   ipcMain.handle(IPC.MUSIC_LIBRARY, () => lib.getLibraryCached())
   ipcMain.handle(IPC.MUSIC_PLAYLIST, (_e, id: string) => music.getPlaylist(id))
   ipcMain.handle(IPC.MUSIC_ALBUM, (_e, id: string) => music.getAlbum(id))

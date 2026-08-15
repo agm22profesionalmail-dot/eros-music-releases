@@ -254,6 +254,8 @@ export const IPC = {
   MUSIC_SEARCH: 'music:search',
   MUSIC_SUGGESTIONS: 'music:suggestions',
   MUSIC_HOME: 'music:home',
+  /** F32 · Devuelve la lista actual de estanterías detectadas (id + título) */
+  HOME_SHELF_INDEX: 'home:shelfIndex',
   MUSIC_LIBRARY: 'music:library',
   MUSIC_PLAYLIST: 'music:playlist',
   MUSIC_ALBUM: 'music:album',
@@ -464,7 +466,43 @@ export interface AppSettings {
   showTopMonthly: boolean
   /** Muestra la tarjeta "Top semanal" en Inicio */
   showTopWeekly: boolean
+
+  // ---------- F32 · Personalización de Home ----------
+
+  /** Baraja el orden de las estanterías de Inicio en cada carga (no persistente). */
+  homeShuffleShelves: boolean
+  /**
+   * Orden custom de estanterías por `shelfId`. Cadena vacía = orden natural
+   * del proveedor. Las estanterías cuyo id no esté aquí se pintan detrás en
+   * el orden natural.
+   */
+  homeShelvesOrder: string[]
+  /** Ids de estantería (`shelfId(title)`) que se ocultan de Inicio. */
+  homeHiddenShelves: string[]
+  /**
+   * Categorías destacadas (chips) que aparecen encima del HomeHero. Ver
+   * `HOME_QUICK_PICK_CATEGORIES` para el catálogo. Vacío = no se pinta la
+   * fila de selecciones rápidas.
+   */
+  homeQuickPicks: string[]
 }
+
+/**
+ * F32 · Catálogo de categorías destacadas mostradas como chips en Inicio.
+ * El id coincide con los que devuelve `categorizeShelf()` para permitir hacer
+ * scroll a la primera estantería que matchee.
+ */
+export const HOME_QUICK_PICK_CATEGORIES: { id: string; label: string; emoji: string }[] = [
+  { id: 'recientes', label: 'Recientes', emoji: '⏱️' },
+  { id: 'novedades', label: 'Novedades', emoji: '✨' },
+  { id: 'mixes', label: 'Mixes', emoji: '🎧' },
+  { id: 'radios', label: 'Radios', emoji: '📻' },
+  { id: 'topcharts', label: 'Top Charts', emoji: '📈' },
+  { id: 'sugerencias', label: 'Sugerencias', emoji: '💡' }
+]
+
+/** F32 · Selecciones rápidas por defecto. */
+export const DEFAULT_HOME_QUICK_PICKS: string[] = ['recientes', 'novedades', 'mixes', 'radios']
 
 /** F30 · Un proveedor de letras en la cadena configurable. */
 export interface LyricsProvider {
@@ -557,7 +595,13 @@ export const DEFAULT_SETTINGS: AppSettings = {
   wrappedTopN: 50,
   showWrappedRecapCard: true,
   showTopMonthly: true,
-  showTopWeekly: true
+  showTopWeekly: true,
+  // F32 · personalización de Home (por defecto sin cambios: orden natural,
+  // sin barajar, sin ocultar, chips clásicos)
+  homeShuffleShelves: false,
+  homeShelvesOrder: [],
+  homeHiddenShelves: [],
+  homeQuickPicks: DEFAULT_HOME_QUICK_PICKS
 }
 
 export interface LyricWord {

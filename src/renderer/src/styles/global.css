@@ -543,6 +543,52 @@ a:hover {
   margin: 24px 0 12px;
 }
 
+/* ---------- F32 · Home quick picks (chips grandes) ---------- */
+.home-quickpicks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 4px 0 10px;
+}
+
+.home-quickpick {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border: 1px solid var(--divider);
+  border-radius: 999px;
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition:
+    transform 0.15s var(--ease-out),
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.home-quickpick:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: var(--accent);
+}
+
+.home-quickpick:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.home-quickpick.is-disabled,
+.home-quickpick:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.home-quickpick-emoji {
+  font-size: 18px;
+  line-height: 1;
+}
+
 /* ---------- F24 · Home hero (Sorpréndeme + Mix Personal) ---------- */
 .home-hero {
   display: grid;

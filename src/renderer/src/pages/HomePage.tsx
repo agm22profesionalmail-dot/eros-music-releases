@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { MediaCard, RecapData, Shelf, TrackSummary } from '@shared/types'
 import { ShelfRow } from '../components/Shelf'
+import { HomeQuickPicks } from '../components/HomeQuickPicks'
+import { shelfId } from '@shared/homeShelfCategorize'
 import { usePlayer } from '../player/store'
 import { useAuth } from '../app/authStore'
 import { useRouter } from '../app/router'
@@ -225,6 +227,7 @@ export function HomePage(): React.JSX.Element {
   const [error, setError] = useState<string | null>(null)
   const playTracks = usePlayer((s) => s.playTracks)
   const auth = useAuth((s) => s.state)
+  const { settings } = useSettings()
 
   useEffect(() => {
     let cancelled = false
@@ -243,6 +246,46 @@ export function HomePage(): React.JSX.Element {
     }
   }, [auth.status])
 
+  /**
+   * F32 · Aplica el filtro/orden/shuffle sobre las estanterías crudas.
+   * - Filtro: elimina las que estén en `homeHiddenShelves`.
+   * - Orden: pone primero las del orden custom (respetando ese orden) y
+   *   deja detrás el resto en orden natural.
+   * - Shuffle: mezcla el resultado con `Math.random()` (no persistente).
+   * El shuffle se recalcula cada vez que cambian los shelves o el toggle.
+   */
+  const displayedShelves = useMemo<Shelf[] | null>(() => {
+    if (!shelves) return null
+    const hidden = new Set(settings.homeHiddenShelves ?? [])
+    let out = shelves.filter((s) => !hidden.has(shelfId(s.title)))
+
+    const orderIds = settings.homeShelvesOrder ?? []
+    if (orderIds.length > 0) {
+      const positionById = new Map(orderIds.map((id, i) => [id, i] as const))
+      const known: { shelf: Shelf; pos: number }[] = []
+      const rest: Shelf[] = []
+      for (const s of out) {
+        const p = positionById.get(shelfId(s.title))
+        if (p !== undefined) known.push({ shelf: s, pos: p })
+        else rest.push(s)
+      }
+      known.sort((a, b) => a.pos - b.pos)
+      out = [...known.map((k) => k.shelf), ...rest]
+    }
+
+    if (settings.homeShuffleShelves) {
+      // Fisher-Yates
+      const arr = [...out]
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1))
+        ;[arr[i], arr[j]] = [arr[j], arr[i]]
+      }
+      out = arr
+    }
+    return out
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shelves, settings.homeHiddenShelves, settings.homeShelvesOrder, settings.homeShuffleShelves])
+
   const playCard = (card: MediaCard): void => {
     if (card.kind === 'song' || card.kind === 'video') {
       void playTracks([cardToTrack(card)])
@@ -260,12 +303,14 @@ export function HomePage(): React.JSX.Element {
   return (
     <div className="page">
       <h1>{greeting()}</h1>
+      {/* F32: fila de chips de selecciones rápidas — antes del HomeHero */}
+      <HomeQuickPicks shelves={displayedShelves} />
       {/* F24: tarjetas grandes SIEMPRE visibles, incluso mientras carga el resto */}
       <HomeHero />
       {/* F31: tarjetas Recap + accesos rápidos al top semanal/mensual */}
       <HomeRecap />
       {error && <div className="error-banner">No se pudo cargar Inicio: {error}</div>}
-      {!shelves && !error && (
+      {!displayedShelves && !error && (
         <div className="card-grid">
           {[...Array(7)].map((_, i) => (
             <div key={i}>
@@ -276,8 +321,10 @@ export function HomePage(): React.JSX.Element {
           ))}
         </div>
       )}
-      {shelves?.map((shelf, i) => <ShelfRow key={i} shelf={shelf} onPlayItem={playCard} />)}
-      {shelves && !shelves.length && (
+      {displayedShelves?.map((shelf, i) => (
+        <ShelfRow key={`${shelfId(shelf.title)}-${i}`} shelf={shelf} onPlayItem={playCard} />
+      ))}
+      {displayedShelves && !displayedShelves.length && (
         <div className="empty-state">
           Inicio está vacío. Inicia sesión para ver tus recomendaciones.
         </div>

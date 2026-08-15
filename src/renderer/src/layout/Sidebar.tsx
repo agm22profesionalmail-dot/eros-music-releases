@@ -60,6 +60,16 @@ export function Sidebar(): React.JSX.Element {
         >
           <SearchIcon size={24} /> Buscar
         </button>
+        {/* F32 · Acceso rápido al Recap */}
+        <button
+          className={`sidebar-nav-item ${route.name === 'recap' ? 'active' : ''}`}
+          onClick={() => navigate({ name: 'recap' })}
+        >
+          <span aria-hidden="true" style={{ fontSize: 20, width: 24, textAlign: 'center' }}>
+            📊
+          </span>
+          Recap
+        </button>
       </nav>
 
       <div className="sidebar-library">

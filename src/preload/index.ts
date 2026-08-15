@@ -46,6 +46,9 @@ const api = {
     suggestions: (input: string): Promise<string[]> =>
       ipcRenderer.invoke(IPC.MUSIC_SUGGESTIONS, input),
     home: (): Promise<Shelf[]> => ipcRenderer.invoke(IPC.MUSIC_HOME),
+    /** F32 · Índice ligero de estanterías detectadas para el editor de Ajustes. */
+    homeShelfIndex: (): Promise<{ id: string; title: string; category: string | null }[]> =>
+      ipcRenderer.invoke(IPC.HOME_SHELF_INDEX),
     library: (): Promise<LibrarySnapshot & { fromCache: boolean; updatedAt: number }> =>
       ipcRenderer.invoke(IPC.MUSIC_LIBRARY),
     playlist: (id: string): Promise<PlaylistDetail> => ipcRenderer.invoke(IPC.MUSIC_PLAYLIST, id),
