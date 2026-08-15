@@ -1,16 +1,21 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { AlbumDetail } from '@shared/types'
 import { TrackTable } from '../components/TrackTable'
+import { ListSearchInput } from '../components/ListSearchInput'
 import { usePlayer } from '../player/store'
 import { useRouter } from '../app/router'
 import { openContextMenu } from '../components/ContextMenu'
 import { trackMenu } from '../app/libraryStore'
 import { useArtworkColor } from '../app/artworkColor'
+import { matchesTrack, useDebouncedValue } from '../app/listFilter'
 import { MusicNoteIcon, PauseIcon, PlayIcon } from '../components/Icons'
 
 export function AlbumPage({ id }: { id: string }): React.JSX.Element {
   const [album, setAlbum] = useState<AlbumDetail | null>(null)
   const [error, setError] = useState<string | null>(null)
+  // F21: filtro local con debounce (mismo helper que PlaylistPage).
+  const [filter, setFilter] = useState('')
+  const debounced = useDebouncedValue(filter, 150)
   const playTracks = usePlayer((s) => s.playTracks)
   const isPlaying = usePlayer((s) => s.isPlaying)
   const togglePlay = usePlayer((s) => s.togglePlay)
@@ -21,6 +26,7 @@ export function AlbumPage({ id }: { id: string }): React.JSX.Element {
     let cancelled = false
     setAlbum(null)
     setError(null)
+    setFilter('')
     void window.api.music
       .album(id)
       .then((data) => {
@@ -36,6 +42,12 @@ export function AlbumPage({ id }: { id: string }): React.JSX.Element {
 
   const isThisPlaying = isPlaying && album?.tracks.some((t) => t.videoId === current?.videoId)
   const tint = useArtworkColor(album?.thumbnailUrl)
+
+  const filteredTracks = useMemo(() => {
+    if (!album) return []
+    if (!debounced) return album.tracks
+    return album.tracks.filter((t) => matchesTrack(t, debounced))
+  }, [album, debounced])
 
   if (error) {
     return (
@@ -114,13 +126,23 @@ export function AlbumPage({ id }: { id: string }): React.JSX.Element {
           >
             {isThisPlaying ? <PauseIcon size={22} /> : <PlayIcon size={22} />}
           </button>
+          {album.tracks.length > 0 && (
+            <ListSearchInput
+              value={filter}
+              onChange={setFilter}
+              ariaLabel="Buscar en el álbum"
+            />
+          )}
         </div>
         <TrackTable
-          tracks={album.tracks}
+          tracks={filteredTracks}
           showArt={false}
-          onPlayIndex={(i) => void playTracks(album.tracks, i)}
+          onPlayIndex={(i) => void playTracks(filteredTracks, i)}
           onContextMenu={(e, t) => openContextMenu(e, trackMenu(t))}
         />
+        {debounced && album.tracks.length > 0 && filteredTracks.length === 0 && (
+          <div className="empty-state">Sin resultados para «{filter}»</div>
+        )}
       </div>
     </>
   )

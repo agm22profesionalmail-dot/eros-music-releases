@@ -1,15 +1,20 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { PlaylistDetail } from '@shared/types'
 import { TrackTable } from '../components/TrackTable'
+import { ListSearchInput } from '../components/ListSearchInput'
 import { usePlayer } from '../player/store'
 import { openContextMenu } from '../components/ContextMenu'
 import { trackMenu } from '../app/libraryStore'
 import { useArtworkColor } from '../app/artworkColor'
+import { matchesTrack, useDebouncedValue } from '../app/listFilter'
 import { MusicNoteIcon, PauseIcon, PlayIcon } from '../components/Icons'
 
 export function PlaylistPage({ id }: { id: string }): React.JSX.Element {
   const [pl, setPl] = useState<PlaylistDetail | null>(null)
   const [error, setError] = useState<string | null>(null)
+  // F21: filtro local (no persistente) con debounce de 150 ms.
+  const [filter, setFilter] = useState('')
+  const debounced = useDebouncedValue(filter, 150)
   const playTracks = usePlayer((s) => s.playTracks)
   const isPlaying = usePlayer((s) => s.isPlaying)
   const togglePlay = usePlayer((s) => s.togglePlay)
@@ -19,6 +24,7 @@ export function PlaylistPage({ id }: { id: string }): React.JSX.Element {
     let cancelled = false
     setPl(null)
     setError(null)
+    setFilter('') // limpia el filtro al cambiar de playlist
     void window.api.music
       .playlist(id)
       .then((data) => {
@@ -34,6 +40,14 @@ export function PlaylistPage({ id }: { id: string }): React.JSX.Element {
 
   const isThisPlaying = isPlaying && pl?.tracks.some((t) => t.videoId === current?.videoId)
   const tint = useArtworkColor(pl?.thumbnailUrl)
+
+  // Lista efectiva que se pinta y que se usa para reproducir al hacer
+  // click en una fila (cola = lo que ves).
+  const filteredTracks = useMemo(() => {
+    if (!pl) return []
+    if (!debounced) return pl.tracks
+    return pl.tracks.filter((t) => matchesTrack(t, debounced))
+  }, [pl, debounced])
 
   if (error) {
     return (
@@ -102,6 +116,10 @@ export function PlaylistPage({ id }: { id: string }): React.JSX.Element {
         </div>
       </div>
       <div className="detail-body">
+        {/* F21: la fila de acciones incluye ahora el buscador anclado a la
+            derecha con `margin-left: auto`. F22 podrá insertar sus tres
+            botones circulares (+ / ↗ / ✎) justo tras el big-play sin
+            colisionar. */}
         <div className="detail-actions">
           <button
             className={`big-play ${isThisPlaying ? 'is-playing' : ''}`}
@@ -113,14 +131,25 @@ export function PlaylistPage({ id }: { id: string }): React.JSX.Element {
           >
             {isThisPlaying ? <PauseIcon size={22} /> : <PlayIcon size={22} />}
           </button>
+          {/* Hueco reservado para F22 (botones «+ ↗ ✎») */}
+          {pl.tracks.length > 0 && (
+            <ListSearchInput
+              value={filter}
+              onChange={setFilter}
+              ariaLabel="Buscar en la playlist"
+            />
+          )}
         </div>
         <TrackTable
-          tracks={pl.tracks}
+          tracks={filteredTracks}
           showAlbum
-          onPlayIndex={(i) => void playTracks(pl.tracks, i)}
+          onPlayIndex={(i) => void playTracks(filteredTracks, i)}
           onContextMenu={(e, t) => openContextMenu(e, trackMenu(t, { playlistId: id }))}
         />
         {!pl.tracks.length && <div className="empty-state">Esta playlist está vacía</div>}
+        {debounced && pl.tracks.length > 0 && filteredTracks.length === 0 && (
+          <div className="empty-state">Sin resultados para «{filter}»</div>
+        )}
       </div>
     </>
   )
