@@ -167,6 +167,18 @@ export const DEFAULT_PROFILE: UserProfile = {
   enabled: false
 }
 
+// ---------- Descubrimiento (F24) ----------
+
+/**
+ * Resultado del IPC `discovery:surprise`: la pista sugerida y un motivo
+ * corto para mostrar como toast ("Porque escuchas a X", "Radio de Y"…).
+ * `null` significa que no hay semillas suficientes (sin favoritos ni likes).
+ */
+export interface DiscoverySurpriseResult {
+  track: TrackSummary
+  reason: string
+}
+
 // ---------- Géneros (F23) ----------
 
 /**
@@ -231,6 +243,9 @@ export const IPC = {
   PROFILE_CHANGED: 'profile:changed', // main -> todas las ventanas (evento)
   // géneros (F23): resolución con caché SQLite + Last.fm
   GENRE_RESOLVE: 'genre:resolve',
+  // descubrimiento (F24): tarjetas "Sorpréndeme" y "Mix Personal"
+  DISCOVERY_SURPRISE: 'discovery:surprise',
+  DISCOVERY_MIX: 'discovery:mix',
   // control remoto (teclas multimedia globales) main -> renderer
   MEDIA_COMMAND: 'media:command',
   // mini-player y estado de reproducción

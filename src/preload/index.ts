@@ -6,6 +6,7 @@ import type {
   AppSettings,
   ArtistDetail,
   AuthState,
+  DiscoverySurpriseResult,
   GenreResolveResult,
   LibrarySnapshot,
   LyricsData,
@@ -90,6 +91,20 @@ const api = {
      */
     resolve: (tracks: TrackSummary[]): Promise<GenreResolveResult> =>
       ipcRenderer.invoke(IPC.GENRE_RESOLVE, tracks)
+  },
+
+  discovery: {
+    /**
+     * F24 · "Sorpréndeme" — devuelve UNA canción de un artista relacionado
+     * a los favoritos/historial, o `null` si no hay semillas.
+     */
+    surprise: (): Promise<DiscoverySurpriseResult | null> =>
+      ipcRenderer.invoke(IPC.DISCOVERY_SURPRISE),
+    /**
+     * F24 · "Mix Personal" — devuelve ~25 pistas mezclando favoritas,
+     * top de artistas favoritos y recomendaciones. Vacío si no hay semillas.
+     */
+    mix: (): Promise<TrackSummary[]> => ipcRenderer.invoke(IPC.DISCOVERY_MIX)
   },
 
   media: {

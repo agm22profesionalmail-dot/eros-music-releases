@@ -132,6 +132,37 @@ export function registerIpc(getMainWindow: () => BrowserWindow | null): void {
     return resolveGenresForTracks(Array.isArray(tracks) ? tracks : [])
   })
 
+  // ---- Descubrimiento (F24): Sorpréndeme + Mix Personal ----
+  // Ambas rutas leen los favoritos del perfil y los likes de la cuenta; si no
+  // hay ninguno, el renderer muestra un mensaje invitando al usuario a añadir
+  // artistas favoritos en el Perfil.
+  ipcMain.handle(IPC.DISCOVERY_SURPRISE, async () => {
+    const { getSurpriseTrack } = await import('../innertube/discovery')
+    const profile = getProfile()
+    const favs = profile.favoriteArtists ?? []
+    const liked = await lib.getLikedIds().catch(() => [])
+    if (!favs.length && !liked.length) return null
+    return getSurpriseTrack(favs, liked)
+  })
+
+  ipcMain.handle(IPC.DISCOVERY_MIX, async () => {
+    const { getPersonalMixTracks } = await import('../innertube/discovery')
+    const profile = getProfile()
+    const favs = profile.favoriteArtists ?? []
+    // Traemos las pistas completas (no solo ids) para poder meter las favoritas
+    // "tal cual" en el mix — así aparecen aunque el usuario esté offline hasta
+    // la mitad del mix.
+    let likedTracks: TrackSummary[] = []
+    try {
+      const liked = await music.getPlaylist('LM')
+      likedTracks = liked.tracks
+    } catch {
+      likedTracks = []
+    }
+    if (!favs.length && !likedTracks.length) return []
+    return getPersonalMixTracks(favs, likedTracks, 25)
+  })
+
   // ---- Streaming ----
   ipcMain.handle(IPC.STREAM_PREPARE, async (_e, videoId: string): Promise<PreparedStream> => {
     // Descargada -> directo del disco, sin tocar la red (modo offline real)

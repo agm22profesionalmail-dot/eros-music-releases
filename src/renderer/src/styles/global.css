@@ -543,6 +543,123 @@ a:hover {
   margin: 24px 0 12px;
 }
 
+/* ---------- F24 · Home hero (Sorpréndeme + Mix Personal) ---------- */
+.home-hero {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 4px 0 8px;
+}
+
+.hero-card {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  min-height: 160px;
+  padding: 20px 22px;
+  border: 0;
+  border-radius: 12px;
+  color: #fff;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  position: relative;
+  transition:
+    transform 0.25s var(--ease-out),
+    box-shadow 0.25s var(--ease-out),
+    filter 0.2s ease;
+  box-shadow: var(--shadow-card);
+  background: linear-gradient(135deg, var(--accent), var(--accent-press));
+}
+
+/* Un pequeño toque de contraste entre las dos tarjetas: la de "Mix" invierte
+   el degradado para que se noten como dos superficies distintas aun cuando
+   comparten el mismo acento. */
+.hero-card--mix {
+  background: linear-gradient(135deg, var(--accent-press), var(--accent));
+}
+
+.hero-card::after {
+  /* Halo suave arriba a la derecha — remata el estilo tarjeta grande */
+  content: '';
+  position: absolute;
+  top: -40%;
+  right: -20%;
+  width: 60%;
+  height: 180%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.18), transparent 60%);
+  pointer-events: none;
+}
+
+.hero-card:hover:not(:disabled) {
+  transform: scale(1.02);
+  filter: brightness(1.05);
+}
+
+.hero-card:active:not(:disabled) {
+  transform: scale(0.99);
+}
+
+.hero-card:disabled {
+  cursor: progress;
+  filter: brightness(0.9);
+}
+
+.hero-icon {
+  flex: 0 0 auto;
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+}
+
+.hero-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.hero-title {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  line-height: 1.1;
+}
+
+.hero-sub {
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.86);
+}
+
+/* Colapsa a una columna en anchos estrechos (mini-layouts, resize brusco). */
+@media (max-width: 720px) {
+  .home-hero {
+    grid-template-columns: 1fr;
+  }
+  .hero-card {
+    min-height: 128px;
+    padding: 16px 18px;
+  }
+  .hero-icon {
+    width: 56px;
+    height: 56px;
+  }
+  .hero-icon svg {
+    width: 40px;
+    height: 40px;
+  }
+  .hero-title {
+    font-size: 22px;
+  }
+}
+
 /* ---------- Estanterías y tarjetas ---------- */
 .shelf-header {
   display: flex;
