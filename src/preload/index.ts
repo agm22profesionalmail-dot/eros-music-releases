@@ -6,6 +6,7 @@ import type {
   AppSettings,
   ArtistDetail,
   AuthState,
+  GenreResolveResult,
   LibrarySnapshot,
   LyricsData,
   PlaylistDetail,
@@ -79,6 +80,16 @@ const api = {
       ipcRenderer.on(IPC.PROFILE_CHANGED, listener)
       return () => ipcRenderer.removeListener(IPC.PROFILE_CHANGED, listener)
     }
+  },
+
+  genre: {
+    /**
+     * Resuelve géneros para una lista de pistas (F23). El main consulta la
+     * caché SQLite y, si faltan artistas, dispara Last.fm con concurrencia
+     * limitada. Devuelve videoId → géneros y la lista de géneros presentes.
+     */
+    resolve: (tracks: TrackSummary[]): Promise<GenreResolveResult> =>
+      ipcRenderer.invoke(IPC.GENRE_RESOLVE, tracks)
   },
 
   media: {

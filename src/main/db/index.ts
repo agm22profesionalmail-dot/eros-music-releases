@@ -47,6 +47,11 @@ export function getDb(): DatabaseSync {
       thumbnail_data_url TEXT,
       updated_at INTEGER NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS artist_tags (
+      artist_key TEXT PRIMARY KEY,
+      tags_json TEXT NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
   `)
   return db
 }
@@ -234,4 +239,45 @@ export function getAllPlaylistOverrides(): Map<string, PlaylistOverride> {
     if (o) out.set(o.id, o)
   }
   return out
+}
+
+// ---------- Tags por artista (F23) ----------
+//
+// Caché de los tags crudos que devuelve Last.fm por artista, normalizado a
+// minúsculas y sin tildes para casar variaciones como "Rosalía" y "Rosalia".
+// La caché es SQLite (persiste entre sesiones); el módulo `genres/` decide
+// cuándo refrescar y cuándo servir la copia local.
+
+/** Rango de marcas combinantes Unicode U+0300–U+036F (los "acentos" tras NFD). */
+const DIACRITICS_RE = new RegExp('[\\u0300-\\u036f]', 'g')
+
+/** Normaliza el nombre del artista a la clave usada en la caché. */
+export function artistTagKey(name: string): string {
+  return name.normalize('NFD').replace(DIACRITICS_RE, '').toLowerCase().trim()
+}
+
+/** Devuelve los tags cacheados de un artista (o null si nunca se resolvieron). */
+export function getArtistTags(name: string): { tags: string[]; updatedAt: number } | null {
+  const key = artistTagKey(name)
+  if (!key) return null
+  const row = getDb()
+    .prepare('SELECT tags_json, updated_at FROM artist_tags WHERE artist_key = ?')
+    .get(key) as { tags_json: string; updated_at: number } | undefined
+  if (!row) return null
+  try {
+    const tags = JSON.parse(row.tags_json) as string[]
+    if (!Array.isArray(tags)) return null
+    return { tags, updatedAt: row.updated_at }
+  } catch {
+    return null
+  }
+}
+
+/** Guarda o actualiza los tags de un artista en la caché. */
+export function setArtistTags(name: string, tags: string[]): void {
+  const key = artistTagKey(name)
+  if (!key) return
+  getDb()
+    .prepare('INSERT OR REPLACE INTO artist_tags (artist_key, tags_json, updated_at) VALUES (?, ?, ?)')
+    .run(key, JSON.stringify(tags), Date.now())
 }

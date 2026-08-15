@@ -167,6 +167,21 @@ export const DEFAULT_PROFILE: UserProfile = {
   enabled: false
 }
 
+// ---------- Géneros (F23) ----------
+
+/**
+ * Respuesta del IPC `genre:resolve`. El renderer manda una lista de pistas y
+ * recibe la clasificación por bucket (taxonomía fija de 14) junto con la
+ * lista de géneros que realmente aportan una canción, para pintar solo los
+ * chips con contenido.
+ */
+export interface GenreResolveResult {
+  /** videoId → géneros asignados (al menos uno; `Sin género` como fallback). */
+  tracksToGenres: Record<string, string[]>
+  /** Géneros únicos presentes en la lista, ya ordenados por la taxonomía. */
+  availableGenres: string[]
+}
+
 // ---------- Canales IPC ----------
 
 export const IPC = {
@@ -214,6 +229,8 @@ export const IPC = {
   PROFILE_GET: 'profile:get',
   PROFILE_SET: 'profile:set',
   PROFILE_CHANGED: 'profile:changed', // main -> todas las ventanas (evento)
+  // géneros (F23): resolución con caché SQLite + Last.fm
+  GENRE_RESOLVE: 'genre:resolve',
   // control remoto (teclas multimedia globales) main -> renderer
   MEDIA_COMMAND: 'media:command',
   // mini-player y estado de reproducción

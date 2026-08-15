@@ -1981,6 +1981,42 @@ a:hover {
   margin-left: auto;
 }
 
+/* ---------- Filtros de género en playlist (F23) ---------- */
+/* Fila de chips que aparece ENCIMA de la tabla, dentro de `.detail-body`
+   y SOLO en la playlist "Canciones que me gustan". El botón para crear
+   una playlist derivada se ancla a la derecha con `margin-left: auto`. */
+.genre-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0 16px;
+  flex-wrap: wrap;
+}
+
+.genre-bar .genre-create-btn {
+  margin-left: auto;
+  font-size: 13px;
+  padding: 8px 14px;
+}
+
+/* Chip fantasma mientras se resuelve Last.fm — mismo tamaño que un chip
+   real para evitar reflow cuando aparecen los reales. */
+.chip.is-loading {
+  opacity: 0.6;
+  animation: chip-pulse 1.2s ease-in-out infinite;
+  cursor: default;
+}
+
+@keyframes chip-pulse {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
 /* ---------- Perfil (F20) ---------- */
 .profile-page .profile-header {
   display: flex;

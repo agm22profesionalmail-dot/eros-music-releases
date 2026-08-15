@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { PlaylistDetail } from '@shared/types'
+import type { GenreResolveResult, PlaylistDetail } from '@shared/types'
 import { TrackTable } from '../components/TrackTable'
 import { ListSearchInput } from '../components/ListSearchInput'
 import { usePlayer } from '../player/store'
@@ -12,6 +12,26 @@ import { TrackPickerModal } from '../components/TrackPickerModal'
 import { PlaylistEditModal } from '../components/PlaylistEditModal'
 import { pushToast } from '../components/Toast'
 
+/** Género especial que indica "todas": chip siempre visible como reset. */
+const ALL_GENRES = '__all__'
+/** Timeout global del resolvedor de géneros — devuelve lo que haya llegado. */
+const GENRE_RESOLVE_TIMEOUT_MS = 8_000
+
+/**
+ * ¿Es la playlist "Canciones que me gustan"? El id llega como `LM` (rating)
+ * o `VLLM` (browse). En ambos casos empieza por `LM` o `VLLM`.
+ * F23 solo pinta los chips de género en esta lista.
+ */
+function isLikedMusic(id: string): boolean {
+  if (!id) return false
+  return id.startsWith('LM') || id.startsWith('VLLM')
+}
+
+/** Clave localStorage para recordar el último chip por playlist. */
+function activeGenreKey(id: string): string {
+  return `ml.genres.lastActive.${id}`
+}
+
 export function PlaylistPage({ id }: { id: string }): React.JSX.Element {
   const [pl, setPl] = useState<PlaylistDetail | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -21,11 +41,18 @@ export function PlaylistPage({ id }: { id: string }): React.JSX.Element {
   // F22: modales de acción (añadir canciones / editar).
   const [showPicker, setShowPicker] = useState(false)
   const [showEdit, setShowEdit] = useState(false)
+  // F23: género activo (chip). `ALL_GENRES` = sin filtro.
+  const [activeGenre, setActiveGenre] = useState<string>(ALL_GENRES)
+  // F23: mapa de géneros resueltos y estado de carga.
+  const [genres, setGenres] = useState<GenreResolveResult | null>(null)
+  const [genresLoading, setGenresLoading] = useState(false)
   const playTracks = usePlayer((s) => s.playTracks)
   const isPlaying = usePlayer((s) => s.isPlaying)
   const togglePlay = usePlayer((s) => s.togglePlay)
   const current = usePlayer((s) => s.current())
   const refreshLibrary = useLibrary((s) => s.refresh)
+
+  const isLiked = isLikedMusic(id)
 
   // Recarga la playlist actual (tras editar/añadir) sin salir de la vista.
   const reload = async (): Promise<void> => {
@@ -42,6 +69,15 @@ export function PlaylistPage({ id }: { id: string }): React.JSX.Element {
     setPl(null)
     setError(null)
     setFilter('') // limpia el filtro al cambiar de playlist
+    setGenres(null)
+    setGenresLoading(false)
+    // Recupera el último chip usado para esta playlist (F23).
+    try {
+      const saved = localStorage.getItem(activeGenreKey(id))
+      setActiveGenre(saved && saved.length ? saved : ALL_GENRES)
+    } catch {
+      setActiveGenre(ALL_GENRES)
+    }
     void window.api.music
       .playlist(id)
       .then((data) => {
@@ -55,16 +91,70 @@ export function PlaylistPage({ id }: { id: string }): React.JSX.Element {
     }
   }, [id])
 
+  // F23: al cargar las pistas de "Canciones que me gustan", resuelve géneros.
+  // Timeout global de 8 s: si tarda más, mostramos lo que se haya podido
+  // resolver (el backend responde con lo cacheado + lo que dio tiempo a
+  // consultar; aquí el timeout es solo por si el IPC entero se cuelga).
+  useEffect(() => {
+    if (!isLiked || !pl?.tracks?.length) return
+    let cancelled = false
+    setGenresLoading(true)
+    const tid = setTimeout(() => {
+      if (!cancelled) setGenresLoading(false)
+    }, GENRE_RESOLVE_TIMEOUT_MS)
+    window.api.genre
+      .resolve(pl.tracks)
+      .then((res) => {
+        if (cancelled) return
+        setGenres(res)
+        setGenresLoading(false)
+      })
+      .catch(() => {
+        if (cancelled) return
+        setGenres({ tracksToGenres: {}, availableGenres: [] })
+        setGenresLoading(false)
+      })
+      .finally(() => clearTimeout(tid))
+    return () => {
+      cancelled = true
+      clearTimeout(tid)
+    }
+  }, [isLiked, pl])
+
+  // Persiste el chip elegido por playlist.
+  useEffect(() => {
+    if (!isLiked) return
+    try {
+      if (activeGenre === ALL_GENRES) localStorage.removeItem(activeGenreKey(id))
+      else localStorage.setItem(activeGenreKey(id), activeGenre)
+    } catch {
+      /* localStorage sin permisos: silencio */
+    }
+  }, [activeGenre, id, isLiked])
+
   const isThisPlaying = isPlaying && pl?.tracks.some((t) => t.videoId === current?.videoId)
   const tint = useArtworkColor(pl?.thumbnailUrl)
 
+  // Chips a pintar: solo los géneros que tienen ≥1 canción en la lista.
+  // Si el género activo desaparece (p. ej. la playlist cambió), cae a ALL.
+  const availableGenres = isLiked ? genres?.availableGenres ?? [] : []
+  const effectiveGenre =
+    activeGenre === ALL_GENRES || availableGenres.includes(activeGenre)
+      ? activeGenre
+      : ALL_GENRES
+
   // Lista efectiva que se pinta y que se usa para reproducir al hacer
-  // click en una fila (cola = lo que ves).
+  // click en una fila (cola = lo que ves). F23: primero filtra por género,
+  // luego por texto.
   const filteredTracks = useMemo(() => {
     if (!pl) return []
-    if (!debounced) return pl.tracks
-    return pl.tracks.filter((t) => matchesTrack(t, debounced))
-  }, [pl, debounced])
+    let list = pl.tracks
+    if (isLiked && effectiveGenre !== ALL_GENRES && genres) {
+      list = list.filter((t) => genres.tracksToGenres[t.videoId]?.includes(effectiveGenre))
+    }
+    if (debounced) list = list.filter((t) => matchesTrack(t, debounced))
+    return list
+  }, [pl, debounced, isLiked, effectiveGenre, genres])
 
   if (error) {
     return (
@@ -105,6 +195,20 @@ export function PlaylistPage({ id }: { id: string }): React.JSX.Element {
       pushToast('Enlace copiado')
     } catch {
       pushToast('No se pudo copiar el enlace')
+    }
+  }
+
+  // F23: crea una playlist con el subconjunto filtrado por género.
+  const createGenrePlaylist = async (): Promise<void> => {
+    if (effectiveGenre === ALL_GENRES) return
+    const videoIds = filteredTracks.map((t) => t.videoId)
+    if (!videoIds.length) return
+    try {
+      await window.api.library.playlistCreate(`Me gusta · ${effectiveGenre}`, videoIds)
+      pushToast('Playlist creada')
+      void refreshLibrary()
+    } catch {
+      pushToast('No se pudo crear la playlist')
     }
   }
 
@@ -207,6 +311,47 @@ export function PlaylistPage({ id }: { id: string }): React.JSX.Element {
             />
           )}
         </div>
+        {/* F23: fila de chips de género + botón "Crear playlist con [Género]".
+            Solo se pinta en "Canciones que me gustan" y solo cuando ya hay
+            resolución (o un skeleton mientras se carga). */}
+        {isLiked && pl.tracks.length > 0 && (
+          <div className="genre-bar" aria-label="Filtro por género">
+            {genresLoading && !genres ? (
+              <span className="chip is-loading" aria-busy="true">
+                Cargando géneros…
+              </span>
+            ) : (
+              <>
+                <button
+                  className={`chip ${effectiveGenre === ALL_GENRES ? 'active-accent' : ''}`}
+                  onClick={() => setActiveGenre(ALL_GENRES)}
+                  aria-pressed={effectiveGenre === ALL_GENRES}
+                >
+                  Todos
+                </button>
+                {availableGenres.map((g) => (
+                  <button
+                    key={g}
+                    className={`chip ${effectiveGenre === g ? 'active-accent' : ''}`}
+                    onClick={() => setActiveGenre(g)}
+                    aria-pressed={effectiveGenre === g}
+                  >
+                    {g}
+                  </button>
+                ))}
+                {effectiveGenre !== ALL_GENRES && filteredTracks.length > 0 && (
+                  <button
+                    className="btn btn-secondary genre-create-btn"
+                    onClick={() => void createGenrePlaylist()}
+                    title={`Crear una playlist nueva con las ${filteredTracks.length} canciones de ${effectiveGenre}`}
+                  >
+                    Crear playlist con {effectiveGenre}
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+        )}
         <TrackTable
           tracks={filteredTracks}
           showAlbum
@@ -217,6 +362,15 @@ export function PlaylistPage({ id }: { id: string }): React.JSX.Element {
         {debounced && pl.tracks.length > 0 && filteredTracks.length === 0 && (
           <div className="empty-state">Sin resultados para «{filter}»</div>
         )}
+        {isLiked &&
+          !debounced &&
+          effectiveGenre !== ALL_GENRES &&
+          pl.tracks.length > 0 &&
+          filteredTracks.length === 0 && (
+            <div className="empty-state">
+              Ninguna canción encaja en «{effectiveGenre}»
+            </div>
+          )}
       </div>
 
       {showPicker && (

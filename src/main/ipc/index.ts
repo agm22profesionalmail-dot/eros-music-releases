@@ -123,6 +123,15 @@ export function registerIpc(getMainWindow: () => BrowserWindow | null): void {
     return merged
   })
 
+  // ---- Géneros (F23) ----
+  // La UI manda las pistas visibles y recibe un mapa videoId→géneros más la
+  // lista de géneros presentes. La resolución usa caché en SQLite y consulta
+  // Last.fm solo cuando falta información.
+  ipcMain.handle(IPC.GENRE_RESOLVE, async (_e, tracks: TrackSummary[]) => {
+    const { resolveGenresForTracks } = await import('../genres')
+    return resolveGenresForTracks(Array.isArray(tracks) ? tracks : [])
+  })
+
   // ---- Streaming ----
   ipcMain.handle(IPC.STREAM_PREPARE, async (_e, videoId: string): Promise<PreparedStream> => {
     // Descargada -> directo del disco, sin tocar la red (modo offline real)
