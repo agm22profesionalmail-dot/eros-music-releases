@@ -319,6 +319,60 @@ function HomeShelvesEditor(): React.JSX.Element {
   )
 }
 
+/**
+ * F33 · Sección "Red". Botón "Probar conexión" que hace un HEAD/GET simple
+ * a `generate_204` (200 sin cuerpo) para validar que el proxy configurado
+ * deja pasar el tráfico. Se ejecuta desde el renderer, así que sale por la
+ * sesión por defecto de Electron — la misma a la que se aplica el proxy.
+ */
+function ProxyTestButton(): React.JSX.Element {
+  const [msg, setMsg] = useState<string | null>(null)
+  const [pending, setPending] = useState(false)
+
+  const run = async (): Promise<void> => {
+    setPending(true)
+    setMsg('Comprobando…')
+    try {
+      const controller = new AbortController()
+      const timer = setTimeout(() => controller.abort(), 8000)
+      const res = await fetch('https://www.google.com/generate_204', {
+        method: 'GET',
+        cache: 'no-store',
+        signal: controller.signal
+      })
+      clearTimeout(timer)
+      // 204 es el esperado; cualquier 2xx/3xx también vale como "hay red"
+      if (res.status === 204 || (res.status >= 200 && res.status < 400)) {
+        setMsg(`OK (HTTP ${res.status})`)
+      } else {
+        setMsg(`Error HTTP ${res.status}`)
+      }
+    } catch (e) {
+      setMsg(`Error: ${String((e as Error)?.message ?? e)}`)
+    } finally {
+      setPending(false)
+    }
+  }
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+      <button className="btn btn-secondary" onClick={() => void run()} disabled={pending}>
+        {pending ? 'Probando…' : 'Probar conexión'}
+      </button>
+      {msg && (
+        <span
+          style={{
+            fontSize: 12,
+            color: msg.startsWith('OK') ? 'var(--accent)' : 'var(--text-secondary)'
+          }}
+        >
+          {msg}
+        </span>
+      )}
+    </div>
+  )
+}
+
 export function SettingsPage(): React.JSX.Element {
   const { settings, update } = useSettings()
   const auth = useAuth((s) => s.state)
@@ -1029,6 +1083,53 @@ export function SettingsPage(): React.JSX.Element {
           checked={settings.pauseOnAudioDeviceChange}
           onChange={(e) => void update({ pauseOnAudioDeviceChange: e.target.checked })}
         />
+      </Row>
+
+      <h2>Red</h2>
+      <p style={{ color: 'var(--text-subdued)', fontSize: 12, padding: '0 0 8px' }}>
+        Aplica a InnerTube, descargas y toda la red de la app.
+      </p>
+      <Row label="Modo de proxy">
+        {(
+          [
+            ['off', 'Desactivado'],
+            ['system', 'Sistema'],
+            ['http', 'HTTP'],
+            ['socks5', 'SOCKS5']
+          ] as const
+        ).map(([value, label]) => (
+          <button
+            key={value}
+            className={`chip ${settings.proxyMode === value ? 'active' : ''}`}
+            onClick={() => void update({ proxyMode: value })}
+          >
+            {label}
+          </button>
+        ))}
+      </Row>
+      <Row label="Servidor proxy">
+        <input
+          type="text"
+          value={settings.proxyUrl}
+          disabled={settings.proxyMode !== 'http' && settings.proxyMode !== 'socks5'}
+          placeholder="usuario:pass@host:puerto  o  host:puerto"
+          onChange={(e) => void update({ proxyUrl: e.target.value })}
+          onBlur={(e) => void update({ proxyUrl: e.target.value.trim() })}
+          style={{
+            flex: 1,
+            minWidth: 220,
+            maxWidth: 360,
+            padding: '8px 10px',
+            borderRadius: 6,
+            border: '1px solid var(--divider)',
+            background: 'var(--bg-elevated)',
+            color: 'var(--text-primary)',
+            fontSize: 13
+          }}
+        />
+      </Row>
+      <Row label="Probar conexión saliente (Google 204)">
+        <ProxyTestButton />
       </Row>
     </div>
   )

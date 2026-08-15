@@ -4,6 +4,7 @@ import { existsSync } from 'fs'
 import { join } from 'path'
 import { sessionManager } from '../innertube/session'
 import { getAllSettings } from '../settings'
+import { ytDlpProxyArgs } from '../net/proxy'
 
 /**
  * Resuelve videoId -> URL directa de audio de googlevideo.
@@ -189,7 +190,13 @@ function resolveWithYtDlp(videoId: string): Promise<ResolvedStream> {
   return new Promise((resolve, reject) => {
     const proc = spawn(
       ytDlpBin(),
-      ['-f', 'bestaudio', '--no-playlist', '-j', `https://music.youtube.com/watch?v=${videoId}`],
+      [
+        '-f', 'bestaudio',
+        '--no-playlist',
+        '-j',
+        ...ytDlpProxyArgs(),
+        `https://music.youtube.com/watch?v=${videoId}`
+      ],
       { windowsHide: true }
     )
     let out = ''

@@ -485,6 +485,23 @@ export interface AppSettings {
    * fila de selecciones rápidas.
    */
   homeQuickPicks: string[]
+
+  // ---------- F33 · Proxy HTTP/SOCKS ----------
+
+  /**
+   * Modo de proxy aplicado a `session.defaultSession` y propagado a yt-dlp:
+   *   - `off`     — sin proxy (comportamiento por defecto).
+   *   - `system`  — usa la configuración de proxy del sistema operativo.
+   *   - `http`    — proxy HTTP explícito (ver `proxyUrl`).
+   *   - `socks5`  — proxy SOCKS5 explícito (ver `proxyUrl`).
+   */
+  proxyMode: 'off' | 'system' | 'http' | 'socks5'
+  /**
+   * URL del proxy cuando `proxyMode` es `http` o `socks5`. Se admite el
+   * esquema (`http://`, `socks5://`) pero se ignora al aplicar — la parte
+   * útil es `usuario:password@host:puerto` o `host:puerto`.
+   */
+  proxyUrl: string
 }
 
 /**
@@ -601,7 +618,10 @@ export const DEFAULT_SETTINGS: AppSettings = {
   homeShuffleShelves: false,
   homeShelvesOrder: [],
   homeHiddenShelves: [],
-  homeQuickPicks: DEFAULT_HOME_QUICK_PICKS
+  homeQuickPicks: DEFAULT_HOME_QUICK_PICKS,
+  // F33 · proxy desactivado por defecto
+  proxyMode: 'off',
+  proxyUrl: ''
 }
 
 export interface LyricWord {

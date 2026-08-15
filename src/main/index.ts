@@ -327,7 +327,7 @@ if (!gotTheLock) {
     }
   })
 
-  app.whenReady().then(() => {
+  app.whenReady().then(async () => {
     electronApp.setAppUserModelId('com.zero.metrolistpc')
 
     // F22: registro del protocolo `metrolist://` para deep-links.
@@ -346,6 +346,11 @@ if (!gotTheLock) {
     }
 
     ipcMain.handle('app:ping', () => 'pong')
+
+    // F33 · aplica el proxy configurado (o direct) antes de que se dispare
+    // cualquier `net.fetch` de la sesión por defecto.
+    const { applyProxyFromSettings } = await import('./net/proxy')
+    await applyProxyFromSettings()
 
     registerIpc(() => mainWindow)
 

@@ -129,6 +129,16 @@ export function registerIpc(getMainWindow: () => BrowserWindow | null): void {
       const { clearStreamCache } = await import('../stream/resolver')
       clearStreamCache()
     }
+    // F33 · Al cambiar el modo o la URL del proxy, reaplícalo a la sesión
+    // por defecto (afecta a `net.fetch` desde el main y a las peticiones
+    // del renderer) y limpia la caché de streams — las URLs de googlevideo
+    // están ligadas a la IP saliente, así que hay que re-resolver.
+    if ('proxyMode' in patch || 'proxyUrl' in patch) {
+      const { applyProxyFromSettings } = await import('../net/proxy')
+      await applyProxyFromSettings()
+      const { clearStreamCache } = await import('../stream/resolver')
+      clearStreamCache()
+    }
     // Notifica a todas las ventanas (la principal Y el mini) para que
     // tema/acento se mantengan sincronizados en vivo.
     for (const w of BrowserWindow.getAllWindows()) {

@@ -3,6 +3,7 @@ import { spawn } from 'child_process'
 import { existsSync, promises as fs } from 'fs'
 import { join } from 'path'
 import { recordDownload, removeDownload, readDownloads, getDownloadPath, getSetting } from '../db'
+import { ytDlpProxyArgs } from '../net/proxy'
 import type { TrackSummary } from '@shared/types'
 
 /**
@@ -152,6 +153,7 @@ function ytDlpDownload(
         '--newline',
         '--no-part',
         '-o', outTemplate,
+        ...ytDlpProxyArgs(),
         `https://music.youtube.com/watch?v=${videoId}`
       ],
       { windowsHide: true }
