@@ -114,12 +114,16 @@ export function registerIpc(getMainWindow: () => BrowserWindow | null): void {
 
   // ---- Perfil de usuario (F20) ----
   ipcMain.handle(IPC.PROFILE_GET, () => getProfile())
-  ipcMain.handle(IPC.PROFILE_SET, (_e, patch: Partial<UserProfile>) => {
+  ipcMain.handle(IPC.PROFILE_SET, async (_e, patch: Partial<UserProfile>) => {
     const merged = setProfile(patch)
     // Notifica a todas las ventanas para que el avatar/nombre se actualicen en vivo
     for (const w of BrowserWindow.getAllWindows()) {
       w.webContents.send(IPC.PROFILE_CHANGED, merged)
     }
+    // F25 · refresca la presencia de Discord con la última info conocida
+    // (foto/nombre nuevos aparecen sin esperar a la siguiente canción).
+    const { refreshDiscordPresence } = await import('../integrations/discord')
+    await refreshDiscordPresence()
     return merged
   })
 

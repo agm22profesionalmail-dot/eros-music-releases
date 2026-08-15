@@ -220,6 +220,11 @@ export function ProfilePage(): React.JSX.Element {
             Cuando esté activo, tu foto y nombre sustituyen a los de Google en la barra
             superior y en Discord.
           </div>
+          {/* F25 · nota informativa sobre Discord Rich Presence */}
+          <div style={{ color: 'var(--text-subdued)', fontSize: 12, marginTop: 4 }}>
+            Si activas Discord Rich Presence en Ajustes, se mostrará esta foto y este
+            nombre en tu perfil de Discord mientras escuches música.
+          </div>
         </div>
         <input
           type="checkbox"
