@@ -1,3 +1,4 @@
+import { BrowserWindow } from 'electron'
 import { sessionManager } from './session'
 import { getLibrary } from './api'
 import {
@@ -8,12 +9,30 @@ import {
   setPlaylistOverride,
   getPlaylistOverride
 } from '../db'
-import type {
-  LibrarySnapshot,
-  PlaylistEditPatch,
-  PlaylistOverride,
-  TrackSummary
+import {
+  IPC,
+  type LibrarySnapshot,
+  type PlaylistEditPatch,
+  type PlaylistOverride,
+  type TrackSummary
 } from '@shared/types'
+
+/**
+ * Notifica a todas las ventanas que la biblioteca cambió tras una escritura
+ * (crear/editar/borrar playlist, like, suscripción). El renderer se resuscribe
+ * a `library.onChanged` y dispara `useLibrary.load()` para refrescar la UI sin
+ * intervención del usuario. Es un aviso — no espera a que `refreshLibrary()`
+ * termine su red porque `load()` ya lee la caché SQLite recién actualizada.
+ */
+function notifyLibraryChanged(reason: string): void {
+  for (const w of BrowserWindow.getAllWindows()) {
+    try {
+      w.webContents.send(IPC.LIB_CHANGED, { reason })
+    } catch {
+      /* ventana cerrándose */
+    }
+  }
+}
 
 /**
  * Biblioteca con caché: sirve al instante la última instantánea guardada en
@@ -69,6 +88,9 @@ export async function setTrackRating(videoId: string, action: LikeAction): Promi
     client: 'YTMUSIC',
     target: { videoId }
   } as never)
+  // Los "me gusta" también forman parte de la biblioteca (playlist LM) y del
+  // panel de corazones — notificamos para que la UI se resuscribe sin refresh.
+  notifyLibraryChanged('rate')
 }
 
 /** IDs de las canciones con "Me gusta" (playlist LM), para hidratar los corazones. */
@@ -85,19 +107,25 @@ export async function getLikedIds(): Promise<string[]> {
 export async function addToPlaylist(playlistId: string, videoIds: string[]): Promise<void> {
   const yt = await sessionManager.get()
   await yt.playlist.addVideos(normalizePlaylistId(playlistId), videoIds)
-  void refreshLibrary().catch(() => undefined)
+  void refreshLibrary()
+    .catch(() => undefined)
+    .finally(() => notifyLibraryChanged('playlistAdd'))
 }
 
 export async function removeFromPlaylist(playlistId: string, videoIds: string[]): Promise<void> {
   const yt = await sessionManager.get()
   await yt.playlist.removeVideos(normalizePlaylistId(playlistId), videoIds)
-  void refreshLibrary().catch(() => undefined)
+  void refreshLibrary()
+    .catch(() => undefined)
+    .finally(() => notifyLibraryChanged('playlistRemove'))
 }
 
 export async function createPlaylist(title: string, videoIds: string[]): Promise<string | null> {
   const yt = await sessionManager.get()
   const res = await yt.playlist.create(title, videoIds)
-  void refreshLibrary().catch(() => undefined)
+  void refreshLibrary()
+    .catch(() => undefined)
+    .finally(() => notifyLibraryChanged('playlistCreate'))
   return (res as { playlist_id?: string })?.playlist_id ?? null
 }
 
@@ -145,7 +173,9 @@ export async function editPlaylist(
 
   // Invalida la caché para que el próximo `getLibrary()` traiga datos frescos
   // y aplique los overrides encima.
-  void refreshLibrary().catch(() => undefined)
+  void refreshLibrary()
+    .catch(() => undefined)
+    .finally(() => notifyLibraryChanged('playlistEdit'))
   return { remoteTitleOk, override }
 }
 
@@ -158,7 +188,9 @@ export async function setSubscribed(channelId: string, subscribed: boolean): Pro
   const yt = await sessionManager.get()
   if (subscribed) await yt.interact.subscribe(channelId)
   else await yt.interact.unsubscribe(channelId)
-  void refreshLibrary().catch(() => undefined)
+  void refreshLibrary()
+    .catch(() => undefined)
+    .finally(() => notifyLibraryChanged('subscribe'))
 }
 
 /** Los browseId de playlist llegan como VLPL...; la API de escritura quiere PL... */

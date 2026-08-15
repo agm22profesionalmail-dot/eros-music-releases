@@ -171,7 +171,9 @@ export function ProfilePage(): React.JSX.Element {
       <div className="profile-header">
         <div className="profile-avatar">
           {displayed ? (
-            <img src={displayed} alt="" />
+            // F22c · `key` fuerza remount cuando cambia la fuente (perfil
+            // custom on/off, foto nueva subida) — evita cache visual del <img>.
+            <img key={displayed} src={displayed} alt="" />
           ) : (
             <span className="ph">
               <PersonIcon size={72} />

@@ -160,7 +160,17 @@ const api = {
       ipcRenderer.invoke(IPC.LIB_PLAYLIST_EDIT, id, patch),
     subscribe: (channelId: string, subscribed: boolean): Promise<void> =>
       ipcRenderer.invoke(IPC.LIB_SUBSCRIBE, channelId, subscribed),
-    likedIds: (): Promise<string[]> => ipcRenderer.invoke(IPC.LIB_LIKED_IDS)
+    likedIds: (): Promise<string[]> => ipcRenderer.invoke(IPC.LIB_LIKED_IDS),
+    /**
+     * Suscripción a cambios de la biblioteca (F22c). El main lo emite tras
+     * cualquier escritura (crear/editar playlist, like, suscribir). Devuelve
+     * un cleanup que quita el listener.
+     */
+    onChanged: (cb: (payload: { reason: string }) => void): (() => void) => {
+      const listener = (_e: unknown, payload: { reason: string }): void => cb(payload)
+      ipcRenderer.on(IPC.LIB_CHANGED, listener)
+      return () => ipcRenderer.removeListener(IPC.LIB_CHANGED, listener)
+    }
   },
 
   history: {

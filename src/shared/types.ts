@@ -224,6 +224,8 @@ export const IPC = {
   LIB_PLAYLIST_EDIT: 'library:playlistEdit',
   LIB_SUBSCRIBE: 'library:subscribe',
   LIB_LIKED_IDS: 'library:likedIds',
+  /** main -> renderer: la biblioteca cambió (crear/editar playlist, like, sub…) */
+  LIB_CHANGED: 'library:changed',
   HISTORY_ADD: 'history:add',
   HISTORY_LIST: 'history:list',
   // descargas

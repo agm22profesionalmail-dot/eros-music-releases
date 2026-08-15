@@ -130,23 +130,31 @@ export default function App(): React.JSX.Element {
                 >
                   <SettingsIcon size={18} />
                 </button>
-                {auth.status === 'signedIn' ? (
-                  <button
-                    className="avatar-btn"
-                    title={
-                      (profile.enabled ? profile.displayName : auth.accountName) || 'Perfil'
-                    }
-                    onClick={() => navigate({ name: 'profile' })}
-                  >
-                    {profile.enabled && profile.photoDataUrl ? (
-                      <img src={profile.photoDataUrl} alt="" />
-                    ) : auth.accountPhotoUrl ? (
-                      <img src={auth.accountPhotoUrl} alt="" />
-                    ) : (
-                      <PersonIcon size={18} />
-                    )}
-                  </button>
-                ) : (
+                {auth.status === 'signedIn' ? (() => {
+                  // F22c · La foto efectiva depende de si el perfil personalizado
+                  // está activo. Usamos `key` para forzar remount del <img>
+                  // cuando cambia — de otro modo React reutiliza el nodo y
+                  // el navegador puede mantener la imagen anterior cacheada.
+                  const effectivePhotoUrl =
+                    profile.enabled && profile.photoDataUrl
+                      ? profile.photoDataUrl
+                      : auth.accountPhotoUrl
+                  return (
+                    <button
+                      className="avatar-btn"
+                      title={
+                        (profile.enabled ? profile.displayName : auth.accountName) || 'Perfil'
+                      }
+                      onClick={() => navigate({ name: 'profile' })}
+                    >
+                      {effectivePhotoUrl ? (
+                        <img key={effectivePhotoUrl} src={effectivePhotoUrl} alt="" />
+                      ) : (
+                        <PersonIcon size={18} />
+                      )}
+                    </button>
+                  )
+                })() : (
                   <button
                     className="btn btn-primary"
                     style={{ padding: '8px 20px' }}

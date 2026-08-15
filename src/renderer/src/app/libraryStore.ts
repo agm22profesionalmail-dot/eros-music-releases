@@ -65,6 +65,19 @@ export const useLibrary = create<LibraryState>((set, get) => ({
   clear: () => set({ library: null, likedIds: new Set() })
 }))
 
+// -------------------------------------------------------------
+// F22c · Reactividad live: el main emite `library:changed` tras
+// cualquier escritura (crear/editar playlist, like, suscripción).
+// Nos resuscribimos UNA sola vez al arrancar el módulo — patrón
+// paralelo al de settingsStore. `load()` no dispara el evento
+// (solo lee), así que no hay bucle.
+// -------------------------------------------------------------
+if (typeof window !== 'undefined' && window.api?.library?.onChanged) {
+  window.api.library.onChanged(() => {
+    void useLibrary.getState().load()
+  })
+}
+
 /** Menú contextual estándar de una pista. */
 export function trackMenu(track: TrackSummary, opts?: { playlistId?: string }): MenuItem[] {
   const player = usePlayer.getState()
