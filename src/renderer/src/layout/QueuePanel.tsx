@@ -1,8 +1,10 @@
 import { usePlayer } from '../player/store'
 import { CloseIcon, MusicNoteIcon } from '../components/Icons'
 import { openContextMenu } from '../components/ContextMenu'
+import { useT } from '../app/i18n'
 
 export function QueuePanel({ onClose }: { onClose: () => void }): React.JSX.Element {
+  const t = useT()
   const queue = usePlayer((s) => s.queue)
   const index = usePlayer((s) => s.index)
   const current = usePlayer((s) => s.current())
@@ -13,15 +15,15 @@ export function QueuePanel({ onClose }: { onClose: () => void }): React.JSX.Elem
   return (
     <aside className="queue-panel">
       <div className="qp-header">
-        <span>Cola</span>
-        <button className="icon-btn" onClick={onClose} aria-label="Cerrar cola">
+        <span>{t('queue.title')}</span>
+        <button className="icon-btn" onClick={onClose} aria-label={t('queue.close')}>
           <CloseIcon size={16} />
         </button>
       </div>
       <div className="qp-list">
         {current && (
           <>
-            <div className="qp-section">Reproduciendo</div>
+            <div className="qp-section">{t('queue.playing')}</div>
             <div className="library-row active">
               {current.thumbnailUrl ? (
                 <img src={current.thumbnailUrl} alt="" />
@@ -39,7 +41,7 @@ export function QueuePanel({ onClose }: { onClose: () => void }): React.JSX.Elem
             </div>
           </>
         )}
-        {upcoming.length > 0 && <div className="qp-section">A continuación</div>}
+        {upcoming.length > 0 && <div className="qp-section">{t('queue.next')}</div>}
         {upcoming.map((item) => (
           <button
             key={item.queueId}
@@ -51,13 +53,13 @@ export function QueuePanel({ onClose }: { onClose: () => void }): React.JSX.Elem
             onContextMenu={(e) =>
               openContextMenu(e, [
                 {
-                  label: 'Reproducir ya',
+                  label: t('queue.playNow'),
                   action: () => {
                     const idx = queue.findIndex((q) => q.queueId === item.queueId)
                     if (idx >= 0) void usePlayer.getState().playTracks(queue, idx)
                   }
                 },
-                { label: 'Quitar de la cola', action: () => removeFromQueue(item.queueId) }
+                { label: t('queue.remove'), action: () => removeFromQueue(item.queueId) }
               ])
             }
           >
@@ -76,7 +78,7 @@ export function QueuePanel({ onClose }: { onClose: () => void }): React.JSX.Elem
         ))}
         {!current && !upcoming.length && (
           <div className="empty-state" style={{ fontSize: 13 }}>
-            La cola está vacía
+            {t('queue.empty')}
           </div>
         )}
       </div>

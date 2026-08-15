@@ -26,6 +26,7 @@ import { useAmbient } from './app/ambientStore'
 import { initMediaIntegration } from './player/mediaSession'
 import { useRouter } from './app/router'
 import { useAuth } from './app/authStore'
+import { useT } from './app/i18n'
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -35,6 +36,7 @@ import {
 } from './components/Icons'
 
 export default function App(): React.JSX.Element {
+  const t = useT()
   const route = useRouter((s) => s.route())
   const navigate = useRouter((s) => s.navigate)
   const back = useRouter((s) => s.back)
@@ -96,7 +98,7 @@ export default function App(): React.JSX.Element {
                 className="nav-circle"
                 disabled={!canBack}
                 onClick={back}
-                aria-label="Atrás"
+                aria-label={t('nav.back')}
               >
                 <ChevronLeftIcon size={18} />
               </button>
@@ -104,7 +106,7 @@ export default function App(): React.JSX.Element {
                 className="nav-circle"
                 disabled={!canForward}
                 onClick={forward}
-                aria-label="Adelante"
+                aria-label={t('nav.forward')}
               >
                 <ChevronRightIcon size={18} />
               </button>
@@ -116,7 +118,7 @@ export default function App(): React.JSX.Element {
                   </span>
                   <input
                     autoFocus
-                    placeholder="¿Qué quieres reproducir?"
+                    placeholder={t('nav.searchPlaceholder')}
                     value={searchText}
                     onChange={(e) => setSearchText(e.target.value)}
                   />
@@ -126,7 +128,7 @@ export default function App(): React.JSX.Element {
               <div className="topbar-right">
                 <button
                   className="avatar-btn"
-                  title="Ajustes"
+                  title={t('nav.settings')}
                   onClick={() => navigate({ name: 'settings' })}
                 >
                   <SettingsIcon size={18} />
@@ -144,7 +146,7 @@ export default function App(): React.JSX.Element {
                     <button
                       className="avatar-btn"
                       title={
-                        (profile.enabled ? profile.displayName : auth.accountName) || 'Perfil'
+                        (profile.enabled ? profile.displayName : auth.accountName) || t('nav.profile')
                       }
                       onClick={() => navigate({ name: 'profile' })}
                     >
@@ -161,7 +163,7 @@ export default function App(): React.JSX.Element {
                     style={{ padding: '8px 20px' }}
                     onClick={() => navigate({ name: 'home' })}
                   >
-                    {auth.status === 'pendingDeviceCode' ? 'Vinculando…' : 'Iniciar sesión'}
+                    {auth.status === 'pendingDeviceCode' ? t('nav.linking') : t('nav.signIn')}
                   </button>
                 )}
               </div>

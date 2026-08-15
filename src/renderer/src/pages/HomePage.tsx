@@ -8,13 +8,14 @@ import { useAuth } from '../app/authStore'
 import { useRouter } from '../app/router'
 import { pushToast } from '../components/Toast'
 import { useSettings } from '../app/settingsStore'
+import { useT } from '../app/i18n'
 
-function greeting(): string {
+function greetingKey(): string {
   const h = new Date().getHours()
-  if (h < 7) return 'Buenas noches'
-  if (h < 14) return 'Buenos días'
-  if (h < 21) return 'Buenas tardes'
-  return 'Buenas noches'
+  if (h < 7) return 'home.greeting.evening'
+  if (h < 14) return 'home.greeting.morning'
+  if (h < 21) return 'home.greeting.afternoon'
+  return 'home.greeting.evening'
 }
 
 /** Convierte una tarjeta reproducible en TrackSummary mínimo para la cola. */
@@ -35,6 +36,7 @@ export function cardToTrack(card: MediaCard): TrackSummary {
  * cargando y evita doble click accidental.
  */
 function HomeHero(): React.JSX.Element {
+  const t = useT()
   const playTracks = usePlayer((s) => s.playTracks)
   const navigate = useRouter((s) => s.navigate)
   const [surpriseLoading, setSurpriseLoading] = useState(false)
@@ -46,14 +48,14 @@ function HomeHero(): React.JSX.Element {
     try {
       const s = await window.api.discovery.surprise()
       if (!s || !s.track) {
-        pushToast('Añade algunos artistas favoritos primero')
+        pushToast(t('home.toast.surpriseNoSeeds'))
         navigate({ name: 'profile' })
         return
       }
       pushToast(s.reason)
       await playTracks([s.track])
     } catch {
-      pushToast('No pude generar la sorpresa ahora')
+      pushToast(t('home.toast.surpriseError'))
     } finally {
       setSurpriseLoading(false)
     }
@@ -65,13 +67,13 @@ function HomeHero(): React.JSX.Element {
     try {
       const tracks = await window.api.discovery.mix()
       if (!tracks?.length) {
-        pushToast('Añade artistas favoritos o dale a "me gusta" a más canciones')
+        pushToast(t('home.toast.mixNoSeeds'))
         return
       }
-      pushToast(`Mix Personal: ${tracks.length} canciones`)
+      pushToast(t('home.toast.mixCount', { n: tracks.length }))
       await playTracks(tracks)
     } catch {
-      pushToast('No pude generar el mix ahora')
+      pushToast(t('home.toast.mixError'))
     } finally {
       setMixLoading(false)
     }
@@ -84,7 +86,7 @@ function HomeHero(): React.JSX.Element {
         className="hero-card hero-card--surprise"
         onClick={onSurprise}
         disabled={surpriseLoading}
-        aria-label="Sorpréndeme: reproducir una canción inesperada"
+        aria-label={t('home.hero.surpriseAria')}
       >
         <div className="hero-icon" aria-hidden="true">
           {/* Estrella brillante como icono de "sorpresa" */}
@@ -94,9 +96,9 @@ function HomeHero(): React.JSX.Element {
         </div>
         <div className="hero-body">
           <div className="hero-title">
-            {surpriseLoading ? 'Preparando…' : 'Sorpréndeme'}
+            {surpriseLoading ? t('home.hero.preparing') : t('home.hero.surprise')}
           </div>
-          <div className="hero-sub">Reproduce algo inesperado</div>
+          <div className="hero-sub">{t('home.hero.surpriseSub')}</div>
         </div>
       </button>
 
@@ -105,7 +107,7 @@ function HomeHero(): React.JSX.Element {
         className="hero-card hero-card--mix"
         onClick={onMix}
         disabled={mixLoading}
-        aria-label="Mix Personal: 25 canciones para ti"
+        aria-label={t('home.hero.mixAria')}
       >
         <div className="hero-icon" aria-hidden="true">
           {/* Auriculares — mix personal */}
@@ -115,9 +117,9 @@ function HomeHero(): React.JSX.Element {
         </div>
         <div className="hero-body">
           <div className="hero-title">
-            {mixLoading ? 'Preparando…' : 'Mix Personal'}
+            {mixLoading ? t('home.hero.preparing') : t('home.hero.mix')}
           </div>
-          <div className="hero-sub">25 canciones para ti</div>
+          <div className="hero-sub">{t('home.hero.mixSub')}</div>
         </div>
       </button>
     </div>
@@ -130,6 +132,7 @@ function HomeHero(): React.JSX.Element {
  * Cada tarjeta puede desactivarse desde Ajustes → Estadísticas.
  */
 function HomeRecap(): React.JSX.Element | null {
+  const t = useT()
   const { settings } = useSettings()
   const navigate = useRouter((s) => s.navigate)
   const [recap, setRecap] = useState<RecapData | null>(null)
@@ -166,7 +169,7 @@ function HomeRecap(): React.JSX.Element | null {
           type="button"
           className="recap-card recap-card--wrapped"
           onClick={() => navigate({ name: 'recap' })}
-          aria-label="Abrir mi Recap"
+          aria-label={t('home.recap.openAria')}
         >
           <div className="recap-card-icon" aria-hidden="true">
             {/* Icono de barras — estadísticas */}
@@ -175,9 +178,9 @@ function HomeRecap(): React.JSX.Element | null {
             </svg>
           </div>
           <div className="recap-card-body">
-            <div className="recap-card-title">Tu Recap · últimos 30 días</div>
+            <div className="recap-card-title">{t('home.recap.title')}</div>
             <div className="recap-card-sub">
-              {uniqueTracks} canciones · {hours} h · Top artista: {topArtist}
+              {t('home.recap.sub', { tracks: uniqueTracks, hours, artist: topArtist })}
             </div>
           </div>
         </button>
@@ -187,7 +190,7 @@ function HomeRecap(): React.JSX.Element | null {
           type="button"
           className="recap-card recap-card--week"
           onClick={() => navigate({ name: 'recap' })}
-          aria-label="Ver top semanal"
+          aria-label={t('home.recap.week.aria')}
         >
           <div className="recap-card-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" width="40" height="40" fill="currentColor">
@@ -195,8 +198,8 @@ function HomeRecap(): React.JSX.Element | null {
             </svg>
           </div>
           <div className="recap-card-body">
-            <div className="recap-card-title">Lo más escuchado esta semana</div>
-            <div className="recap-card-sub">Ver mi top semanal</div>
+            <div className="recap-card-title">{t('home.recap.week.title')}</div>
+            <div className="recap-card-sub">{t('home.recap.week.sub')}</div>
           </div>
         </button>
       )}
@@ -205,7 +208,7 @@ function HomeRecap(): React.JSX.Element | null {
           type="button"
           className="recap-card recap-card--month"
           onClick={() => navigate({ name: 'recap' })}
-          aria-label="Ver top mensual"
+          aria-label={t('home.recap.month.aria')}
         >
           <div className="recap-card-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" width="40" height="40" fill="currentColor">
@@ -213,8 +216,8 @@ function HomeRecap(): React.JSX.Element | null {
             </svg>
           </div>
           <div className="recap-card-body">
-            <div className="recap-card-title">Lo más escuchado este mes</div>
-            <div className="recap-card-sub">Ver mi top mensual</div>
+            <div className="recap-card-title">{t('home.recap.month.title')}</div>
+            <div className="recap-card-sub">{t('home.recap.month.sub')}</div>
           </div>
         </button>
       )}
@@ -223,6 +226,7 @@ function HomeRecap(): React.JSX.Element | null {
 }
 
 export function HomePage(): React.JSX.Element {
+  const t = useT()
   const [shelves, setShelves] = useState<Shelf[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const playTracks = usePlayer((s) => s.playTracks)
@@ -302,14 +306,14 @@ export function HomePage(): React.JSX.Element {
 
   return (
     <div className="page">
-      <h1>{greeting()}</h1>
+      <h1>{t(greetingKey())}</h1>
       {/* F32: fila de chips de selecciones rápidas — antes del HomeHero */}
       <HomeQuickPicks shelves={displayedShelves} />
       {/* F24: tarjetas grandes SIEMPRE visibles, incluso mientras carga el resto */}
       <HomeHero />
       {/* F31: tarjetas Recap + accesos rápidos al top semanal/mensual */}
       <HomeRecap />
-      {error && <div className="error-banner">No se pudo cargar Inicio: {error}</div>}
+      {error && <div className="error-banner">{t('home.error', { msg: error })}</div>}
       {!displayedShelves && !error && (
         <div className="card-grid">
           {[...Array(7)].map((_, i) => (
@@ -325,9 +329,7 @@ export function HomePage(): React.JSX.Element {
         <ShelfRow key={`${shelfId(shelf.title)}-${i}`} shelf={shelf} onPlayItem={playCard} />
       ))}
       {displayedShelves && !displayedShelves.length && (
-        <div className="empty-state">
-          Inicio está vacío. Inicia sesión para ver tus recomendaciones.
-        </div>
+        <div className="empty-state">{t('home.empty')}</div>
       )}
     </div>
   )

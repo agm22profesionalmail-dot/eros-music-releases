@@ -2,6 +2,16 @@
 
 Historial de fases del proyecto por si necesitas retomar cualquier parte sin releer todo el código.
 
+## F34 · i18n de la interfaz (es/en)
+
+Framework mínimo de traducción con dict JSON por idioma (`src/renderer/src/i18n/{es,en}.json`) y hook `useT()` (`src/renderer/src/app/i18n.ts`), sin dependencias nuevas — Zustand vale como store del locale.
+
+- Nueva clave `uiLanguage: 'auto' | 'es' | 'en'` en `AppSettings` (default `auto`, detecta el sistema con `navigator.language` — fallback a `es`).
+- `settingsStore` aplica el locale al arranque, en cada `update()` y en cada `settings:changed` vía IPC, y refleja el resultado en `<html lang>`.
+- Selector nuevo en Ajustes → Apariencia (auto/Español/English).
+- Traducidas las cadenas más visibles al primer nivel: sidebar, topbar, saludos y toasts de Home, tarjetas Hero/Recap, cola, títulos de sección de Ajustes y `<h1>` de Ajustes. No traducido a propósito: menús contextuales complejos, modales F22, mensajes de error largos. `contentLanguage` (F28) sigue siendo aparte — este cambio es solo la piel visible.
+- `useT()` se suscribe al `locale` (no a `t`, cuya referencia era estable) para que el cambio de idioma re-renderice al instante.
+
 ## F17 · Barra inferior estilo Metrolist
 
 Now-playing bar más pulida: carátula de 60 px con sombra teñida del ambiente, animación de zoom al pasar el ratón, y **crossfade + blur** al cambiar de canción (`animation: cover-swap`). La `key={videoId}` en el `<img>` fuerza que la animación se dispare por cada canción distinta.

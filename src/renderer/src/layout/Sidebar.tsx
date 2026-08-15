@@ -4,6 +4,7 @@ import { useRouter } from '../app/router'
 import { useAuth } from '../app/authStore'
 import { useLibrary, cardMenu } from '../app/libraryStore'
 import { openContextMenu } from '../components/ContextMenu'
+import { useT } from '../app/i18n'
 import {
   HomeIcon,
   LibraryIcon,
@@ -15,6 +16,7 @@ import {
 type Filter = 'all' | 'playlists' | 'albums' | 'artists'
 
 export function Sidebar(): React.JSX.Element {
+  const t = useT()
   const route = useRouter((s) => s.route())
   const navigate = useRouter((s) => s.navigate)
   const auth = useAuth((s) => s.state)
@@ -24,13 +26,17 @@ export function Sidebar(): React.JSX.Element {
   const rows: { card: MediaCard; sub: string }[] = []
   if (library) {
     if (filter === 'all' || filter === 'playlists') {
-      rows.push(...library.playlists.map((card) => ({ card, sub: card.subtitle ?? 'Playlist' })))
+      rows.push(
+        ...library.playlists.map((card) => ({ card, sub: card.subtitle ?? t('media.playlist') }))
+      )
     }
     if (filter === 'all' || filter === 'albums') {
-      rows.push(...library.albums.map((card) => ({ card, sub: card.subtitle ?? 'Álbum' })))
+      rows.push(
+        ...library.albums.map((card) => ({ card, sub: card.subtitle ?? t('media.album') }))
+      )
     }
     if (filter === 'all' || filter === 'artists') {
-      rows.push(...library.artists.map((card) => ({ card, sub: 'Artista' })))
+      rows.push(...library.artists.map((card) => ({ card, sub: t('media.artist') })))
     }
   }
 
@@ -52,13 +58,13 @@ export function Sidebar(): React.JSX.Element {
           className={`sidebar-nav-item ${route.name === 'home' ? 'active' : ''}`}
           onClick={() => navigate({ name: 'home' })}
         >
-          <HomeIcon size={24} /> Inicio
+          <HomeIcon size={24} /> {t('sidebar.home')}
         </button>
         <button
           className={`sidebar-nav-item ${route.name === 'search' ? 'active' : ''}`}
           onClick={() => navigate({ name: 'search' })}
         >
-          <SearchIcon size={24} /> Buscar
+          <SearchIcon size={24} /> {t('sidebar.search')}
         </button>
         {/* F32 · Acceso rápido al Recap */}
         <button
@@ -68,7 +74,7 @@ export function Sidebar(): React.JSX.Element {
           <span aria-hidden="true" style={{ fontSize: 20, width: 24, textAlign: 'center' }}>
             📊
           </span>
-          Recap
+          {t('sidebar.recap')}
         </button>
       </nav>
 
@@ -79,19 +85,19 @@ export function Sidebar(): React.JSX.Element {
             style={{ display: 'flex', alignItems: 'center', gap: 12, color: 'inherit', fontWeight: 700, fontSize: 15 }}
             onClick={() => navigate({ name: 'library' })}
           >
-            <LibraryIcon size={24} /> Tu biblioteca
+            <LibraryIcon size={24} /> {t('sidebar.library')}
           </button>
           {auth.status === 'signedIn' && (
             <button
               className="icon-btn"
-              title="Crear playlist"
+              title={t('sidebar.createPlaylist')}
               style={{ fontSize: 22, lineHeight: 1, width: 32, height: 32, borderRadius: '50%' }}
               onClick={() => {
                 void import('../components/TextModal').then(({ askText }) =>
                   askText({
-                    title: 'Nueva playlist',
-                    placeholder: 'Nombre de la playlist',
-                    confirmLabel: 'Crear'
+                    title: t('sidebar.newPlaylist'),
+                    placeholder: t('sidebar.newPlaylistPlaceholder'),
+                    confirmLabel: t('btn.create')
                   }).then((title) => {
                     if (title) {
                       void window.api.library
@@ -111,10 +117,10 @@ export function Sidebar(): React.JSX.Element {
           <div className="sidebar-filters">
             {(
               [
-                ['all', 'Todo'],
-                ['playlists', 'Playlists'],
-                ['albums', 'Álbumes'],
-                ['artists', 'Artistas']
+                ['all', t('sidebar.filter.all')],
+                ['playlists', t('sidebar.filter.playlists')],
+                ['albums', t('sidebar.filter.albums')],
+                ['artists', t('sidebar.filter.artists')]
               ] as [Filter, string][]
             ).map(([key, label]) => (
               <button
@@ -131,7 +137,7 @@ export function Sidebar(): React.JSX.Element {
         <div className="sidebar-library-list">
           {auth.status !== 'signedIn' && (
             <div className="empty-state" style={{ padding: '24px 16px', fontSize: 13 }}>
-              Inicia sesión para ver tu biblioteca
+              {t('sidebar.signInPrompt')}
             </div>
           )}
           {auth.status === 'signedIn' && !library && (

@@ -44,6 +44,14 @@ export function getAllSettings(): AppSettings {
       .map((p) => ({ id: p.id, enabled: p.enabled !== false }))
   }
   if (typeof merged.romanizeLyrics !== 'boolean') merged.romanizeLyrics = false
+  // F34 · idioma de la UI: defensivo si viene de una versión previa sin campo.
+  if (
+    merged.uiLanguage !== 'auto' &&
+    merged.uiLanguage !== 'es' &&
+    merged.uiLanguage !== 'en'
+  ) {
+    merged.uiLanguage = 'auto'
+  }
   return merged
 }
 

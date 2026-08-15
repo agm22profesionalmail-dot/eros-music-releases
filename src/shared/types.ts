@@ -502,6 +502,14 @@ export interface AppSettings {
    * útil es `usuario:password@host:puerto` o `host:puerto`.
    */
   proxyUrl: string
+
+  // ---------- F34 · Idioma de la interfaz ----------
+
+  /**
+   * Idioma de la UI. 'auto' detecta el sistema (fallback a 'es' si no es EN).
+   * NO afecta a `contentLanguage` (F28) — ese sigue rigiendo InnerTube.
+   */
+  uiLanguage: 'auto' | 'es' | 'en'
 }
 
 /**
@@ -621,7 +629,9 @@ export const DEFAULT_SETTINGS: AppSettings = {
   homeQuickPicks: DEFAULT_HOME_QUICK_PICKS,
   // F33 · proxy desactivado por defecto
   proxyMode: 'off',
-  proxyUrl: ''
+  proxyUrl: '',
+  // F34 · idioma de la UI (auto = detecta del sistema)
+  uiLanguage: 'auto'
 }
 
 export interface LyricWord {

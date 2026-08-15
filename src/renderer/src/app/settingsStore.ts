@@ -3,6 +3,7 @@ import { DEFAULT_SETTINGS, type AppSettings } from '@shared/types'
 import { engine } from '../player/engine'
 import { usePlayer, runtimeFlags } from '../player/store'
 import { extractAccent } from './artworkColor'
+import { resolveLocale, useI18n } from './i18n'
 
 /**
  * Ajustes de la app: se hidratan del main (SQLite), se aplican al motor de
@@ -62,6 +63,18 @@ function applyTheme(s: AppSettings): void {
   else applyDynamicAccent()
 }
 
+/** F34 · Aplica el idioma de la UI al store i18n. */
+function applyLocale(s: AppSettings): void {
+  const locale = resolveLocale(s.uiLanguage)
+  useI18n.getState().setLocale(locale)
+  // Refleja en <html lang> para lectores de pantalla y CSS.
+  try {
+    document.documentElement.lang = locale
+  } catch {
+    /* jsdom / entornos sin document */
+  }
+}
+
 /** Acento dinámico: sigue la carátula de la pista en reproducción. */
 let dynamicWired = false
 function applyDynamicAccent(): void {
@@ -96,6 +109,7 @@ export const useSettings = create<SettingsState>((set, get) => ({
       set({ settings, loaded: true })
       applyToEngine(settings)
       applyTheme(settings)
+      applyLocale(settings)
       // F27 · Restaura shuffle/repeat de la sesión anterior si el usuario lo pidió.
       if (settings.rememberShuffleRepeat) {
         const player = usePlayer.getState()
@@ -122,6 +136,7 @@ export const useSettings = create<SettingsState>((set, get) => ({
       set({ settings: s })
       applyToEngine(s)
       applyTheme(s)
+      applyLocale(s)
     })
   },
 
@@ -130,6 +145,7 @@ export const useSettings = create<SettingsState>((set, get) => ({
     set({ settings: merged })
     applyToEngine(merged)
     applyTheme(merged)
+    applyLocale(merged)
     await window.api.settings.set(patch).catch(() => undefined)
   }
 }))

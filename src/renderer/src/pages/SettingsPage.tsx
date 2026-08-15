@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useSettings } from '../app/settingsStore'
 import { useAuth } from '../app/authStore'
+import { useT } from '../app/i18n'
 import { EQ_BANDS } from '../player/engine'
 import {
   DEFAULT_HOME_QUICK_PICKS,
@@ -374,24 +375,25 @@ function ProxyTestButton(): React.JSX.Element {
 }
 
 export function SettingsPage(): React.JSX.Element {
+  const t = useT()
   const { settings, update } = useSettings()
   const auth = useAuth((s) => s.state)
   const [dirMsg, setDirMsg] = useState<string | null>(null)
 
   return (
     <div className="page" style={{ maxWidth: 780 }}>
-      <h1>Ajustes</h1>
+      <h1>{t('settings.title')}</h1>
 
-      <h2>Cuenta</h2>
-      <Row label={auth.status === 'signedIn' ? 'Sesión iniciada' : 'Sin sesión'}>
+      <h2>{t('settings.section.account')}</h2>
+      <Row label={auth.status === 'signedIn' ? t('settings.account.signedIn') : t('settings.account.signedOut')}>
         {auth.status === 'signedIn' && (
           <button className="btn btn-secondary" onClick={() => void window.api.auth.signOut()}>
-            Cerrar sesión
+            {t('btn.signOut')}
           </button>
         )}
       </Row>
 
-      <h2>Reproducción</h2>
+      <h2>{t('settings.section.playback')}</h2>
       <Row label="Calidad de sonido">
         {(
           [
@@ -563,7 +565,7 @@ export function SettingsPage(): React.JSX.Element {
         />
       </Row>
 
-      <h2>Contenido</h2>
+      <h2>{t('settings.section.content')}</h2>
       <Row label="Ocultar contenido explícito">
         <input
           type="checkbox"
@@ -640,7 +642,7 @@ export function SettingsPage(): React.JSX.Element {
         la sesión de YouTube Music se reconstruye en caliente.
       </p>
 
-      <h2>Fuentes de streaming</h2>
+      <h2>{t('settings.section.streamingSources')}</h2>
       <p style={{ color: 'var(--text-subdued)', fontSize: 12, padding: '0 0 8px' }}>
         Orden en el que el resolver probará cada cliente al pedir audio. Marca solo los que
         quieras usar y arrastra la prioridad con las flechas. Al cambiar cualquier ajuste la
@@ -718,7 +720,7 @@ export function SettingsPage(): React.JSX.Element {
         </button>
       </div>
 
-      <h2>Letras</h2>
+      <h2>{t('settings.section.lyrics')}</h2>
       <p style={{ color: 'var(--text-subdued)', fontSize: 12, padding: '0 0 8px' }}>
         Orden en el que se consultará cada proveedor de letras. El primero que devuelva algo
         con contenido gana. Marca solo los que quieras usar y ajusta la prioridad con las
@@ -796,7 +798,7 @@ export function SettingsPage(): React.JSX.Element {
         </button>
       </div>
 
-      <h2>Estadísticas y Wrapped</h2>
+      <h2>{t('settings.section.stats')}</h2>
       <p style={{ color: 'var(--text-subdued)', fontSize: 12, padding: '0 0 8px' }}>
         Las estadísticas se calculan solo desde tu historial local (SQLite). Nada sale de tu
         equipo. La página Recap se abre desde Inicio o navegando a Recap.
@@ -833,7 +835,7 @@ export function SettingsPage(): React.JSX.Element {
         />
       </Row>
 
-      <h2>Personalizar Inicio</h2>
+      <h2>{t('settings.section.customizeHome')}</h2>
       <p style={{ color: 'var(--text-subdued)', fontSize: 12, padding: '0 0 8px' }}>
         Ajusta cómo se ve la pantalla de Inicio: barajar estanterías, elegir qué
         chips de selecciones rápidas aparecen arriba y reordenar u ocultar las
@@ -849,7 +851,7 @@ export function SettingsPage(): React.JSX.Element {
       <HomeQuickPicksEditor />
       <HomeShelvesEditor />
 
-      <h2>Página del Artista</h2>
+      <h2>{t('settings.section.artistPage')}</h2>
       <Row label="Mostrar descripción del artista">
         <input
           type="checkbox"
@@ -872,7 +874,7 @@ export function SettingsPage(): React.JSX.Element {
         />
       </Row>
 
-      <h2>Ecualizador</h2>
+      <h2>{t('settings.section.equalizer')}</h2>
       <div className="sidebar-filters" style={{ padding: '4px 0 12px' }}>
         {Object.entries(EQ_PRESETS).map(([name, gains]) => (
           <button
@@ -926,7 +928,7 @@ export function SettingsPage(): React.JSX.Element {
         />
       </Row>
 
-      <h2>Descargas</h2>
+      <h2>{t('settings.section.downloads')}</h2>
       <Row label="Carpeta de descargas">
         <code
           style={{
@@ -974,7 +976,27 @@ export function SettingsPage(): React.JSX.Element {
         descargadas se mueven automáticamente a la nueva carpeta.
       </p>
 
-      <h2>Apariencia</h2>
+      <h2>{t('settings.section.appearance')}</h2>
+      {/* F34 · Selector de idioma de la UI (auto/es/en) */}
+      <Row label={t('settings.appearance.uiLanguage')}>
+        <select
+          value={settings.uiLanguage}
+          onChange={(e) =>
+            void update({ uiLanguage: e.target.value as 'auto' | 'es' | 'en' })
+          }
+          style={{
+            background: 'var(--bg-elevated)',
+            color: 'var(--text-primary)',
+            border: '1px solid var(--divider)',
+            borderRadius: 4,
+            padding: '6px 10px'
+          }}
+        >
+          <option value="auto">{t('settings.appearance.uiLanguage.auto')}</option>
+          <option value="es">{t('settings.appearance.uiLanguage.es')}</option>
+          <option value="en">{t('settings.appearance.uiLanguage.en')}</option>
+        </select>
+      </Row>
       <Row label="Tema">
         {(
           [
@@ -1056,7 +1078,7 @@ export function SettingsPage(): React.JSX.Element {
         />
       </Row>
 
-      <h2>Integraciones</h2>
+      <h2>{t('settings.section.integrations')}</h2>
       <Row label="Discord Rich Presence (mostrar lo que escuchas en Discord)">
         <input
           type="checkbox"
@@ -1069,7 +1091,7 @@ export function SettingsPage(): React.JSX.Element {
         título, artista, carátula y progreso.
       </p>
 
-      <h2>Sistema</h2>
+      <h2>{t('settings.section.system')}</h2>
       <Row label="Al cerrar la ventana, seguir en la bandeja del sistema">
         <input
           type="checkbox"
@@ -1085,7 +1107,7 @@ export function SettingsPage(): React.JSX.Element {
         />
       </Row>
 
-      <h2>Red</h2>
+      <h2>{t('settings.section.network')}</h2>
       <p style={{ color: 'var(--text-subdued)', fontSize: 12, padding: '0 0 8px' }}>
         Aplica a InnerTube, descargas y toda la red de la app.
       </p>
