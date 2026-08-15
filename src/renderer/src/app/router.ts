@@ -15,6 +15,7 @@ export type Route =
   | { name: 'visualizer' }
   | { name: 'settings' }
   | { name: 'profile' }
+  | { name: 'recap' }
 
 interface RouterState {
   stack: Route[]

@@ -115,6 +115,38 @@ export function readHistory(limit = 100): unknown[] {
   return out
 }
 
+/**
+ * F31 · Historial con metadatos (para agregaciones estadísticas).
+ * Devuelve el track parseado + `playedAt` (última reproducción, ms epoch) +
+ * `playCount` (contador acumulado global). Ordenado por `playedAt` desc.
+ *
+ * Limitación conocida: como solo guardamos una fila por videoId con el
+ * timestamp de la ÚLTIMA reproducción, filtrar por período usa esa fecha
+ * como proxy; una canción muy escuchada hace un año que se volvió a poner
+ * dentro del período cuenta con TODO su play_count. Es una aproximación
+ * pragmática que evita duplicar filas por cada play.
+ */
+export function readHistoryWithMeta(
+  limit = 500
+): { track: unknown; playedAt: number; playCount: number }[] {
+  const rows = getDb()
+    .prepare('SELECT json, played_at, play_count FROM history ORDER BY played_at DESC LIMIT ?')
+    .all(limit) as { json: string; played_at: number; play_count: number }[]
+  const out: { track: unknown; playedAt: number; playCount: number }[] = []
+  for (const r of rows) {
+    try {
+      out.push({
+        track: JSON.parse(r.json),
+        playedAt: r.played_at,
+        playCount: r.play_count
+      })
+    } catch {
+      /* fila corrupta: ignorar */
+    }
+  }
+  return out
+}
+
 // ---------- Ajustes ----------
 
 export function getSetting<T>(key: string, fallback: T): T {

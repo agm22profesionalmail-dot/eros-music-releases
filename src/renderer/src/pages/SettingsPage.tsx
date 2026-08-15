@@ -526,6 +526,43 @@ export function SettingsPage(): React.JSX.Element {
         </button>
       </div>
 
+      <h2>Estadísticas y Wrapped</h2>
+      <p style={{ color: 'var(--text-subdued)', fontSize: 12, padding: '0 0 8px' }}>
+        Las estadísticas se calculan solo desde tu historial local (SQLite). Nada sale de tu
+        equipo. La página Recap se abre desde Inicio o navegando a Recap.
+      </p>
+      <Row label="Mostrar tarjeta Recap en Inicio">
+        <input
+          type="checkbox"
+          checked={settings.showWrappedRecapCard}
+          onChange={(e) => void update({ showWrappedRecapCard: e.target.checked })}
+        />
+      </Row>
+      <Row label="Mostrar Top semanal en Inicio">
+        <input
+          type="checkbox"
+          checked={settings.showTopWeekly}
+          onChange={(e) => void update({ showTopWeekly: e.target.checked })}
+        />
+      </Row>
+      <Row label="Mostrar Top mensual en Inicio">
+        <input
+          type="checkbox"
+          checked={settings.showTopMonthly}
+          onChange={(e) => void update({ showTopMonthly: e.target.checked })}
+        />
+      </Row>
+      <Row label={`Longitud del Top: ${settings.wrappedTopN} canciones`}>
+        <input
+          type="range"
+          min={10}
+          max={200}
+          step={10}
+          value={settings.wrappedTopN}
+          onChange={(e) => void update({ wrappedTopN: Number(e.target.value) })}
+        />
+      </Row>
+
       <h2>Página del Artista</h2>
       <Row label="Mostrar descripción del artista">
         <input

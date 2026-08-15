@@ -196,6 +196,50 @@ export interface GenreResolveResult {
   availableGenres: string[]
 }
 
+// ---------- Estadísticas (F31) ----------
+
+/** Rango temporal cerrado en milisegundos epoch (ambos inclusive). */
+export interface StatsPeriod {
+  start: number
+  end: number
+}
+
+/**
+ * Agregado por canción para las listas Top. `playCount` y `totalSec` reflejan
+ * el conteo del rango pedido (el `play_count` de la BD es global — el filtro
+ * temporal se hace por `played_at`, ver limitación en el módulo `stats/`).
+ */
+export interface TrackStats {
+  videoId: string
+  title: string
+  artists: string
+  thumbnailUrl?: string
+  playCount: number
+  totalSec: number
+}
+
+/** Agregado por artista para las listas Top. */
+export interface ArtistStats {
+  name: string
+  playCount: number
+  totalSec: number
+}
+
+/** Resumen tipo "Wrapped" de los últimos N días (por defecto 30). */
+export interface RecapData {
+  period: StatsPeriod
+  /** Horas totales estimadas de escucha en el período */
+  hoursListened: number
+  /** Nº de canciones únicas reproducidas en el período */
+  uniqueTracks: number
+  /** Nº de artistas únicos escuchados en el período */
+  uniqueArtists: number
+  /** Top 10 canciones del período */
+  topTracks: TrackStats[]
+  /** Top 5 artistas del período */
+  topArtists: ArtistStats[]
+}
+
 // ---------- Canales IPC ----------
 
 export const IPC = {
@@ -250,6 +294,11 @@ export const IPC = {
   // descubrimiento (F24): tarjetas "Sorpréndeme" y "Mix Personal"
   DISCOVERY_SURPRISE: 'discovery:surprise',
   DISCOVERY_MIX: 'discovery:mix',
+  // estadísticas (F31): Wrapped, Top semanal/mensual, playlist auto-generada
+  STATS_TOP_TRACKS: 'stats:topTracks',
+  STATS_TOP_ARTISTS: 'stats:topArtists',
+  STATS_RECAP: 'stats:recap',
+  STATS_CREATE_TOP_PLAYLIST: 'stats:createTopPlaylist',
   // control remoto (teclas multimedia globales) main -> renderer
   MEDIA_COMMAND: 'media:command',
   // mini-player y estado de reproducción
@@ -404,6 +453,17 @@ export interface AppSettings {
   lyricsProviders: LyricsProvider[]
   /** Muestra romanización debajo de líneas con caracteres japoneses/coreanos. */
   romanizeLyrics: boolean
+
+  // ---------- F31 · Wrapped y estadísticas ----------
+
+  /** Longitud del top usado en Recap y en las playlists auto-generadas (10..500) */
+  wrappedTopN: number
+  /** Muestra la tarjeta Recap (últimos 30 días) en Inicio */
+  showWrappedRecapCard: boolean
+  /** Muestra la tarjeta "Top mensual" en Inicio */
+  showTopMonthly: boolean
+  /** Muestra la tarjeta "Top semanal" en Inicio */
+  showTopWeekly: boolean
 }
 
 /** F30 · Un proveedor de letras en la cadena configurable. */
@@ -492,7 +552,12 @@ export const DEFAULT_SETTINGS: AppSettings = {
   useYtDlpFallback: true,
   // F30 · proveedores de letras y romanización CJK
   lyricsProviders: DEFAULT_LYRICS_PROVIDERS,
-  romanizeLyrics: false
+  romanizeLyrics: false,
+  // F31 · Wrapped y estadísticas
+  wrappedTopN: 50,
+  showWrappedRecapCard: true,
+  showTopMonthly: true,
+  showTopWeekly: true
 }
 
 export interface LyricWord {

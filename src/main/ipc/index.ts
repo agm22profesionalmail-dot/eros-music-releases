@@ -163,6 +163,43 @@ export function registerIpc(getMainWindow: () => BrowserWindow | null): void {
     return getSurpriseTrack(favs, liked)
   })
 
+  // ---- Estadísticas (F31): Recap, Top semanal/mensual, playlist auto ----
+  ipcMain.handle(
+    IPC.STATS_TOP_TRACKS,
+    async (_e, period: { start: number; end: number }, topN?: number) => {
+      const { computeTopTracks } = await import('../stats')
+      return computeTopTracks(period, topN)
+    }
+  )
+  ipcMain.handle(
+    IPC.STATS_TOP_ARTISTS,
+    async (_e, period: { start: number; end: number }, topN?: number) => {
+      const { computeTopArtists } = await import('../stats')
+      return computeTopArtists(period, topN)
+    }
+  )
+  ipcMain.handle(IPC.STATS_RECAP, async (_e, days?: number) => {
+    const { computeRecap } = await import('../stats')
+    return computeRecap(typeof days === 'number' && days > 0 ? days : 30)
+  })
+  ipcMain.handle(
+    IPC.STATS_CREATE_TOP_PLAYLIST,
+    async (_e, range: 'week' | 'month', topN?: number) => {
+      // Genera un top del período pedido y crea una playlist en la cuenta.
+      const { computeTopTracks, periodOfWeek, periodOfMonth } = await import('../stats')
+      const period = range === 'week' ? periodOfWeek() : periodOfMonth()
+      const top = computeTopTracks(period, topN)
+      if (!top.length) return null
+      const ids = top.map((t) => t.videoId).filter(Boolean)
+      if (!ids.length) return null
+      const now = new Date()
+      const stamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+      const label = range === 'week' ? 'semanal' : 'mensual'
+      const title = `Mi Top ${label} · ${stamp}`
+      return lib.createPlaylist(title, ids)
+    }
+  )
+
   ipcMain.handle(IPC.DISCOVERY_MIX, async () => {
     const { getPersonalMixTracks } = await import('../innertube/discovery')
     const profile = getProfile()

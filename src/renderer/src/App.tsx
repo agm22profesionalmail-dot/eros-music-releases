@@ -14,6 +14,7 @@ import { SettingsPage } from './pages/SettingsPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { LyricsPage } from './pages/LyricsPage'
 import { VisualizerPage } from './pages/VisualizerPage'
+import { RecapPage } from './pages/RecapPage'
 import { ContextMenuHost } from './components/ContextMenu'
 import { TextModalHost } from './components/TextModal'
 import { ToastHost } from './components/Toast'
@@ -181,6 +182,7 @@ export default function App(): React.JSX.Element {
                 {route.name === 'visualizer' && <VisualizerPage />}
                 {route.name === 'settings' && <SettingsPage />}
                 {route.name === 'profile' && <ProfilePage />}
+                {route.name === 'recap' && <RecapPage />}
               </div>
             )}
           </div>

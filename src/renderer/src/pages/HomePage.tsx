@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
-import type { MediaCard, Shelf, TrackSummary } from '@shared/types'
+import type { MediaCard, RecapData, Shelf, TrackSummary } from '@shared/types'
 import { ShelfRow } from '../components/Shelf'
 import { usePlayer } from '../player/store'
 import { useAuth } from '../app/authStore'
 import { useRouter } from '../app/router'
 import { pushToast } from '../components/Toast'
+import { useSettings } from '../app/settingsStore'
 
 function greeting(): string {
   const h = new Date().getHours()
@@ -121,6 +122,104 @@ function HomeHero(): React.JSX.Element {
   )
 }
 
+/**
+ * F31 · Tarjeta Recap + accesos rápidos al Top semanal/mensual.
+ * Se pintan bajo el HomeHero y llevan a `/recap` (única página con detalle).
+ * Cada tarjeta puede desactivarse desde Ajustes → Estadísticas.
+ */
+function HomeRecap(): React.JSX.Element | null {
+  const { settings } = useSettings()
+  const navigate = useRouter((s) => s.navigate)
+  const [recap, setRecap] = useState<RecapData | null>(null)
+
+  const anyEnabled =
+    settings.showWrappedRecapCard || settings.showTopWeekly || settings.showTopMonthly
+
+  useEffect(() => {
+    if (!anyEnabled) return
+    let cancelled = false
+    window.api.stats
+      .recap(30)
+      .then((r) => {
+        if (!cancelled) setRecap(r)
+      })
+      .catch(() => {
+        if (!cancelled) setRecap(null)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [anyEnabled])
+
+  if (!anyEnabled) return null
+
+  const topArtist = recap?.topArtists?.[0]?.name ?? '—'
+  const uniqueTracks = recap?.uniqueTracks ?? 0
+  const hours = recap?.hoursListened ?? 0
+
+  return (
+    <div className="home-recap">
+      {settings.showWrappedRecapCard && (
+        <button
+          type="button"
+          className="recap-card recap-card--wrapped"
+          onClick={() => navigate({ name: 'recap' })}
+          aria-label="Abrir mi Recap"
+        >
+          <div className="recap-card-icon" aria-hidden="true">
+            {/* Icono de barras — estadísticas */}
+            <svg viewBox="0 0 24 24" width="44" height="44" fill="currentColor">
+              <path d="M5 10h3v10H5V10zm5-6h3v16h-3V4zm5 9h3v7h-3v-7z" />
+            </svg>
+          </div>
+          <div className="recap-card-body">
+            <div className="recap-card-title">Tu Recap · últimos 30 días</div>
+            <div className="recap-card-sub">
+              {uniqueTracks} canciones · {hours} h · Top artista: {topArtist}
+            </div>
+          </div>
+        </button>
+      )}
+      {settings.showTopWeekly && (
+        <button
+          type="button"
+          className="recap-card recap-card--week"
+          onClick={() => navigate({ name: 'recap' })}
+          aria-label="Ver top semanal"
+        >
+          <div className="recap-card-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="40" height="40" fill="currentColor">
+              <path d="M7 2h10v2H7V2zm-2 4h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2zm7 4l-1.5 4H8l3 2-1 4 3-2 3 2-1-4 3-2h-3.5L12 10z" />
+            </svg>
+          </div>
+          <div className="recap-card-body">
+            <div className="recap-card-title">Lo más escuchado esta semana</div>
+            <div className="recap-card-sub">Ver mi top semanal</div>
+          </div>
+        </button>
+      )}
+      {settings.showTopMonthly && (
+        <button
+          type="button"
+          className="recap-card recap-card--month"
+          onClick={() => navigate({ name: 'recap' })}
+          aria-label="Ver top mensual"
+        >
+          <div className="recap-card-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="40" height="40" fill="currentColor">
+              <path d="M4 4h16a1 1 0 0 1 1 1v15a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zm1 5v10h14V9H5zm2-6h2v3H7V3zm8 0h2v3h-2V3z" />
+            </svg>
+          </div>
+          <div className="recap-card-body">
+            <div className="recap-card-title">Lo más escuchado este mes</div>
+            <div className="recap-card-sub">Ver mi top mensual</div>
+          </div>
+        </button>
+      )}
+    </div>
+  )
+}
+
 export function HomePage(): React.JSX.Element {
   const [shelves, setShelves] = useState<Shelf[] | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -163,6 +262,8 @@ export function HomePage(): React.JSX.Element {
       <h1>{greeting()}</h1>
       {/* F24: tarjetas grandes SIEMPRE visibles, incluso mientras carga el resto */}
       <HomeHero />
+      {/* F31: tarjetas Recap + accesos rápidos al top semanal/mensual */}
+      <HomeRecap />
       {error && <div className="error-banner">No se pudo cargar Inicio: {error}</div>}
       {!shelves && !error && (
         <div className="card-grid">

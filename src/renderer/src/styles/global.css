@@ -2515,3 +2515,217 @@ a:hover {
   min-width: 34px;
   padding: 4px 8px;
 }
+
+/* ---------- F31 · Recap (Home) ---------- */
+.home-recap {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+  margin: 14px 0 4px;
+}
+
+.recap-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 96px;
+  padding: 14px 18px;
+  border: 0;
+  border-radius: 12px;
+  color: #fff;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  position: relative;
+  transition:
+    transform 0.25s var(--ease-out),
+    filter 0.2s ease;
+  box-shadow: var(--shadow-card);
+  background: linear-gradient(135deg, var(--accent), var(--accent-press));
+}
+
+.recap-card--week {
+  background: linear-gradient(135deg, var(--accent-press), color-mix(in oklab, var(--accent) 55%, #202026));
+}
+
+.recap-card--month {
+  background: linear-gradient(135deg, color-mix(in oklab, var(--accent) 55%, #101014), var(--accent-press));
+}
+
+.recap-card::after {
+  content: '';
+  position: absolute;
+  top: -30%;
+  right: -20%;
+  width: 50%;
+  height: 160%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.16), transparent 60%);
+  pointer-events: none;
+}
+
+.recap-card:hover {
+  transform: scale(1.02);
+  filter: brightness(1.05);
+}
+
+.recap-card:active {
+  transform: scale(0.99);
+}
+
+.recap-card-icon {
+  flex: 0 0 auto;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+}
+
+.recap-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.recap-card-title {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  line-height: 1.1;
+}
+
+.recap-card-sub {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.86);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- F31 · Recap page ---------- */
+.recap-page {
+  max-width: 900px;
+}
+
+.recap-subtitle {
+  color: var(--text-subdued);
+  margin: 4px 0 16px;
+}
+
+.recap-range {
+  display: flex;
+  gap: 8px;
+  margin: 4px 0 20px;
+  flex-wrap: wrap;
+}
+
+.recap-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin: 8px 0 20px;
+}
+
+.recap-metric {
+  padding: 18px 20px;
+  border-radius: 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--divider);
+}
+
+.recap-metric-value {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recap-metric-label {
+  font-size: 12px;
+  color: var(--text-subdued);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 4px;
+}
+
+.recap-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 4px 0 24px;
+}
+
+.recap-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.recap-row {
+  display: grid;
+  grid-template-columns: 32px 48px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--divider);
+}
+
+.recap-rank {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-subdued);
+  text-align: center;
+}
+
+.recap-thumb {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 6px;
+  background: var(--bg-subdued);
+}
+
+.recap-thumb--placeholder {
+  background: linear-gradient(135deg, var(--accent), var(--accent-press));
+  opacity: 0.7;
+}
+
+.recap-row-text {
+  min-width: 0;
+}
+
+.recap-row-title {
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recap-row-sub {
+  font-size: 12px;
+  color: var(--text-subdued);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recap-row-count {
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 13px;
+}

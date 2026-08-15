@@ -5,6 +5,7 @@ import type {
   AlbumDetail,
   AppSettings,
   ArtistDetail,
+  ArtistStats,
   AuthState,
   DiscoverySurpriseResult,
   GenreResolveResult,
@@ -14,9 +15,12 @@ import type {
   PlaylistEditPatch,
   PlaylistOverride,
   PreparedStream,
+  RecapData,
   SearchFilter,
   SearchResults,
   Shelf,
+  StatsPeriod,
+  TrackStats,
   TrackSummary,
   UserProfile
 } from '../shared/types'
@@ -105,6 +109,23 @@ const api = {
      * top de artistas favoritos y recomendaciones. Vacío si no hay semillas.
      */
     mix: (): Promise<TrackSummary[]> => ipcRenderer.invoke(IPC.DISCOVERY_MIX)
+  },
+
+  stats: {
+    /** F31 · Top de canciones para un rango temporal. */
+    topTracks: (period: StatsPeriod, topN?: number): Promise<TrackStats[]> =>
+      ipcRenderer.invoke(IPC.STATS_TOP_TRACKS, period, topN),
+    /** F31 · Top de artistas para un rango temporal. */
+    topArtists: (period: StatsPeriod, topN?: number): Promise<ArtistStats[]> =>
+      ipcRenderer.invoke(IPC.STATS_TOP_ARTISTS, period, topN),
+    /** F31 · Resumen tipo Wrapped (últimos N días, por defecto 30). */
+    recap: (days?: number): Promise<RecapData> => ipcRenderer.invoke(IPC.STATS_RECAP, days),
+    /**
+     * F31 · Crea una playlist con el top del período pedido en la cuenta.
+     * Devuelve el playlist_id o null si el historial está vacío.
+     */
+    createTopPlaylist: (range: 'week' | 'month', topN?: number): Promise<string | null> =>
+      ipcRenderer.invoke(IPC.STATS_CREATE_TOP_PLAYLIST, range, topN)
   },
 
   media: {
