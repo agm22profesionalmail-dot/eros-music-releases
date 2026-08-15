@@ -2,7 +2,12 @@ import { useState } from 'react'
 import { useSettings } from '../app/settingsStore'
 import { useAuth } from '../app/authStore'
 import { EQ_BANDS } from '../player/engine'
-import { DEFAULT_STREAMING_SOURCES, type StreamingSource } from '@shared/types'
+import {
+  DEFAULT_LYRICS_PROVIDERS,
+  DEFAULT_STREAMING_SOURCES,
+  type LyricsProvider,
+  type StreamingSource
+} from '@shared/types'
 
 // F29 · Metadatos visibles de cada fuente de streaming. El backend usa el id
 // tal cual (con alias normalizados) — este mapa solo alimenta la UI.
@@ -39,6 +44,27 @@ const STREAMING_SOURCE_META: Record<string, { name: string; description: string 
 
 function sourceMeta(id: string): { name: string; description: string } {
   return STREAMING_SOURCE_META[id] ?? { name: id, description: 'Cliente personalizado.' }
+}
+
+// F30 · Metadatos de los proveedores de letras. La lógica del backend recorre
+// la cadena en orden; este mapa solo alimenta la UI.
+const LYRICS_PROVIDER_META: Record<string, { name: string; description: string }> = {
+  LRCLIB: {
+    name: 'LRCLIB',
+    description: 'LRCLIB. Letras sincronizadas comunitarias, gratis.'
+  },
+  KUGOU: {
+    name: 'KuGou',
+    description: 'KuGou. Sincronizadas por línea o por palabra (KRC).'
+  },
+  YTMUSIC: {
+    name: 'YouTube Music',
+    description: 'YouTube Music. Letra oficial no sincronizada.'
+  }
+}
+
+function lyricsProviderMeta(id: string): { name: string; description: string } {
+  return LYRICS_PROVIDER_META[id] ?? { name: id, description: 'Proveedor personalizado.' }
 }
 
 const EQ_PRESETS: Record<string, number[]> = {
@@ -415,6 +441,84 @@ export function SettingsPage(): React.JSX.Element {
             void update({
               streamingSources: DEFAULT_STREAMING_SOURCES.map((s) => ({ ...s })),
               useYtDlpFallback: true
+            })
+          }
+        >
+          Restaurar predeterminados
+        </button>
+      </div>
+
+      <h2>Letras</h2>
+      <p style={{ color: 'var(--text-subdued)', fontSize: 12, padding: '0 0 8px' }}>
+        Orden en el que se consultará cada proveedor de letras. El primero que devuelva algo
+        con contenido gana. Marca solo los que quieras usar y ajusta la prioridad con las
+        flechas.
+      </p>
+      <div className="streaming-source-list">
+        {settings.lyricsProviders.map((prov: LyricsProvider, i) => {
+          const meta = lyricsProviderMeta(prov.id)
+          const total = settings.lyricsProviders.length
+          const move = (delta: number): void => {
+            const j = i + delta
+            if (j < 0 || j >= total) return
+            const next = settings.lyricsProviders.slice()
+            const [item] = next.splice(i, 1)
+            next.splice(j, 0, item)
+            void update({ lyricsProviders: next })
+          }
+          return (
+            <div key={prov.id} className="streaming-source-row">
+              <input
+                type="checkbox"
+                checked={prov.enabled}
+                aria-label={`Activar ${meta.name}`}
+                onChange={(e) => {
+                  const next = settings.lyricsProviders.map((p, k) =>
+                    k === i ? { ...p, enabled: e.target.checked } : p
+                  )
+                  void update({ lyricsProviders: next })
+                }}
+              />
+              <div className="streaming-source-info">
+                <div className="streaming-source-name">{meta.name}</div>
+                <div className="streaming-source-desc">{meta.description}</div>
+              </div>
+              <div className="streaming-source-order">
+                <button
+                  className="chip"
+                  aria-label={`Subir ${meta.name}`}
+                  disabled={i === 0}
+                  onClick={() => move(-1)}
+                >
+                  ↑
+                </button>
+                <button
+                  className="chip"
+                  aria-label={`Bajar ${meta.name}`}
+                  disabled={i === total - 1}
+                  onClick={() => move(1)}
+                >
+                  ↓
+                </button>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+      <Row label="Romanizar letras en japonés/coreano (ローマ字)">
+        <input
+          type="checkbox"
+          checked={settings.romanizeLyrics}
+          onChange={(e) => void update({ romanizeLyrics: e.target.checked })}
+        />
+      </Row>
+      <div style={{ padding: '10px 0 8px' }}>
+        <button
+          className="btn btn-secondary"
+          onClick={() =>
+            void update({
+              lyricsProviders: DEFAULT_LYRICS_PROVIDERS.map((p) => ({ ...p })),
+              romanizeLyrics: false
             })
           }
         >

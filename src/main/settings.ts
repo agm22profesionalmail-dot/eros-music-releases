@@ -3,10 +3,12 @@ import { promises as fs } from 'fs'
 import { join, basename } from 'path'
 import { getSetting, setSetting, getDb } from './db'
 import {
+  DEFAULT_LYRICS_PROVIDERS,
   DEFAULT_PROFILE,
   DEFAULT_SETTINGS,
   DEFAULT_STREAMING_SOURCES,
   type AppSettings,
+  type LyricsProvider,
   type StreamingSource,
   type UserProfile
 } from '@shared/types'
@@ -31,6 +33,17 @@ export function getAllSettings(): AppSettings {
       .map((s) => ({ id: s.id, enabled: s.enabled !== false }))
   }
   if (typeof merged.useYtDlpFallback !== 'boolean') merged.useYtDlpFallback = true
+  // F30 · idem para la cadena de proveedores de letras. Respetamos el orden
+  // guardado si al menos hay una entrada válida; si no, sembramos defaults.
+  const rawProviders = Array.isArray(stored?.lyricsProviders) ? stored.lyricsProviders : null
+  if (!rawProviders || rawProviders.length === 0) {
+    merged.lyricsProviders = DEFAULT_LYRICS_PROVIDERS.map((p) => ({ ...p }))
+  } else {
+    merged.lyricsProviders = rawProviders
+      .filter((p): p is LyricsProvider => !!p && typeof p.id === 'string')
+      .map((p) => ({ id: p.id, enabled: p.enabled !== false }))
+  }
+  if (typeof merged.romanizeLyrics !== 'boolean') merged.romanizeLyrics = false
   return merged
 }
 

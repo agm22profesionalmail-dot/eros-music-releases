@@ -56,11 +56,10 @@ export function registerIpc(getMainWindow: () => BrowserWindow | null): void {
       _e,
       params: { videoId: string; title: string; artists: string[]; album?: string; durationSec?: number }
     ) => {
-      // LRCLIB/KuGou (sincronizadas) primero; letra de YouTube como último recurso
-      const synced = await getLyrics(params)
-      if (synced) return synced
-      const yt = await music.getYtLyrics(params.videoId)
-      return yt ? { source: 'YouTube Music', plain: yt.text } : null
+      // F30 · Todo el fallback (LRCLIB/KuGou/YTMUSIC) vive dentro del
+      // orquestador; aquí solo delegamos. El orden y qué proveedores están
+      // activos lo decide el usuario en Ajustes → Letras.
+      return await getLyrics(params)
     }
   )
 

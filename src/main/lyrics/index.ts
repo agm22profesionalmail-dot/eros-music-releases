@@ -1,13 +1,26 @@
-// Orquestador de letras: las mismas fuentes y el mismo orden que Metrolist
-// en Android — LRCLIB (sincronizada) → KuGou (sincronizada) → LRCLIB (plana).
-// Con caché en memoria por título|artistas que vive lo que la sesión.
+// Orquestador de letras. En F30 la cadena de proveedores es configurable:
+// el usuario reordena LRCLIB, KUGOU y YTMUSIC en Ajustes → Letras. El
+// orquestador itera la lista, respeta el flag `enabled` y devuelve el
+// primer proveedor que entregue una letra útil.
+//
+// Prioridad interna dentro de cada proveedor:
+//   1. sincronizada por palabra (KRC de KuGou) — karaoke real
+//   2. sincronizada por líneas (LRC) — resaltado de línea
+//   3. texto plano — mejor que nada
+//
+// Caché en memoria por título|artistas para la sesión (deduplica peticiones
+// concurrentes al guardar la promesa en curso).
 
-import type { LyricsData } from '@shared/types'
+import type { LyricsData, LyricLine, LyricsProvider } from '@shared/types'
 import { fetchLrclibLyrics, type LrclibLyrics } from './lrclib'
 import { fetchKugouLyrics, fetchKugouKrc } from './kugou'
 import { parseLrc } from './parser'
+import { getAllSettings } from '../settings'
+import { getYtLyrics } from '../innertube/api'
 
 export interface GetLyricsParams {
+  /** F30 · Necesario para el proveedor YTMUSIC (Innertube.music.getLyrics). */
+  videoId?: string
   title: string
   artists: string[]
   album?: string
@@ -59,9 +72,8 @@ export function clearLyricsCache(): void {
 }
 
 /**
- * Busca la letra de una canción. Orden de fuentes, como Metrolist:
- *   1) LRCLIB sincronizada  2) KuGou sincronizada  3) LRCLIB texto plano
- * Nunca lanza: si todo falla devuelve null.
+ * Busca la letra de una canción respetando la cadena configurada por el
+ * usuario (F30). Nunca lanza: si nada devuelve algo útil, resuelve a null.
  */
 export function getLyrics(params: GetLyricsParams): Promise<LyricsData | null> {
   const title = normalizeTitle(params.title)
@@ -74,53 +86,111 @@ export function getLyrics(params: GetLyricsParams): Promise<LyricsData | null> {
   return promise
 }
 
+/**
+ * Ejecuta los proveedores en el orden configurado. Cada proveedor decide su
+ * propia jerarquía interna (KRC > LRC > texto plano) y devuelve `null` si no
+ * encuentra nada. El primero que devuelva contenido real gana.
+ */
 async function lookup(
   title: string,
   artist: string,
   params: GetLyricsParams
 ): Promise<LyricsData | null> {
-  // KRC de KuGou (tiempos por palabra) y LRCLIB (líneas) en paralelo:
-  // el karaoke de verdad necesita palabras; LRCLIB es el respaldo fiable.
-  const kugouParams = { title, artist, durationSec: params.durationSec }
-  const [krcResult, lrclibResult] = await Promise.allSettled([
-    fetchKugouKrc(kugouParams),
-    fetchLrclibLyrics({ title, artist, album: params.album, durationSec: params.durationSec })
-  ])
+  const settings = getAllSettings()
+  // Si no hay proveedores configurados (o el array quedó vacío), usa los
+  // defaults implícitos igual que getAllSettings — cinturón y tirantes.
+  const providers: LyricsProvider[] = settings.lyricsProviders?.length
+    ? settings.lyricsProviders
+    : [
+        { id: 'LRCLIB', enabled: true },
+        { id: 'KUGOU', enabled: true },
+        { id: 'YTMUSIC', enabled: true }
+      ]
 
-  // 1) KuGou KRC — karaoke por palabra (el que sigue al cantante)
-  const krc = krcResult.status === 'fulfilled' ? krcResult.value : null
-  if (krc && hasRealLines(krc) && !krc.some((l) => l.text.includes('纯音乐'))) {
-    return { source: 'KuGou (karaoke)', synced: krc }
+  for (const provider of providers) {
+    if (!provider.enabled) continue
+    try {
+      const result = await runProvider(provider.id, title, artist, params)
+      if (result) return result
+    } catch {
+      // Cualquier fallo se traga y se pasa al siguiente proveedor.
+    }
   }
+  return null
+}
 
-  // 2) LRCLIB sincronizada por líneas
-  const lrclib: LrclibLyrics | null =
-    lrclibResult.status === 'fulfilled' ? lrclibResult.value : null
-  if (lrclib?.synced) {
+/** Ejecuta un proveedor concreto por id. */
+async function runProvider(
+  id: string,
+  title: string,
+  artist: string,
+  params: GetLyricsParams
+): Promise<LyricsData | null> {
+  switch (id.toUpperCase()) {
+    case 'LRCLIB':
+      return await providerLrclib(title, artist, params)
+    case 'KUGOU':
+      return await providerKugou(title, artist, params)
+    case 'YTMUSIC':
+      return await providerYoutubeMusic(params)
+    default:
+      return null
+  }
+}
+
+// ---------- Proveedores ----------
+
+async function providerLrclib(
+  title: string,
+  artist: string,
+  params: GetLyricsParams
+): Promise<LyricsData | null> {
+  const lrclib: LrclibLyrics | null = await fetchLrclibLyrics({
+    title,
+    artist,
+    album: params.album,
+    durationSec: params.durationSec
+  })
+  if (!lrclib) return null
+  if (lrclib.synced) {
     const synced = parseLrc(lrclib.synced)
     if (hasRealLines(synced)) {
       return { source: 'LRCLIB', synced, plain: lrclib.plain }
     }
   }
+  if (lrclib.plain) return { source: 'LRCLIB', plain: lrclib.plain }
+  return null
+}
 
-  // 3) KuGou LRC — respaldo sincronizado por líneas (nunca lanza)
-  const kugouLrc = await fetchKugouLyrics(kugouParams)
-  if (kugouLrc) {
-    const synced = parseLrc(kugouLrc)
-    // "纯音乐" = pista instrumental marcada por KuGou: no es una letra real
+async function providerKugou(
+  title: string,
+  artist: string,
+  params: GetLyricsParams
+): Promise<LyricsData | null> {
+  const kugouParams = { title, artist, durationSec: params.durationSec }
+  // KRC primero (palabras); LRC como respaldo del mismo proveedor.
+  const krc = await fetchKugouKrc(kugouParams).catch(() => null)
+  if (krc && hasRealLines(krc) && !krc.some((l) => l.text.includes('纯音乐'))) {
+    return { source: 'KuGou (karaoke)', synced: krc }
+  }
+  const lrc = await fetchKugouLyrics(kugouParams).catch(() => null)
+  if (lrc) {
+    const synced = parseLrc(lrc)
     if (hasRealLines(synced) && !synced.some((l) => l.text.includes('纯音乐'))) {
       return { source: 'KuGou', synced }
     }
   }
-
-  // 4) LRCLIB texto plano — mejor que nada
-  if (lrclib?.plain) {
-    return { source: 'LRCLIB', plain: lrclib.plain }
-  }
   return null
 }
 
+async function providerYoutubeMusic(params: GetLyricsParams): Promise<LyricsData | null> {
+  if (!params.videoId) return null
+  const yt = await getYtLyrics(params.videoId).catch(() => null)
+  if (!yt?.text || yt.text.trim() === '') return null
+  return { source: 'YouTube Music', plain: yt.text }
+}
+
 /** Al menos una línea con texto de verdad (no solo pausas vacías). */
-function hasRealLines(lines: { timeMs: number; text: string }[]): boolean {
+function hasRealLines(lines: LyricLine[] | { timeMs: number; text: string }[]): boolean {
   return lines.some((l) => l.text.trim() !== '')
 }

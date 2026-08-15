@@ -394,7 +394,33 @@ export interface AppSettings {
   streamingSources: StreamingSource[]
   /** Si todos los clientes InnerTube fallan, cae a yt-dlp como red de seguridad */
   useYtDlpFallback: boolean
+
+  // ---------- F30 · Proveedores de letras configurables + romanización CJK ----------
+
+  /**
+   * Cadena de proveedores de letras que el orquestador prueba en orden.
+   * El usuario reordena/desactiva. Ids conocidos: LRCLIB, KUGOU, YTMUSIC.
+   */
+  lyricsProviders: LyricsProvider[]
+  /** Muestra romanización debajo de líneas con caracteres japoneses/coreanos. */
+  romanizeLyrics: boolean
 }
+
+/** F30 · Un proveedor de letras en la cadena configurable. */
+export interface LyricsProvider {
+  id: string
+  enabled: boolean
+}
+
+/**
+ * F30 · Orden y estado por defecto de la cadena de proveedores de letras.
+ * Coincide con la cadena histórica: LRCLIB → KUGOU → YTMUSIC.
+ */
+export const DEFAULT_LYRICS_PROVIDERS: LyricsProvider[] = [
+  { id: 'LRCLIB', enabled: true },
+  { id: 'KUGOU', enabled: true },
+  { id: 'YTMUSIC', enabled: true }
+]
 
 /** F29 · Un cliente configurable en la cadena de streaming. */
 export interface StreamingSource {
@@ -463,7 +489,10 @@ export const DEFAULT_SETTINGS: AppSettings = {
   pauseOnAudioDeviceChange: false,
   // F29 · fuentes de streaming (misma cadena histórica) + yt-dlp de rescate
   streamingSources: DEFAULT_STREAMING_SOURCES,
-  useYtDlpFallback: true
+  useYtDlpFallback: true,
+  // F30 · proveedores de letras y romanización CJK
+  lyricsProviders: DEFAULT_LYRICS_PROVIDERS,
+  romanizeLyrics: false
 }
 
 export interface LyricWord {
