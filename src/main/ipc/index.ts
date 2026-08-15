@@ -110,6 +110,15 @@ export function registerIpc(getMainWindow: () => BrowserWindow | null): void {
       const { sessionManager } = await import('../innertube/session')
       await sessionManager.invalidateForLocaleChange().catch(() => undefined)
     }
+    // F29 · si cambia la cadena de streaming o el toggle de yt-dlp, invalidamos
+    // la sesión (fuerza a recrear el player) y limpiamos la caché de URLs
+    // resueltas: la próxima reproducción probará el orden nuevo.
+    if ('streamingSources' in patch || 'useYtDlpFallback' in patch) {
+      const { sessionManager } = await import('../innertube/session')
+      await sessionManager.invalidateStreamingSession().catch(() => undefined)
+      const { clearStreamCache } = await import('../stream/resolver')
+      clearStreamCache()
+    }
     // Notifica a todas las ventanas (la principal Y el mini) para que
     // tema/acento se mantengan sincronizados en vivo.
     for (const w of BrowserWindow.getAllWindows()) {

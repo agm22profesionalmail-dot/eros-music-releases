@@ -2,6 +2,44 @@ import { useState } from 'react'
 import { useSettings } from '../app/settingsStore'
 import { useAuth } from '../app/authStore'
 import { EQ_BANDS } from '../player/engine'
+import { DEFAULT_STREAMING_SOURCES, type StreamingSource } from '@shared/types'
+
+// F29 · Metadatos visibles de cada fuente de streaming. El backend usa el id
+// tal cual (con alias normalizados) — este mapa solo alimenta la UI.
+const STREAMING_SOURCE_META: Record<string, { name: string; description: string }> = {
+  YTMUSIC: {
+    name: 'YouTube Music (WEB_REMIX)',
+    description: 'YouTube Music web (WEB_REMIX). Cliente principal autenticado.'
+  },
+  IOS: {
+    name: 'iOS',
+    description: 'iOS. Fiable como fallback sin PoToken.'
+  },
+  ANDROID: {
+    name: 'Android',
+    description: 'Android. Alta calidad, ~2 MB sin PoToken propio.'
+  },
+  TV_EMBEDDED: {
+    name: 'TV embed (TVHTML5)',
+    description: 'TV embed. Cliente estable como último InnerTube.'
+  },
+  ANDROID_VR: {
+    name: 'Android VR',
+    description: 'Android VR. Experimental.'
+  },
+  WEB_CREATOR: {
+    name: 'YouTube Studio (WEB_CREATOR)',
+    description: 'YouTube Studio. Experimental.'
+  },
+  MWEB: {
+    name: 'YouTube móvil web',
+    description: 'Móvil web. Experimental.'
+  }
+}
+
+function sourceMeta(id: string): { name: string; description: string } {
+  return STREAMING_SOURCE_META[id] ?? { name: id, description: 'Cliente personalizado.' }
+}
 
 const EQ_PRESETS: Record<string, number[]> = {
   Plano: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -305,6 +343,84 @@ export function SettingsPage(): React.JSX.Element {
         Idioma y país afectan a las recomendaciones y a los resultados de búsqueda. Al cambiarlos
         la sesión de YouTube Music se reconstruye en caliente.
       </p>
+
+      <h2>Fuentes de streaming</h2>
+      <p style={{ color: 'var(--text-subdued)', fontSize: 12, padding: '0 0 8px' }}>
+        Orden en el que el resolver probará cada cliente al pedir audio. Marca solo los que
+        quieras usar y arrastra la prioridad con las flechas. Al cambiar cualquier ajuste la
+        caché de URLs se limpia para que el próximo tema se resuelva con el orden nuevo.
+      </p>
+      <div className="streaming-source-list">
+        {settings.streamingSources.map((src: StreamingSource, i) => {
+          const meta = sourceMeta(src.id)
+          const total = settings.streamingSources.length
+          const move = (delta: number): void => {
+            const j = i + delta
+            if (j < 0 || j >= total) return
+            const next = settings.streamingSources.slice()
+            const [item] = next.splice(i, 1)
+            next.splice(j, 0, item)
+            void update({ streamingSources: next })
+          }
+          return (
+            <div key={src.id} className="streaming-source-row">
+              <input
+                type="checkbox"
+                checked={src.enabled}
+                aria-label={`Activar ${meta.name}`}
+                onChange={(e) => {
+                  const next = settings.streamingSources.map((s, k) =>
+                    k === i ? { ...s, enabled: e.target.checked } : s
+                  )
+                  void update({ streamingSources: next })
+                }}
+              />
+              <div className="streaming-source-info">
+                <div className="streaming-source-name">{meta.name}</div>
+                <div className="streaming-source-desc">{meta.description}</div>
+              </div>
+              <div className="streaming-source-order">
+                <button
+                  className="chip"
+                  aria-label={`Subir ${meta.name}`}
+                  disabled={i === 0}
+                  onClick={() => move(-1)}
+                >
+                  ↑
+                </button>
+                <button
+                  className="chip"
+                  aria-label={`Bajar ${meta.name}`}
+                  disabled={i === total - 1}
+                  onClick={() => move(1)}
+                >
+                  ↓
+                </button>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+      <Row label="Usar yt-dlp como último recurso">
+        <input
+          type="checkbox"
+          checked={settings.useYtDlpFallback}
+          onChange={(e) => void update({ useYtDlpFallback: e.target.checked })}
+        />
+      </Row>
+      <div style={{ padding: '10px 0 8px' }}>
+        <button
+          className="btn btn-secondary"
+          onClick={() =>
+            void update({
+              streamingSources: DEFAULT_STREAMING_SOURCES.map((s) => ({ ...s })),
+              useYtDlpFallback: true
+            })
+          }
+        >
+          Restaurar predeterminados
+        </button>
+      </div>
 
       <h2>Página del Artista</h2>
       <Row label="Mostrar descripción del artista">

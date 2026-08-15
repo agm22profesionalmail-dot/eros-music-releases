@@ -2462,3 +2462,56 @@ a:hover {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* ---------- F29 · Fuentes de streaming (Ajustes) ---------- */
+
+.streaming-source-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 0 4px;
+}
+
+.streaming-source-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--divider);
+  border-radius: 8px;
+}
+
+.streaming-source-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.streaming-source-name {
+  font-size: 14px;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.streaming-source-desc {
+  font-size: 12px;
+  color: var(--text-subdued);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.streaming-source-order {
+  display: flex;
+  gap: 4px;
+}
+
+.streaming-source-order .chip {
+  min-width: 34px;
+  padding: 4px 8px;
+}

@@ -32,15 +32,29 @@ export interface ResolvedStream {
   totalBytes?: number
 }
 
-// YTMUSIC primero: con PoToken de WEB es el único con acceso completo al fichero;
-// IOS/ANDROID solo sirven ~2 MB sin su propia atestación (medido 2026-08)
-const CLIENT_CHAIN = ['YTMUSIC', 'IOS', 'ANDROID', 'TV_EMBEDDED'] as const
+// F29 · La cadena real se lee de `AppSettings.streamingSources` en cada
+// resolución (respetando orden y `enabled`). Los alias del ecosistema
+// Metrolist Android se normalizan al cliente que sí conoce youtubei.js.
+const CLIENT_ALIAS: Record<string, string> = {
+  WEB_REMIX: 'YTMUSIC',
+  ANDROID_MUSIC: 'ANDROID',
+  TVHTML5: 'TV_EMBEDDED'
+}
+
+/** Normaliza un id de fuente a su cliente real para `getInfo({client})`. */
+function normalizeClient(id: string): string {
+  return CLIENT_ALIAS[id] ?? id
+}
 
 const CLIENT_UA: Record<string, string | undefined> = {
   IOS: 'com.google.ios.youtube/20.11.6 (iPhone10,4; U; CPU iOS 16_7_7 like Mac OS X)',
   ANDROID:
     'com.google.android.youtube/21.03.36(Linux; U; Android 16; en_US; SM-S908E Build/TP1A.220624.014) gzip',
+  ANDROID_VR:
+    'com.google.android.apps.youtube.vr.oculus/1.56.21 (Linux; U; Android 12L; eureka-user Build/SQ3A.220605.009.A1) gzip',
   YTMUSIC: undefined, // usa el UA de navegador de la sesión
+  WEB_CREATOR: undefined,
+  MWEB: undefined,
   TV_EMBEDDED: 'Mozilla/5.0 (ChromiumStylePlatform) Cobalt/Version'
 }
 
@@ -60,10 +74,22 @@ export async function resolveStream(videoId: string): Promise<ResolvedStream> {
 
   const yt = await sessionManager.ensureStreamingReady()
 
+  // F29 · leer la cadena configurada; si por algún motivo queda vacía tras
+  // filtrar (todo deshabilitado), volvemos al comportamiento histórico
+  // para no dejar al usuario sin sonido por un botón desmarcado.
+  const settingsSnapshot = getAllSettings()
+  const configured = settingsSnapshot.streamingSources.filter((s) => s.enabled).map((s) => s.id)
+  const chain =
+    configured.length > 0 ? configured : ['YTMUSIC', 'IOS', 'ANDROID', 'TV_EMBEDDED']
+
   let lastError: unknown = null
-  for (const client of CLIENT_CHAIN) {
+  for (const source of chain) {
+    const client = normalizeClient(source)
     try {
-      const info = await yt.getInfo(videoId, { client })
+      // youtubei.js tipa `client` como InnerTubeClient; aceptamos strings
+      // libres para poder probar aliases o clientes experimentales que el
+      // usuario haya añadido. Si el motor los rechaza, capturamos y seguimos.
+      const info = await yt.getInfo(videoId, { client: client as never })
       const status = info.playability_status?.status
       if (status && status !== 'OK') {
         lastError = new Error(`playability ${status} (${client})`)
@@ -93,18 +119,19 @@ export async function resolveStream(videoId: string): Promise<ResolvedStream> {
         }
       }
       if (!format) {
-        lastError = new Error(`sin formato de audio (${client})`)
+        lastError = new Error(`sin formato de audio (${source})`)
         continue
       }
       // decipher aplica sig/nsig con el player y añade pot si la sesión lo tiene
       const url = await format.decipher(yt.session.player)
       if (!url) {
-        lastError = new Error(`decipher vacío (${client})`)
+        lastError = new Error(`decipher vacío (${source})`)
         continue
       }
       const u = new URL(url)
+      const label = source === client ? source : `${source}→${client}`
       console.log(
-        `[resolver] ${client} ok: c=${u.searchParams.get('c')} pot=${u.searchParams.has('pot')} sabr=${u.searchParams.get('sabr') ?? '-'} n=${u.searchParams.has('n')} sig=${u.searchParams.has('sig') || u.searchParams.has('signature')}`
+        `[resolver] ${label} ok: c=${u.searchParams.get('c')} pot=${u.searchParams.has('pot')} sabr=${u.searchParams.get('sabr') ?? '-'} n=${u.searchParams.has('n')} sig=${u.searchParams.has('sig') || u.searchParams.has('signature')}`
       )
       const resolved: ResolvedStream = {
         url,
@@ -113,25 +140,32 @@ export async function resolveStream(videoId: string): Promise<ResolvedStream> {
         durationSec: info.basic_info.duration,
         // las URLs llevan expire=; si no lo encontramos, asumimos 4 h
         expiresAt: extractExpiry(url) ?? Date.now() + 4 * 3600_000,
-        via: client,
-        userAgent: CLIENT_UA[client] ?? yt.session.context.client.userAgent,
+        via: source,
+        userAgent:
+          CLIENT_UA[source] ?? CLIENT_UA[client] ?? yt.session.context.client.userAgent,
         totalBytes: format.content_length ? Number(format.content_length) : undefined
       }
       cache.set(videoId, resolved)
       return resolved
     } catch (err) {
-      console.warn(`[resolver] ${client} falló para ${videoId}:`, String((err as Error)?.message ?? err))
+      console.warn(
+        `[resolver] ${source} falló para ${videoId}:`,
+        String((err as Error)?.message ?? err)
+      )
       lastError = err
     }
   }
 
-  // Red de seguridad: yt-dlp (instalado en el equipo)
-  try {
-    const resolved = await resolveWithYtDlp(videoId)
-    cache.set(videoId, resolved)
-    return resolved
-  } catch (err) {
-    lastError = err
+  // F29 · red de seguridad opcional: yt-dlp (instalado en el equipo).
+  // El usuario puede desactivarla si InnerTube le basta o si yt-dlp está roto.
+  if (settingsSnapshot.useYtDlpFallback) {
+    try {
+      const resolved = await resolveWithYtDlp(videoId)
+      cache.set(videoId, resolved)
+      return resolved
+    } catch (err) {
+      lastError = err
+    }
   }
 
   throw new Error(`No se pudo resolver el stream de ${videoId}: ${String(lastError)}`)

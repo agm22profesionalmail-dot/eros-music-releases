@@ -382,7 +382,38 @@ export interface AppSettings {
   showArtistMonthlyListeners: boolean
   /** Pausar automáticamente al cambiar el dispositivo de salida de audio por defecto */
   pauseOnAudioDeviceChange: boolean
+
+  // ---------- F29 · Fuentes de streaming configurables ----------
+
+  /**
+   * Cadena de clientes InnerTube que el resolver prueba en orden.
+   * El usuario puede reordenarlos y deshabilitar los que no le interesen.
+   * Los ids que no correspondan a un cliente conocido de youtubei.js se
+   * intentan igualmente; si el motor los rechaza se salta al siguiente.
+   */
+  streamingSources: StreamingSource[]
+  /** Si todos los clientes InnerTube fallan, cae a yt-dlp como red de seguridad */
+  useYtDlpFallback: boolean
 }
+
+/** F29 · Un cliente configurable en la cadena de streaming. */
+export interface StreamingSource {
+  id: string
+  enabled: boolean
+}
+
+/**
+ * F29 · Orden y estado por defecto de la cadena de streaming.
+ * Coincide con la cadena histórica del resolver (v0.3): YTMUSIC → IOS →
+ * ANDROID → TV_EMBEDDED. Si un usuario tiene ajustes guardados sin este
+ * campo, `getAllSettings()` los rellena con estos defaults.
+ */
+export const DEFAULT_STREAMING_SOURCES: StreamingSource[] = [
+  { id: 'YTMUSIC', enabled: true },
+  { id: 'IOS', enabled: true },
+  { id: 'ANDROID', enabled: true },
+  { id: 'TV_EMBEDDED', enabled: true }
+]
 
 export type MiniCorner = AppSettings['miniCorner']
 
@@ -429,7 +460,10 @@ export const DEFAULT_SETTINGS: AppSettings = {
   showArtistDescription: true,
   showArtistSubscribers: true,
   showArtistMonthlyListeners: true,
-  pauseOnAudioDeviceChange: false
+  pauseOnAudioDeviceChange: false,
+  // F29 · fuentes de streaming (misma cadena histórica) + yt-dlp de rescate
+  streamingSources: DEFAULT_STREAMING_SOURCES,
+  useYtDlpFallback: true
 }
 
 export interface LyricWord {

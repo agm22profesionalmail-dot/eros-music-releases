@@ -358,6 +358,16 @@ class SessionManager extends EventEmitter {
     await this.get().catch(() => undefined)
   }
 
+  /**
+   * F29 · Alias con nombre más neutro: útil cuando lo que cambia no es el
+   * locale sino la cadena de streaming (o el toggle de yt-dlp). El efecto
+   * es idéntico: `#streamingReady = false` para forzar a reconstruir la
+   * sesión con player la próxima vez que alguien pida un stream.
+   */
+  async invalidateStreamingSession(): Promise<void> {
+    await this.invalidateForLocaleChange()
+  }
+
   async signOut(): Promise<void> {
     try {
       if (this.#authState.method === 'oauth' && this.#innertube) {

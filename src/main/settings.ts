@@ -5,7 +5,9 @@ import { getSetting, setSetting, getDb } from './db'
 import {
   DEFAULT_PROFILE,
   DEFAULT_SETTINGS,
+  DEFAULT_STREAMING_SOURCES,
   type AppSettings,
+  type StreamingSource,
   type UserProfile
 } from '@shared/types'
 
@@ -13,10 +15,22 @@ import {
 
 export function getAllSettings(): AppSettings {
   const stored = getSetting<Partial<AppSettings>>('app.settings', {})
-  const merged = { ...DEFAULT_SETTINGS, ...stored }
+  const merged: AppSettings = { ...DEFAULT_SETTINGS, ...stored }
   if (!merged.downloadsDir) {
     merged.downloadsDir = getSetting('downloads.dir', join('F:\\', 'MetrolistPC', 'Music'))
   }
+  // F29 · rellena defaults si el usuario venía de una versión previa (o si el
+  // array quedó vacío/corrupto). No perdemos configuración: si tiene al
+  // menos una fuente válida guardada, la respetamos tal cual.
+  const rawSources = Array.isArray(stored?.streamingSources) ? stored.streamingSources : null
+  if (!rawSources || rawSources.length === 0) {
+    merged.streamingSources = DEFAULT_STREAMING_SOURCES.map((s) => ({ ...s }))
+  } else {
+    merged.streamingSources = rawSources
+      .filter((s): s is StreamingSource => !!s && typeof s.id === 'string')
+      .map((s) => ({ id: s.id, enabled: s.enabled !== false }))
+  }
+  if (typeof merged.useYtDlpFallback !== 'boolean') merged.useYtDlpFallback = true
   return merged
 }
 
