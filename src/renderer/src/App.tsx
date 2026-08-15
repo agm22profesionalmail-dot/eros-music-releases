@@ -11,6 +11,7 @@ import { ArtistPage } from './pages/ArtistPage'
 import { LoginPage } from './pages/LoginPage'
 import { LibraryPage } from './pages/LibraryPage'
 import { SettingsPage } from './pages/SettingsPage'
+import { ProfilePage } from './pages/ProfilePage'
 import { LyricsPage } from './pages/LyricsPage'
 import { VisualizerPage } from './pages/VisualizerPage'
 import { ContextMenuHost } from './components/ContextMenu'
@@ -18,6 +19,7 @@ import { TextModalHost } from './components/TextModal'
 import { AmbientBackground } from './components/AmbientBackground'
 import { useLibrary } from './app/libraryStore'
 import { useSettings } from './app/settingsStore'
+import { useProfile } from './app/profileStore'
 import { useAmbient } from './app/ambientStore'
 import { initMediaIntegration } from './player/mediaSession'
 import { useRouter } from './app/router'
@@ -50,12 +52,15 @@ export default function App(): React.JSX.Element {
 
   const initSettings = useSettings((s) => s.init)
   const initAmbient = useAmbient((s) => s.init)
+  const initProfile = useProfile((s) => s.init)
+  const profile = useProfile((s) => s.profile)
   useEffect(() => {
     initAuth()
     void initSettings()
+    void initProfile()
     initAmbient()
     return initMediaIntegration()
-  }, [initAuth, initSettings, initAmbient])
+  }, [initAuth, initSettings, initProfile, initAmbient])
 
   // Carga la biblioteca cuando hay sesión; límpiala al cerrar sesión
   const loadLibrary = useLibrary((s) => s.load)
@@ -127,12 +132,14 @@ export default function App(): React.JSX.Element {
                 {auth.status === 'signedIn' ? (
                   <button
                     className="avatar-btn"
-                    title="Cuenta"
-                    onClick={() => {
-                      if (confirm('¿Cerrar sesión?')) void window.api.auth.signOut()
-                    }}
+                    title={
+                      (profile.enabled ? profile.displayName : auth.accountName) || 'Perfil'
+                    }
+                    onClick={() => navigate({ name: 'profile' })}
                   >
-                    {auth.accountPhotoUrl ? (
+                    {profile.enabled && profile.photoDataUrl ? (
+                      <img src={profile.photoDataUrl} alt="" />
+                    ) : auth.accountPhotoUrl ? (
                       <img src={auth.accountPhotoUrl} alt="" />
                     ) : (
                       <PersonIcon size={18} />
@@ -164,6 +171,7 @@ export default function App(): React.JSX.Element {
                 {route.name === 'lyrics' && <LyricsPage />}
                 {route.name === 'visualizer' && <VisualizerPage />}
                 {route.name === 'settings' && <SettingsPage />}
+                {route.name === 'profile' && <ProfilePage />}
               </div>
             )}
           </div>

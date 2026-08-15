@@ -2,7 +2,12 @@ import { dialog, shell, BrowserWindow } from 'electron'
 import { promises as fs } from 'fs'
 import { join, basename } from 'path'
 import { getSetting, setSetting, getDb } from './db'
-import { DEFAULT_SETTINGS, type AppSettings } from '@shared/types'
+import {
+  DEFAULT_PROFILE,
+  DEFAULT_SETTINGS,
+  type AppSettings,
+  type UserProfile
+} from '@shared/types'
 
 /** Ajustes de la app persistidos en SQLite. */
 
@@ -19,6 +24,32 @@ export function updateSettings(patch: Partial<AppSettings>): AppSettings {
   const merged = { ...getAllSettings(), ...patch }
   setSetting('app.settings', merged)
   if (patch.downloadsDir) setSetting('downloads.dir', patch.downloadsDir)
+  return merged
+}
+
+// ---------- Perfil de usuario (F20) ----------
+
+/** Devuelve el perfil almacenado, fusionado con los valores por defecto. */
+export function getProfile(): UserProfile {
+  const stored = getSetting<Partial<UserProfile>>('app.profile', {})
+  return {
+    ...DEFAULT_PROFILE,
+    ...stored,
+    // Fuerza arrays (defensivo si el JSON viejo tuviera undefined)
+    favoriteArtists: Array.isArray(stored?.favoriteArtists) ? stored.favoriteArtists : [],
+    publicPlaylistIds: Array.isArray(stored?.publicPlaylistIds) ? stored.publicPlaylistIds : []
+  }
+}
+
+/** Aplica un parche parcial al perfil y devuelve el perfil resultante. */
+export function setProfile(patch: Partial<UserProfile>): UserProfile {
+  const merged: UserProfile = { ...getProfile(), ...patch }
+  // Sanea bio a 200 chars y displayName a 40 chars por si el renderer se salta el límite
+  if (typeof merged.bio === 'string' && merged.bio.length > 200) merged.bio = merged.bio.slice(0, 200)
+  if (typeof merged.displayName === 'string' && merged.displayName.length > 40) {
+    merged.displayName = merged.displayName.slice(0, 40)
+  }
+  setSetting('app.profile', merged)
   return merged
 }
 

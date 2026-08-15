@@ -13,7 +13,8 @@ import type {
   SearchFilter,
   SearchResults,
   Shelf,
-  TrackSummary
+  TrackSummary,
+  UserProfile
 } from '../shared/types'
 
 const api = {
@@ -65,6 +66,17 @@ const api = {
     changeDownloadsDir: (): Promise<{ dir: string; moved: number } | null> =>
       ipcRenderer.invoke(IPC.DL_CHANGE_DIR),
     openDownloadsDir: (): Promise<void> => ipcRenderer.invoke(IPC.DL_OPEN_DIR)
+  },
+
+  profile: {
+    get: (): Promise<UserProfile> => ipcRenderer.invoke(IPC.PROFILE_GET),
+    set: (patch: Partial<UserProfile>): Promise<UserProfile> =>
+      ipcRenderer.invoke(IPC.PROFILE_SET, patch),
+    onChanged: (cb: (profile: UserProfile) => void): (() => void) => {
+      const listener = (_e: unknown, p: UserProfile): void => cb(p)
+      ipcRenderer.on(IPC.PROFILE_CHANGED, listener)
+      return () => ipcRenderer.removeListener(IPC.PROFILE_CHANGED, listener)
+    }
   },
 
   media: {

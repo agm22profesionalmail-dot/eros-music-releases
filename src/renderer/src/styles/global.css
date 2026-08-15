@@ -1530,3 +1530,314 @@ a:hover {
   margin: 8px 0;
   font-size: 13px;
 }
+
+/* ---------- Perfil (F20) ---------- */
+.profile-page .profile-header {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  padding: 8px 0 24px;
+}
+
+.profile-avatar {
+  width: 128px;
+  height: 128px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: color-mix(in srgb, var(--amb-30) 40%, var(--bg-elevated) 80%);
+  display: grid;
+  place-items: center;
+  color: var(--text-subdued);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--amb-glow) 30%, transparent);
+  transition: box-shadow 0.4s var(--ease-out);
+}
+
+.profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.profile-header-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  padding-top: 8px;
+}
+
+.profile-header-meta .eyebrow {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-subdued);
+}
+
+.profile-header-meta .profile-name {
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-header-meta .profile-bio {
+  color: var(--text-secondary);
+  font-size: 14px;
+  max-width: 520px;
+  overflow-wrap: anywhere;
+}
+
+.profile-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--divider);
+}
+
+.profile-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--divider);
+}
+
+.profile-input,
+.profile-textarea {
+  background: var(--bg-elevated);
+  border: 1px solid var(--divider);
+  border-radius: 6px;
+  padding: 10px 12px;
+  color: var(--text-primary);
+  font-size: 14px;
+  outline: none;
+  font-family: inherit;
+  min-width: 240px;
+}
+
+.profile-textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 72px;
+}
+
+.profile-input:focus,
+.profile-textarea:focus {
+  border-color: var(--accent);
+}
+
+.profile-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 0 12px;
+  align-items: center;
+  min-height: 32px;
+}
+
+.profile-artist-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-tinted);
+  border-radius: 32px;
+  padding: 4px 8px 4px 4px;
+  font-size: 13px;
+  max-width: 240px;
+  color: var(--text-primary);
+}
+
+.profile-artist-chip img,
+.profile-artist-chip .ph {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--bg-elevated);
+  display: grid;
+  place-items: center;
+  color: var(--text-subdued);
+}
+
+.profile-artist-chip .txt {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 140px;
+}
+
+.profile-artist-chip .x {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--text-secondary);
+  background: transparent;
+  transition: background 0.1s;
+}
+
+.profile-artist-chip .x:hover {
+  background: var(--bg-tinted-hover);
+  color: var(--text-primary);
+}
+
+.profile-artist-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-elevated);
+  border-radius: 24px;
+  padding: 6px 14px;
+  max-width: 420px;
+}
+
+.profile-artist-search input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-size: 14px;
+  flex: 1;
+  min-width: 0;
+}
+
+.profile-artist-search .icon {
+  color: var(--text-subdued);
+  display: flex;
+}
+
+.profile-artist-results {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 0;
+  max-height: 340px;
+  overflow-y: auto;
+}
+
+.profile-artist-result {
+  display: grid;
+  grid-template-columns: 40px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  text-align: left;
+  color: var(--text-primary);
+  transition: background 0.1s;
+}
+
+.profile-artist-result:hover:not(:disabled) {
+  background: var(--bg-tinted);
+}
+
+.profile-artist-result:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.profile-artist-result img,
+.profile-artist-result .ph {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--bg-elevated);
+  display: grid;
+  place-items: center;
+  color: var(--text-subdued);
+}
+
+.profile-artist-result .meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.profile-artist-result .meta .t {
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-artist-result .meta .s {
+  font-size: 12px;
+  color: var(--text-subdued);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-artist-result .plus {
+  font-size: 18px;
+  color: var(--text-secondary);
+  padding: 0 6px;
+}
+
+.profile-playlist-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 0 12px;
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.profile-playlist-row {
+  display: grid;
+  grid-template-columns: auto 40px 1fr;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.profile-playlist-row:hover {
+  background: var(--bg-tinted);
+}
+
+.profile-playlist-row img,
+.profile-playlist-row .ph {
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+  object-fit: cover;
+  background: var(--bg-elevated);
+  display: grid;
+  place-items: center;
+  color: var(--text-subdued);
+}
+
+.profile-playlist-row .meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.profile-playlist-row .meta .t {
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-playlist-row .meta .s {
+  font-size: 12px;
+  color: var(--text-subdued);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

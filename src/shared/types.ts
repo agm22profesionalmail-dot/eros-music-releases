@@ -107,6 +107,45 @@ export interface AuthState {
   error?: string
 }
 
+// ---------- Perfil de usuario (F20) ----------
+
+/** Referencia a un artista favorito en el perfil del usuario. */
+export interface ProfileArtistRef {
+  id: string
+  name: string
+  thumbnailUrl?: string
+}
+
+/**
+ * Perfil personalizado del usuario. Persistido en `settings` bajo `app.profile`.
+ * Cuando `enabled` es false la app se comporta como antes (usa nombre y foto de
+ * la cuenta de Google). Cuando `enabled` es true, `displayName` y
+ * `photoDataUrl` (si están puestos) sustituyen a los de Google en toda la UI.
+ */
+export interface UserProfile {
+  /** Nombre visible del usuario (sustituye al de Google si `enabled`). */
+  displayName?: string
+  /** Foto de perfil subida por el usuario, ya redimensionada como data URL. */
+  photoDataUrl?: string
+  /** Descripción corta (máximo 200 caracteres). */
+  bio?: string
+  /** Artistas favoritos: se muestran en el perfil y sirven de semilla a F24. */
+  favoriteArtists: ProfileArtistRef[]
+  /** Playlists que el usuario marca como públicas (por id de playlist). */
+  publicPlaylistIds: string[]
+  /** Si es false, la app usa la foto/nombre de Google como hasta ahora. */
+  enabled: boolean
+}
+
+export const DEFAULT_PROFILE: UserProfile = {
+  displayName: '',
+  photoDataUrl: '',
+  bio: '',
+  favoriteArtists: [],
+  publicPlaylistIds: [],
+  enabled: false
+}
+
 // ---------- Canales IPC ----------
 
 export const IPC = {
@@ -149,6 +188,10 @@ export const IPC = {
   SETTINGS_GET: 'settings:get',
   SETTINGS_SET: 'settings:set',
   SETTINGS_CHANGED: 'settings:changed', // main -> todas las ventanas (evento)
+  // perfil de usuario (F20)
+  PROFILE_GET: 'profile:get',
+  PROFILE_SET: 'profile:set',
+  PROFILE_CHANGED: 'profile:changed', // main -> todas las ventanas (evento)
   // control remoto (teclas multimedia globales) main -> renderer
   MEDIA_COMMAND: 'media:command',
   // mini-player y estado de reproducción

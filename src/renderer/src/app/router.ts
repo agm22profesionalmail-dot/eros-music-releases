@@ -14,6 +14,7 @@ export type Route =
   | { name: 'lyrics' }
   | { name: 'visualizer' }
   | { name: 'settings' }
+  | { name: 'profile' }
 
 interface RouterState {
   stack: Route[]
