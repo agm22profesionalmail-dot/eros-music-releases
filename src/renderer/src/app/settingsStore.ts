@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { DEFAULT_SETTINGS, type AppSettings } from '@shared/types'
 import { engine } from '../player/engine'
-import { usePlayer } from '../player/store'
+import { usePlayer, runtimeFlags } from '../player/store'
 import { extractAccent } from './artworkColor'
 
 /**
@@ -21,7 +21,19 @@ function applyToEngine(s: AppSettings): void {
   engine.setPreamp(s.preampDb)
   engine.setPlaybackRate(s.playbackRate, s.preservePitch)
   engine.setCrossfade(s.crossfadeSec)
+  // F27 · Normalización
+  engine.setNormalize(Boolean(s.normalize), s.normalizeLevel ?? 'normal')
   usePlayer.getState().setAutoplay(s.autoplay)
+  // F27 · Volca los flags de comportamiento en las banderas del store
+  runtimeFlags.avoidDuplicatesInQueue = Boolean(s.avoidDuplicatesInQueue)
+  runtimeFlags.skipOnError = Boolean(s.skipOnError)
+  runtimeFlags.progressiveSeek = Boolean(s.progressiveSeek)
+  runtimeFlags.disableCrossfadeOnGapless = Boolean(s.disableCrossfadeOnGapless)
+  runtimeFlags.disableAutoloadOnRepeatAll = Boolean(s.disableAutoloadOnRepeatAll)
+  runtimeFlags.enableSimilarContent = Boolean(s.enableSimilarContent)
+  runtimeFlags.shuffleFirstBeforeSimilar = Boolean(s.shuffleFirstBeforeSimilar)
+  runtimeFlags.preloadMoreAt80Percent = Boolean(s.preloadMoreAt80Percent)
+  runtimeFlags.persistentShuffle = Boolean(s.persistentShuffle)
 }
 
 function contrastForHex(hex: string): string {
@@ -84,6 +96,19 @@ export const useSettings = create<SettingsState>((set, get) => ({
       set({ settings, loaded: true })
       applyToEngine(settings)
       applyTheme(settings)
+      // F27 · Restaura shuffle/repeat de la sesión anterior si el usuario lo pidió.
+      if (settings.rememberShuffleRepeat) {
+        const player = usePlayer.getState()
+        if (typeof settings.lastRepeat === 'string' && settings.lastRepeat !== player.repeat) {
+          usePlayer.setState({ repeat: settings.lastRepeat })
+        }
+        // shuffle solo se puede recuperar si ya hay cola (la persistente
+        // se carga al final de player/store.ts). Si no hay cola aún, se aplicará
+        // al arrancar una nueva vía `persistentShuffle`.
+        if (settings.lastShuffle && !player.shuffle && player.queue.length > 1) {
+          player.toggleShuffle()
+        }
+      }
     } catch {
       set({ loaded: true })
     }
@@ -108,3 +133,11 @@ export const useSettings = create<SettingsState>((set, get) => ({
     await window.api.settings.set(patch).catch(() => undefined)
   }
 }))
+
+// F27 · Expone la referencia al store para que `player/store.ts` pueda
+// persistir shuffle/repeat sin importar el módulo (evita ciclos).
+if (typeof window !== 'undefined') {
+  ;(window as unknown as { __metrolistSettingsStore?: unknown }).__metrolistSettingsStore = {
+    useSettings
+  }
+}

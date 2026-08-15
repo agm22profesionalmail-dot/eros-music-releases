@@ -58,11 +58,57 @@ export function SettingsPage(): React.JSX.Element {
       </Row>
 
       <h2>Reproducción</h2>
+      <Row label="Calidad de sonido">
+        {(
+          [
+            ['auto', 'Auto'],
+            ['high', 'Alta'],
+            ['medium', 'Media'],
+            ['low', 'Baja']
+          ] as const
+        ).map(([value, label]) => (
+          <button
+            key={value}
+            className={`chip ${settings.audioQuality === value ? 'active' : ''}`}
+            onClick={() => void update({ audioQuality: value })}
+          >
+            {label}
+          </button>
+        ))}
+      </Row>
       <Row label="Continuar con radio al acabar la cola (autoplay)">
         <input
           type="checkbox"
           checked={settings.autoplay}
           onChange={(e) => void update({ autoplay: e.target.checked })}
+        />
+      </Row>
+      <Row label="Habilitar contenido similar (recomendaciones al final de la cola)">
+        <input
+          type="checkbox"
+          checked={settings.enableSimilarContent}
+          onChange={(e) => void update({ enableSimilarContent: e.target.checked })}
+        />
+      </Row>
+      <Row label="Mezclar primero la lista, luego cargar similares">
+        <input
+          type="checkbox"
+          checked={settings.shuffleFirstBeforeSimilar}
+          onChange={(e) => void update({ shuffleFirstBeforeSimilar: e.target.checked })}
+        />
+      </Row>
+      <Row label="Precargar más canciones al 80% del último tema">
+        <input
+          type="checkbox"
+          checked={settings.preloadMoreAt80Percent}
+          onChange={(e) => void update({ preloadMoreAt80Percent: e.target.checked })}
+        />
+      </Row>
+      <Row label="No cargar automáticamente cuando repites todo">
+        <input
+          type="checkbox"
+          checked={settings.disableAutoloadOnRepeatAll}
+          onChange={(e) => void update({ disableAutoloadOnRepeatAll: e.target.checked })}
         />
       </Row>
       <Row label={`Crossfade entre pistas: ${settings.crossfadeSec} s`}>
@@ -73,6 +119,79 @@ export function SettingsPage(): React.JSX.Element {
           step={1}
           value={settings.crossfadeSec}
           onChange={(e) => void update({ crossfadeSec: Number(e.target.value) })}
+        />
+      </Row>
+      <Row label="Desactivar crossfade en álbumes gapless">
+        <input
+          type="checkbox"
+          checked={settings.disableCrossfadeOnGapless}
+          onChange={(e) => void update({ disableCrossfadeOnGapless: e.target.checked })}
+        />
+      </Row>
+      <Row label="Normalizar volumen entre pistas">
+        <input
+          type="checkbox"
+          checked={settings.normalize}
+          onChange={(e) => void update({ normalize: e.target.checked })}
+        />
+        {(
+          [
+            ['soft', 'Suave'],
+            ['normal', 'Normal'],
+            ['loud', 'Alto'],
+            ['aggressive', 'Agresivo']
+          ] as const
+        ).map(([value, label]) => (
+          <button
+            key={value}
+            className={`chip ${settings.normalizeLevel === value ? 'active' : ''}`}
+            onClick={() => void update({ normalizeLevel: value })}
+            disabled={!settings.normalize}
+          >
+            {label}
+          </button>
+        ))}
+      </Row>
+      <Row label="Búsqueda progresiva (cada seek consecutivo suma 5 s)">
+        <input
+          type="checkbox"
+          checked={settings.progressiveSeek}
+          onChange={(e) => void update({ progressiveSeek: e.target.checked })}
+        />
+      </Row>
+      <Row label="Evitar pistas duplicadas en la cola">
+        <input
+          type="checkbox"
+          checked={settings.avoidDuplicatesInQueue}
+          onChange={(e) => void update({ avoidDuplicatesInQueue: e.target.checked })}
+        />
+      </Row>
+      <Row label="Saltar automáticamente si hay error de reproducción">
+        <input
+          type="checkbox"
+          checked={settings.skipOnError}
+          onChange={(e) => void update({ skipOnError: e.target.checked })}
+        />
+      </Row>
+      <Row label="Recordar aleatorio y repetir entre sesiones">
+        <input
+          type="checkbox"
+          checked={settings.rememberShuffleRepeat}
+          onChange={(e) => void update({ rememberShuffleRepeat: e.target.checked })}
+        />
+      </Row>
+      <Row label="Aleatorio persistente al iniciar nueva cola">
+        <input
+          type="checkbox"
+          checked={settings.persistentShuffle}
+          onChange={(e) => void update({ persistentShuffle: e.target.checked })}
+        />
+      </Row>
+      <Row label="Descargar automáticamente al dar me gusta">
+        <input
+          type="checkbox"
+          checked={settings.autoDownloadOnLike}
+          onChange={(e) => void update({ autoDownloadOnLike: e.target.checked })}
         />
       </Row>
       <Row label={`Velocidad: ${settings.playbackRate.toFixed(2)}x`}>
@@ -97,6 +216,16 @@ export function SettingsPage(): React.JSX.Element {
           type="checkbox"
           checked={settings.preservePitch}
           onChange={(e) => void update({ preservePitch: e.target.checked })}
+        />
+      </Row>
+      <Row label={`Duración del historial: ${settings.historyMaxEntries} entradas`}>
+        <input
+          type="range"
+          min={100}
+          max={5000}
+          step={100}
+          value={settings.historyMaxEntries}
+          onChange={(e) => void update({ historyMaxEntries: Number(e.target.value) })}
         />
       </Row>
 

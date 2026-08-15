@@ -36,6 +36,11 @@ export class PlayerEngine {
   #active = 0
   #preamp: GainNode
   #eq: BiquadFilterNode[]
+  /** F27 · Compresor opcional para la normalización. Siempre en la cadena;
+   *  con normalize=false lo dejamos "transparente" (threshold 0, ratio 1). */
+  #compressor: DynamicsCompressorNode
+  #normalize = false
+  #normalizeLevel: 'soft' | 'normal' | 'loud' | 'aggressive' = 'normal'
   #volume: GainNode
   #analyser: AnalyserNode
   #listeners = new Map<EventKey, Set<EngineEvents[EventKey]>>()
@@ -58,18 +63,26 @@ export class PlayerEngine {
       f.gain.value = 0
       return f
     })
+    this.#compressor = this.#ctx.createDynamicsCompressor()
+    // Estado "transparente": no altera el audio (0 dB reducción, ratio 1)
+    this.#compressor.threshold.value = 0
+    this.#compressor.ratio.value = 1
+    this.#compressor.knee.value = 0
+    this.#compressor.attack.value = 0.003
+    this.#compressor.release.value = 0.25
     this.#volume = this.#ctx.createGain()
     this.#analyser = this.#ctx.createAnalyser()
     this.#analyser.fftSize = 256
     this.#analyser.smoothingTimeConstant = 0.8
 
-    // preamp -> eq0 -> eq1 ... -> volumen -> analyser -> salida
+    // preamp -> eq0 -> eq1 ... -> compresor(norm) -> volumen -> analyser -> salida
     let node: AudioNode = this.#preamp
     for (const f of this.#eq) {
       node.connect(f)
       node = f
     }
-    node.connect(this.#volume)
+    node.connect(this.#compressor)
+    this.#compressor.connect(this.#volume)
     this.#volume.connect(this.#analyser)
     this.#analyser.connect(this.#ctx.destination)
 
@@ -268,6 +281,46 @@ export class PlayerEngine {
 
   setCrossfade(seconds: number): void {
     this.#crossfadeSec = Math.max(0, Math.min(12, seconds))
+  }
+
+  /** F27 · lectura del crossfade en vigor (para decidir el fade en el store). */
+  get crossfadeSec(): number {
+    return this.#crossfadeSec
+  }
+
+  /**
+   * F27 · Normalización dinámica. Al desactivarla el compresor vuelve a la
+   * curva transparente. Al activarla mapeamos el "nivel" a un umbral y ratio
+   * inspirado en el objetivo LUFS (aprox.):
+   *   soft       -> target -18 LUFS → threshold −18 dB / ratio 2
+   *   normal     -> target -14 LUFS → threshold −14 dB / ratio 3
+   *   loud       -> target -10 LUFS → threshold −10 dB / ratio 4
+   *   aggressive -> target  -7 LUFS → threshold  −7 dB / ratio 6
+   */
+  setNormalize(enabled: boolean, level: 'soft' | 'normal' | 'loud' | 'aggressive'): void {
+    this.#normalize = enabled
+    this.#normalizeLevel = level
+    const c = this.#compressor
+    if (!enabled) {
+      c.threshold.value = 0
+      c.ratio.value = 1
+      c.knee.value = 0
+      return
+    }
+    const map: Record<typeof level, { threshold: number; ratio: number }> = {
+      soft: { threshold: -18, ratio: 2 },
+      normal: { threshold: -14, ratio: 3 },
+      loud: { threshold: -10, ratio: 4 },
+      aggressive: { threshold: -7, ratio: 6 }
+    }
+    const { threshold, ratio } = map[level]
+    c.threshold.value = threshold
+    c.ratio.value = ratio
+    c.knee.value = 6
+  }
+
+  get normalizeEnabled(): boolean {
+    return this.#normalize
   }
 
   stop(): void {

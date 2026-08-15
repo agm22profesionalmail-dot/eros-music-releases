@@ -323,6 +323,42 @@ export interface AppSettings {
   /** Posición libre del mini-player (si miniCorner = 'free') */
   miniX?: number
   miniY?: number
+
+  // ---------- F27 · Paridad de reproducción con Metrolist Android ----------
+
+  /** Calidad de sonido: auto (mejor disponible), alta (>=192k), media (<=192k), baja (<=96k) */
+  audioQuality: 'auto' | 'high' | 'medium' | 'low'
+  /** Desactivar crossfade cuando dos pistas consecutivas son del mismo álbum (gapless) */
+  disableCrossfadeOnGapless: boolean
+  /** Activa la normalización (compresor dinámico en la cadena) */
+  normalize: boolean
+  /** Nivel objetivo de la normalización: soft(-18) / normal(-14) / loud(-10) / aggressive(-7) LUFS aprox */
+  normalizeLevel: 'soft' | 'normal' | 'loud' | 'aggressive'
+  /** Cada seek consecutivo en <500 ms añade 5 s extra al salto */
+  progressiveSeek: boolean
+  /** Al añadir a la cola, si el videoId ya está, mover en vez de duplicar */
+  avoidDuplicatesInQueue: boolean
+  /** Al fallar el <audio>, saltar automáticamente a la siguiente */
+  skipOnError: boolean
+  /** Recuerda shuffle y repeat entre sesiones */
+  rememberShuffleRepeat: boolean
+  /** Mantiene shuffle activo al iniciar una nueva cola */
+  persistentShuffle: boolean
+  /** En autoplay, dispara `getUpNext` solo cuando la cola original ha terminado íntegramente */
+  shuffleFirstBeforeSimilar: boolean
+  /** Si repeat === 'all', no rellenar la cola con recomendaciones al final */
+  disableAutoloadOnRepeatAll: boolean
+  /** Al dar "me gusta" a una canción, dispara automáticamente su descarga */
+  autoDownloadOnLike: boolean
+  /** Habilita el contenido similar (autoplay) al agotar la cola */
+  enableSimilarContent: boolean
+  /** Precarga una nueva ronda de recomendaciones al 80% del último track de la cola */
+  preloadMoreAt80Percent: boolean
+  /** Máximo de entradas guardadas en el historial local (100..5000) */
+  historyMaxEntries: number
+  /** Persistencia opcional del estado de shuffle/repeat (usado por rememberShuffleRepeat) */
+  lastShuffle?: boolean
+  lastRepeat?: 'off' | 'all' | 'one'
 }
 
 export type MiniCorner = AppSettings['miniCorner']
@@ -344,7 +380,23 @@ export const DEFAULT_SETTINGS: AppSettings = {
   discordRpc: false,
   miniCorner: 'br',
   miniKaraoke: false,
-  miniScale: 1
+  miniScale: 1,
+  // F27
+  audioQuality: 'auto',
+  disableCrossfadeOnGapless: true,
+  normalize: false,
+  normalizeLevel: 'normal',
+  progressiveSeek: false,
+  avoidDuplicatesInQueue: true,
+  skipOnError: true,
+  rememberShuffleRepeat: true,
+  persistentShuffle: false,
+  shuffleFirstBeforeSimilar: true,
+  disableAutoloadOnRepeatAll: true,
+  autoDownloadOnLike: false,
+  enableSimilarContent: true,
+  preloadMoreAt80Percent: false,
+  historyMaxEntries: 500
 }
 
 export interface LyricWord {

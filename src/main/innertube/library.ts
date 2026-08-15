@@ -201,7 +201,18 @@ function normalizePlaylistId(id: string): string {
 // ---------- Historial local ----------
 
 export function addHistoryEntry(track: TrackSummary): void {
-  recordPlay(track.videoId, track)
+  // F27 · pasa el techo del historial al recordPlay para poder recortar la tabla.
+  let cap = 500
+  try {
+    // Importación perezosa para evitar ciclos con settings.ts en tests aislados
+    // (settings depende de db, y db no debe depender de settings).
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const s = require('../settings') as { getAllSettings: () => { historyMaxEntries?: number } }
+    cap = s.getAllSettings().historyMaxEntries ?? 500
+  } catch {
+    /* fallback al defecto */
+  }
+  recordPlay(track.videoId, track, cap)
   // Además, informa a YouTube para que el historial se sincronice con el móvil
   void (async () => {
     try {

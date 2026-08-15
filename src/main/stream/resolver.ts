@@ -3,6 +3,7 @@ import { app } from 'electron'
 import { existsSync } from 'fs'
 import { join } from 'path'
 import { sessionManager } from '../innertube/session'
+import { getAllSettings } from '../settings'
 
 /**
  * Resuelve videoId -> URL directa de audio de googlevideo.
@@ -68,7 +69,29 @@ export async function resolveStream(videoId: string): Promise<ResolvedStream> {
         lastError = new Error(`playability ${status} (${client})`)
         continue
       }
-      const format = info.chooseFormat({ type: 'audio', quality: 'best' })
+      // F27 · calidad de sonido: filtramos por bitrate según el ajuste.
+      //   high   -> mejor formato disponible (equivalente a 'best' actual)
+      //   medium -> el mejor con bitrate <= 192 kbps
+      //   low    -> el mejor con bitrate <= 96 kbps
+      //   auto   -> comportamiento previo (delegado a chooseFormat 'best')
+      const audioQuality = getAllSettings().audioQuality ?? 'auto'
+      let format = info.chooseFormat({ type: 'audio', quality: 'best' })
+      if (audioQuality !== 'auto') {
+        const adaptive =
+          (info as unknown as { streaming_data?: { adaptive_formats?: unknown[] } })
+            .streaming_data?.adaptive_formats ?? []
+        const audioFmts = (adaptive as { mime_type?: string; bitrate?: number }[]).filter(
+          (f) => (f.mime_type ?? '').startsWith('audio/')
+        )
+        if (audioFmts.length) {
+          const cap = audioQuality === 'low' ? 96_000 : audioQuality === 'medium' ? 192_000 : Infinity
+          // Ordena de mayor a menor bitrate y coge el primero por debajo del tope;
+          // si nada cumple, cae al menor disponible para no romper la reproducción.
+          const sorted = [...audioFmts].sort((a, b) => (b.bitrate ?? 0) - (a.bitrate ?? 0))
+          const pick = sorted.find((f) => (f.bitrate ?? 0) <= cap) ?? sorted[sorted.length - 1]
+          if (pick) format = pick as typeof format
+        }
+      }
       if (!format) {
         lastError = new Error(`sin formato de audio (${client})`)
         continue

@@ -3,6 +3,24 @@ import type { QueueItem, TrackSummary } from '@shared/types'
 import { engine } from './engine'
 
 /**
+ * F27 · Flags de reproducción controlados desde ajustes. Se guardan en
+ * variables de módulo (no en el store, para no obligar a re-renderizados) y
+ * los toca `settingsStore.applyToEngine` al hidratar/actualizar los ajustes.
+ * Defaults conservadores: coinciden con `DEFAULT_SETTINGS`.
+ */
+export const runtimeFlags = {
+  avoidDuplicatesInQueue: true,
+  skipOnError: true,
+  progressiveSeek: false,
+  disableCrossfadeOnGapless: true,
+  disableAutoloadOnRepeatAll: true,
+  enableSimilarContent: true,
+  shuffleFirstBeforeSimilar: true,
+  preloadMoreAt80Percent: false,
+  persistentShuffle: false
+}
+
+/**
  * Estado global de reproducción: cola, pista actual, controles.
  * El motor (engine.ts) hace el audio; aquí vive la lógica de cola.
  */
@@ -42,6 +60,46 @@ interface PlayerState {
   toggleShuffle: () => void
   cycleRepeat: () => void
   clearQueue: () => void
+}
+
+// F27 · Estado interno de la búsqueda progresiva.
+let lastSeekAt = 0
+let progressiveExtra = 0
+
+/**
+ * F27 · Persiste shuffle/repeat en los ajustes cuando `rememberShuffleRepeat`
+ * está activo. Import perezoso para evitar dependencia cíclica con settingsStore.
+ */
+let persistShuffleRepeatTimer = 0
+function persistShuffleRepeat(patch: { shuffle?: boolean; repeat?: RepeatMode }): void {
+  window.clearTimeout(persistShuffleRepeatTimer)
+  persistShuffleRepeatTimer = window.setTimeout(() => {
+    try {
+      // Import perezoso del settingsStore para evitar el ciclo
+      // (settingsStore importa store para setAutoplay).
+      const mod = (
+        window as unknown as {
+          __metrolistSettingsStore?: {
+            useSettings: {
+              getState: () => {
+                settings: { rememberShuffleRepeat?: boolean }
+                update: (patch: Record<string, unknown>) => Promise<void>
+              }
+            }
+          }
+        }
+      ).__metrolistSettingsStore
+      if (!mod) return
+      const st = mod.useSettings.getState()
+      if (!st.settings.rememberShuffleRepeat) return
+      const p: Record<string, unknown> = {}
+      if (patch.shuffle !== undefined) p.lastShuffle = patch.shuffle
+      if (patch.repeat !== undefined) p.lastRepeat = patch.repeat
+      if (Object.keys(p).length) void st.update(p)
+    } catch {
+      /* silencio: los ajustes cargarán en la siguiente sesión */
+    }
+  }, 300)
 }
 
 let queueCounter = 0
@@ -106,6 +164,29 @@ async function loadAndPlay(item: QueueItem, crossfade: boolean): Promise<void> {
 
 const preloadUrls = new Map<string, string>()
 
+// F27 · Recuerda para qué track ya lanzamos la precarga al 80% (evita spam).
+const preloadedMoreFor = new Set<string>()
+
+async function maybePreloadMore(videoId: string | undefined): Promise<void> {
+  if (!videoId) return
+  if (preloadedMoreFor.has(videoId)) return
+  preloadedMoreFor.add(videoId)
+  try {
+    const state = usePlayer.getState()
+    const last = state.queue[state.queue.length - 1]
+    if (!last) return
+    const upNext = await window.api.music.upNext(last.videoId)
+    const inQueue = new Set(state.queue.map((q) => q.videoId))
+    const fresh = ((upNext.tracks as TrackSummary[]) ?? []).filter(
+      (t) => !inQueue.has(t.videoId)
+    )
+    if (!fresh.length) return
+    usePlayer.setState({ queue: [...state.queue, ...fresh.map(toQueueItem)] })
+  } catch {
+    /* mejor-esfuerzo */
+  }
+}
+
 async function preloadUpcoming(state: Pick<PlayerState, 'queue' | 'index'>): Promise<void> {
   const nextItem = state.queue[state.index + 1]
   if (!nextItem || engine.hasPreloaded(nextItem.videoId)) return
@@ -126,9 +207,28 @@ export const usePlayer = create<PlayerState>((set, get) => {
   engine.on('playing', () => set({ isPlaying: true, isBuffering: false, error: null }))
   engine.on('paused', () => set({ isPlaying: false }))
   engine.on('buffering', (isBuffering) => set({ isBuffering }))
-  engine.on('error', (message) => set({ error: message, isPlaying: false }))
+  engine.on('error', (message) => {
+    set({ error: message, isPlaying: false })
+    // F27 · Saltar al haber error: pasa automáticamente a la siguiente.
+    if (runtimeFlags.skipOnError) {
+      // pequeño respiro para que no se dispare en bucle si toda la cola falla
+      setTimeout(() => void get().next(), 250)
+    }
+  })
   engine.on('ended', () => {
     void get().next()
+  })
+  // F27 · preload al 80% del último track de la cola (autoplay más agresivo).
+  engine.on('timeupdate', (currentTime, duration) => {
+    if (!runtimeFlags.preloadMoreAt80Percent) return
+    if (!duration || duration <= 0) return
+    if (currentTime / duration < 0.8) return
+    const { queue, index, autoplay } = get()
+    // Solo si estamos en el último track de la cola actual y con autoplay/similar habilitados
+    if (index !== queue.length - 1) return
+    if (!autoplay || !runtimeFlags.enableSimilarContent) return
+    // Evita disparar dos veces por track (marca con una clave por videoId)
+    void maybePreloadMore(queue[index]?.videoId)
   })
 
   return {
@@ -168,8 +268,18 @@ export const usePlayer = create<PlayerState>((set, get) => {
 
     playTracks: async (tracks, startIndex = 0) => {
       if (!tracks.length) return
+      preloadedMoreFor.clear()
       const queue = tracks.map(toQueueItem)
-      set({ queue, index: startIndex, originalQueue: null, shuffle: false, error: null })
+      // F27 · shuffle persistente: si está activo mantenemos shuffle=true al
+      // arrancar nueva cola (por defecto lo desactivábamos).
+      const keepShuffle = runtimeFlags.persistentShuffle && get().shuffle
+      set({
+        queue,
+        index: startIndex,
+        originalQueue: null,
+        shuffle: false,
+        error: null
+      })
       set({ isBuffering: true })
       try {
         await loadAndPlay(queue[startIndex], false)
@@ -177,6 +287,9 @@ export const usePlayer = create<PlayerState>((set, get) => {
       } catch (err) {
         set({ error: String((err as Error)?.message ?? err), isBuffering: false })
       }
+      // Re-activa shuffle si procede (después de arrancar para que el índice
+      // baraje ya sobre la cola cargada).
+      if (keepShuffle) get().toggleShuffle()
     },
 
     playNow: async (track) => {
@@ -185,13 +298,51 @@ export const usePlayer = create<PlayerState>((set, get) => {
 
     enqueueNext: (track) => {
       const { queue, index } = get()
+      // F27 · Evitar duplicados: si ya está en la cola, mueve la fila existente
+      //       justo después del índice actual en vez de duplicar.
+      if (runtimeFlags.avoidDuplicatesInQueue) {
+        const existingIdx = queue.findIndex((q) => q.videoId === track.videoId)
+        if (existingIdx !== -1) {
+          if (existingIdx === index + 1) return // ya está justo detrás
+          const copy = [...queue]
+          const [item] = copy.splice(existingIdx, 1)
+          // El splice puede haber bajado el índice actual si estaba antes
+          const currentIdx = existingIdx < index ? index - 1 : index
+          copy.splice(currentIdx + 1, 0, item)
+          set({ queue: copy, index: currentIdx })
+          return
+        }
+      }
       const copy = [...queue]
       copy.splice(index + 1, 0, toQueueItem(track))
       set({ queue: copy })
     },
 
     enqueueLast: (tracks) => {
-      set({ queue: [...get().queue, ...tracks.map(toQueueItem)] })
+      const { queue } = get()
+      if (runtimeFlags.avoidDuplicatesInQueue) {
+        // Para cada pista: si está, muévela al final; si no, la añadimos.
+        // Aplicamos secuencialmente conservando el orden pedido.
+        let working = [...queue]
+        const currentId = get().current()?.videoId
+        let idx = get().index
+        for (const t of tracks) {
+          const existingIdx = working.findIndex((q) => q.videoId === t.videoId)
+          if (existingIdx !== -1) {
+            // No movemos la que se está reproduciendo
+            if (working[existingIdx].videoId === currentId) continue
+            const [item] = working.splice(existingIdx, 1)
+            // Recalcula índice actual tras el splice
+            if (existingIdx < idx) idx--
+            working.push(item)
+          } else {
+            working.push(toQueueItem(t))
+          }
+        }
+        set({ queue: working, index: idx })
+        return
+      }
+      set({ queue: [...queue, ...tracks.map(toQueueItem)] })
     },
 
     removeFromQueue: (queueId) => {
@@ -223,8 +374,18 @@ export const usePlayer = create<PlayerState>((set, get) => {
       }
       let nextIndex = index + 1
       if (nextIndex >= queue.length) {
-        if (repeat === 'all' && queue.length) nextIndex = 0
-        else if (autoplay && queue.length) {
+        // F27 · Si repeat === 'all' y `disableAutoloadOnRepeatAll`, no rellenamos
+        // con recomendaciones: sencillamente volvemos al principio de la cola.
+        if (repeat === 'all' && queue.length) {
+          if (runtimeFlags.disableAutoloadOnRepeatAll) {
+            nextIndex = 0
+          } else {
+            nextIndex = 0
+          }
+        }
+        // F27 · `enableSimilarContent` gatea el autoplay real (compat con
+        // `autoplay`: si el usuario apagó cualquiera de los dos, no se rellena).
+        else if (autoplay && runtimeFlags.enableSimilarContent && queue.length) {
           // Radio: amplía la cola con recomendaciones a partir de la última pista
           try {
             const last = queue[queue.length - 1]
@@ -248,12 +409,29 @@ export const usePlayer = create<PlayerState>((set, get) => {
         }
       }
       const liveQueue = get().queue // puede haber crecido con la radio
+      // F27 · Crossfade desactivado en álbumes gapless: si la siguiente pista es
+      // del mismo álbum que la anterior, forzamos crossfade a 0 solo para esta
+      // transición (restauramos justo después).
+      const prev = liveQueue[index]
+      const upcoming = liveQueue[nextIndex]
+      let restoreXfade: number | null = null
+      if (
+        runtimeFlags.disableCrossfadeOnGapless &&
+        prev?.album?.id &&
+        upcoming?.album?.id &&
+        prev.album.id === upcoming.album.id
+      ) {
+        restoreXfade = engine.crossfadeSec
+        engine.setCrossfade(0)
+      }
       set({ index: nextIndex, isBuffering: true, currentTime: 0 })
       try {
         await loadAndPlay(liveQueue[nextIndex], true)
         void preloadUpcoming({ queue: liveQueue, index: nextIndex })
       } catch (err) {
         set({ error: String((err as Error)?.message ?? err), isBuffering: false })
+      } finally {
+        if (restoreXfade !== null) engine.setCrossfade(restoreXfade)
       }
     },
 
@@ -295,8 +473,25 @@ export const usePlayer = create<PlayerState>((set, get) => {
     },
 
     seek: (seconds) => {
-      engine.seek(seconds)
-      set({ currentTime: seconds })
+      // F27 · Búsqueda progresiva: si el usuario encadena seeks separados por
+      // <500 ms, cada salto añade 5 s extra al pedido (acumulativo). Reset a 0
+      // si pasa más de 500 ms sin llamar.
+      let target = seconds
+      if (runtimeFlags.progressiveSeek) {
+        const now = performance.now()
+        if (now - lastSeekAt < 500) {
+          progressiveExtra += 5
+          target = seconds + progressiveExtra
+        } else {
+          progressiveExtra = 0
+        }
+        lastSeekAt = now
+      }
+      // Clampa al rango válido para no romper el <audio>
+      const dur = engine.duration || Infinity
+      const clamped = Math.max(0, Math.min(dur, target))
+      engine.seek(clamped)
+      set({ currentTime: clamped })
     },
 
     setVolume: (v) => {
@@ -327,12 +522,16 @@ export const usePlayer = create<PlayerState>((set, get) => {
           : -1
         set({ shuffle: false, originalQueue: null, queue: restored, index: newIndex })
       }
+      // F27 · Persistencia opcional del estado de shuffle en los ajustes.
+      persistShuffleRepeat({ shuffle: get().shuffle })
     },
 
     cycleRepeat: () => {
       const order: RepeatMode[] = ['off', 'all', 'one']
       const next = order[(order.indexOf(get().repeat) + 1) % order.length]
       set({ repeat: next })
+      // F27 · Persistencia opcional del estado de repeat en los ajustes.
+      persistShuffleRepeat({ repeat: next })
     },
 
     clearQueue: () => {

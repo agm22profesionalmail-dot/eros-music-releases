@@ -60,6 +60,24 @@ export const useLibrary = create<LibraryState>((set, get) => ({
     } catch {
       set({ likedIds }) // revierte
     }
+    // F27 · Descarga automática al dar me gusta: si el flag está activo y se
+    // acaba de PONER un like (no al quitar), enviamos el track a descargas.
+    if (!isLiked) {
+      try {
+        const settingsMod = (
+          window as unknown as {
+            __metrolistSettingsStore?: {
+              useSettings: { getState: () => { settings: { autoDownloadOnLike?: boolean } } }
+            }
+          }
+        ).__metrolistSettingsStore
+        if (settingsMod?.useSettings.getState().settings.autoDownloadOnLike) {
+          void window.api.downloads.add(track).catch(() => undefined)
+        }
+      } catch {
+        /* silencio */
+      }
+    }
   },
 
   clear: () => set({ library: null, likedIds: new Set() })

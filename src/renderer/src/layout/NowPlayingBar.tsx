@@ -1,8 +1,9 @@
-import { useCallback, useRef } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { usePlayer } from '../player/store'
 import { formatTime } from '../app/authStore'
 import { useRouter } from '../app/router'
 import { useLibrary } from '../app/libraryStore'
+import { useSleepTimer } from '../app/sleepTimer'
 import {
   HeartIcon,
   MicIcon,
@@ -87,6 +88,10 @@ export function NowPlayingBar({
   const route = useRouter((s) => s.route())
   const likedIds = useLibrary((s) => s.likedIds)
   const toggleLike = useLibrary((s) => s.toggleLike)
+  // F27 · Sleep timer: badge y modal
+  const sleepActive = useSleepTimer((s) => s.active)
+  const sleepMinutesLeft = useSleepTimer((s) => s.minutesLeft)
+  const [sleepOpen, setSleepOpen] = useState(false)
 
   const effDuration = duration || current?.durationSec || 0
   const isLiked = current ? likedIds.has(current.videoId) : false
@@ -199,6 +204,26 @@ export function NowPlayingBar({
           </svg>
         </button>
         <button
+          className={`np-ctrl ${sleepActive ? 'active' : ''}`}
+          aria-label="Temporizador de apagado"
+          title={
+            sleepActive
+              ? `Apagará en ${sleepMinutesLeft} min`
+              : 'Temporizador de apagado'
+          }
+          onClick={() => setSleepOpen(true)}
+          data-testid="sleep-timer-btn"
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+            <path d="M8 1a7 7 0 1 0 7 7 7 7 0 0 0-7-7zm0 12.5A5.5 5.5 0 1 1 13.5 8 5.5 5.5 0 0 1 8 13.5zm.75-9h-1.5v4.09l3.24 1.87.75-1.3-2.49-1.43z" />
+          </svg>
+          {sleepActive && (
+            <span className="sleep-badge" aria-hidden="true">
+              {sleepMinutesLeft}
+            </span>
+          )}
+        </button>
+        <button
           className={`np-ctrl ${queueOpen ? 'active' : ''}`}
           aria-label="Cola"
           onClick={onToggleQueue}
@@ -227,6 +252,122 @@ export function NowPlayingBar({
           <Slider value={volume} max={1} onChange={setVolume} />
         </div>
       </div>
+      {sleepOpen && <SleepTimerModal onClose={() => setSleepOpen(false)} />}
     </footer>
+  )
+}
+
+/**
+ * F27 · Modal accesible del temporizador de apagado. Input de minutos +
+ * toggles de "detener al finalizar canción actual" y "desvanecer último minuto".
+ * Se cierra con Escape o clic fuera. No roba el foco de la app cuando está
+ * cerrado (solo cuando el usuario lo abre).
+ */
+function SleepTimerModal({ onClose }: { onClose: () => void }): React.JSX.Element {
+  const active = useSleepTimer((s) => s.active)
+  const minutesLeft = useSleepTimer((s) => s.minutesLeft)
+  const endWithSong = useSleepTimer((s) => s.endWithSong)
+  const fadeOutLastMinute = useSleepTimer((s) => s.fadeOutLastMinute)
+  const start = useSleepTimer((s) => s.start)
+  const stop = useSleepTimer((s) => s.stop)
+  const [minutes, setMinutes] = useState<number>(15)
+  const [ends, setEnds] = useState<boolean>(endWithSong)
+  const [fade, setFade] = useState<boolean>(fadeOutLastMinute)
+
+  return (
+    <div
+      className="sleep-modal-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Temporizador de apagado"
+      onClick={onClose}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') onClose()
+      }}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(0,0,0,0.6)',
+        display: 'grid',
+        placeItems: 'center',
+        zIndex: 2000
+      }}
+    >
+      <div
+        className="sleep-modal login-card"
+        style={{
+          width: 380,
+          padding: 24,
+          gap: 8,
+          textAlign: 'left',
+          maxWidth: 380
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3 style={{ marginTop: 0 }}>Temporizador de apagado</h3>
+        {active ? (
+          <p style={{ color: 'var(--text-secondary)' }}>
+            Activo — quedan {minutesLeft} min.
+          </p>
+        ) : (
+          <p style={{ color: 'var(--text-secondary)' }}>
+            La reproducción se pausará al terminar el tiempo indicado.
+          </p>
+        )}
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 0' }}>
+          <span style={{ flex: 1 }}>Minutos</span>
+          <input
+            type="number"
+            min={1}
+            max={600}
+            step={1}
+            value={minutes}
+            onChange={(e) => setMinutes(Math.max(1, Math.min(600, Number(e.target.value) || 1)))}
+            style={{ width: 80 }}
+          />
+        </label>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0' }}>
+          <input
+            type="checkbox"
+            checked={ends}
+            onChange={(e) => setEnds(e.target.checked)}
+          />
+          <span>Detener al finalizar la canción actual</span>
+        </label>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0' }}>
+          <input
+            type="checkbox"
+            checked={fade}
+            onChange={(e) => setFade(e.target.checked)}
+          />
+          <span>Desvanecer el último minuto</span>
+        </label>
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', paddingTop: 12 }}>
+          {active && (
+            <button
+              className="btn btn-secondary"
+              onClick={() => {
+                stop()
+                onClose()
+              }}
+            >
+              Cancelar temporizador
+            </button>
+          )}
+          <button className="btn btn-secondary" onClick={onClose}>
+            Cerrar
+          </button>
+          <button
+            className="btn"
+            onClick={() => {
+              start(minutes, { endWithSong: ends, fadeOutLastMinute: fade })
+              onClose()
+            }}
+          >
+            {active ? 'Reiniciar' : 'Iniciar'}
+          </button>
+        </div>
+      </div>
+    </div>
   )
 }

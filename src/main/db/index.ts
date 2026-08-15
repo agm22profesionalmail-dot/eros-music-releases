@@ -78,14 +78,26 @@ export function readLibrarySection<T>(section: string): { data: T; updatedAt: nu
 
 // ---------- Historial ----------
 
-export function recordPlay(videoId: string, trackJson: unknown): void {
-  getDb()
-    .prepare(
-      `INSERT INTO history (video_id, json, played_at, play_count) VALUES (?, ?, ?, 1)
-       ON CONFLICT(video_id) DO UPDATE SET json = excluded.json, played_at = excluded.played_at,
-       play_count = history.play_count + 1`
-    )
-    .run(videoId, JSON.stringify(trackJson), Date.now())
+export function recordPlay(videoId: string, trackJson: unknown, maxEntries?: number): void {
+  const db = getDb()
+  db.prepare(
+    `INSERT INTO history (video_id, json, played_at, play_count) VALUES (?, ?, ?, 1)
+     ON CONFLICT(video_id) DO UPDATE SET json = excluded.json, played_at = excluded.played_at,
+     play_count = history.play_count + 1`
+  ).run(videoId, JSON.stringify(trackJson), Date.now())
+  // F27 · aplica el techo del historial: si supera el máximo, elimina las
+  // entradas más antiguas por `played_at`. Rango 100-5000; 0/undefined = sin límite.
+  if (typeof maxEntries === 'number' && maxEntries > 0) {
+    const cap = Math.max(100, Math.min(5000, Math.floor(maxEntries)))
+    const row = db.prepare('SELECT COUNT(*) AS c FROM history').get() as { c: number }
+    if (row.c > cap) {
+      db.prepare(
+        `DELETE FROM history WHERE video_id IN (
+           SELECT video_id FROM history ORDER BY played_at ASC LIMIT ?
+         )`
+      ).run(row.c - cap)
+    }
+  }
 }
 
 export function readHistory(limit = 100): unknown[] {
