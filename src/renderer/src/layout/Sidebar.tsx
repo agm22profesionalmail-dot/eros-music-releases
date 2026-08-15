@@ -2,7 +2,8 @@ import { useState } from 'react'
 import type { MediaCard } from '@shared/types'
 import { useRouter } from '../app/router'
 import { useAuth } from '../app/authStore'
-import { useLibrary } from '../app/libraryStore'
+import { useLibrary, cardMenu } from '../app/libraryStore'
+import { openContextMenu } from '../components/ContextMenu'
 import {
   HomeIcon,
   LibraryIcon,
@@ -141,6 +142,9 @@ export function Sidebar(): React.JSX.Element {
               key={`${card.id}-${i}`}
               className={`library-row ${card.kind === 'artist' ? 'artist' : ''} ${isActive(card) ? 'active' : ''}`}
               onClick={() => openCard(card)}
+              // F22b · Clic derecho abre el menú contextual específico
+              // (playlist/álbum/artista) — misma fábrica que las tarjetas.
+              onContextMenu={(e) => openContextMenu(e, cardMenu(card))}
             >
               {card.thumbnailUrl ? (
                 <img src={card.thumbnailUrl} alt="" loading="lazy" />

@@ -190,6 +190,7 @@ Documentados en `tests/agent-report.md` y `metrolist-pc.md` de memoria. Los prin
 - Cualquier `fetch` a googlevideo va con `net.fetch` de Electron (la de undici acaba en 403 por huella TLS).
 - Toda escritura contra la cuenta del usuario en `library.ts` invalida la caché.
 - Cambios visuales: leer variables 60-30-10 y curvas del CSS antes de inventar nuevas.
+- Todas las tarjetas (`<Card>`) y filas del sidebar (`.library-row`) soportan clic derecho para menú contextual — la fábrica `cardMenu(card)` en `libraryStore.ts` decide los items según `card.kind` (canción/vídeo, álbum, playlist, artista). Para pistas de tabla la fábrica es `trackMenu(track)`.
 
 ## Regenerar iconos
 

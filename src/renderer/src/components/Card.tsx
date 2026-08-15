@@ -1,15 +1,30 @@
 import type { MediaCard } from '@shared/types'
 import { PlayIcon, MusicNoteIcon, PersonIcon } from './Icons'
 import { useRouter } from '../app/router'
+import { openContextMenu } from './ContextMenu'
+import { cardMenu } from '../app/libraryStore'
 
 interface CardProps {
   item: MediaCard
   onPlay?: (item: MediaCard) => void
   /** Índice para la entrada escalonada */
   index?: number
+  /**
+   * F22b · Contexto opcional del artista dueño de la tarjeta (útil en
+   * ArtistPage y AlbumPage para ofrecer "Ir al artista" en el menú
+   * contextual de una canción/álbum sin volver a resolver relaciones).
+   */
+  artistId?: string
+  artistName?: string
 }
 
-export function Card({ item, onPlay, index = 0 }: CardProps): React.JSX.Element {
+export function Card({
+  item,
+  onPlay,
+  index = 0,
+  artistId,
+  artistName
+}: CardProps): React.JSX.Element {
   const navigate = useRouter((s) => s.navigate)
 
   const open = (): void => {
@@ -32,11 +47,18 @@ export function Card({ item, onPlay, index = 0 }: CardProps): React.JSX.Element 
     }
   }
 
+  // F22b · Clic derecho en CUALQUIER tarjeta abre el menú específico según
+  // su `kind` — la fábrica `cardMenu` decide los items.
+  const onContext = (e: React.MouseEvent): void => {
+    openContextMenu(e, cardMenu(item, { artistId, artistName }))
+  }
+
   return (
     <div
       className={`media-card ${item.kind === 'artist' ? 'artist' : ''}`}
       style={{ ['--i' as string]: Math.min(index, 20) }}
       onClick={open}
+      onContextMenu={onContext}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => e.key === 'Enter' && open()}
