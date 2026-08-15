@@ -229,6 +229,106 @@ export function SettingsPage(): React.JSX.Element {
         />
       </Row>
 
+      <h2>Contenido</h2>
+      <Row label="Ocultar contenido explícito">
+        <input
+          type="checkbox"
+          checked={settings.hideExplicit}
+          onChange={(e) => void update({ hideExplicit: e.target.checked })}
+        />
+      </Row>
+      <Row label="Ocultar canciones de vídeo (videoclips)">
+        <input
+          type="checkbox"
+          checked={settings.hideVideos}
+          onChange={(e) => void update({ hideVideos: e.target.checked })}
+        />
+      </Row>
+      <Row label="Ocultar YouTube Shorts (< 60 s)">
+        <input
+          type="checkbox"
+          checked={settings.hideShorts}
+          onChange={(e) => void update({ hideShorts: e.target.checked })}
+        />
+      </Row>
+      <Row label="Idioma de contenido">
+        <select
+          value={settings.contentLanguage}
+          onChange={(e) => void update({ contentLanguage: e.target.value })}
+          style={{
+            background: 'var(--bg-elevated)',
+            color: 'var(--text-primary)',
+            border: '1px solid var(--divider)',
+            borderRadius: 4,
+            padding: '6px 10px'
+          }}
+        >
+          <option value="auto">Automático (sistema)</option>
+          <option value="es">Español</option>
+          <option value="en">English</option>
+          <option value="fr">Français</option>
+          <option value="de">Deutsch</option>
+          <option value="it">Italiano</option>
+          <option value="pt">Português</option>
+        </select>
+      </Row>
+      <Row label="País de contenido">
+        <select
+          value={settings.contentCountry}
+          onChange={(e) => void update({ contentCountry: e.target.value })}
+          style={{
+            background: 'var(--bg-elevated)',
+            color: 'var(--text-primary)',
+            border: '1px solid var(--divider)',
+            borderRadius: 4,
+            padding: '6px 10px'
+          }}
+        >
+          <option value="auto">Automático (sistema)</option>
+          <option value="ES">España</option>
+          <option value="US">Estados Unidos</option>
+          <option value="AR">Argentina</option>
+          <option value="MX">México</option>
+          <option value="CO">Colombia</option>
+          <option value="CL">Chile</option>
+          <option value="PE">Perú</option>
+          <option value="UY">Uruguay</option>
+          <option value="BR">Brasil</option>
+          <option value="FR">Francia</option>
+          <option value="DE">Alemania</option>
+          <option value="IT">Italia</option>
+          <option value="PT">Portugal</option>
+          <option value="GB">Reino Unido</option>
+        </select>
+      </Row>
+      <p style={{ color: 'var(--text-subdued)', fontSize: 12, padding: '4px 0 0' }}>
+        Idioma y país afectan a las recomendaciones y a los resultados de búsqueda. Al cambiarlos
+        la sesión de YouTube Music se reconstruye en caliente.
+      </p>
+
+      <h2>Página del Artista</h2>
+      <Row label="Mostrar descripción del artista">
+        <input
+          type="checkbox"
+          checked={settings.showArtistDescription}
+          onChange={(e) => void update({ showArtistDescription: e.target.checked })}
+        />
+      </Row>
+      <Row label="Mostrar número de suscriptores">
+        <input
+          type="checkbox"
+          checked={settings.showArtistSubscribers}
+          onChange={(e) => void update({ showArtistSubscribers: e.target.checked })}
+        />
+      </Row>
+      <Row label="Mostrar oyentes mensuales (si el proveedor los expone)">
+        <input
+          type="checkbox"
+          checked={settings.showArtistMonthlyListeners}
+          onChange={(e) => void update({ showArtistMonthlyListeners: e.target.checked })}
+        />
+      </Row>
+
       <h2>Ecualizador</h2>
       <div className="sidebar-filters" style={{ padding: '4px 0 12px' }}>
         {Object.entries(EQ_PRESETS).map(([name, gains]) => (
@@ -432,6 +532,13 @@ export function SettingsPage(): React.JSX.Element {
           type="checkbox"
           checked={settings.closeToTray}
           onChange={(e) => void update({ closeToTray: e.target.checked })}
+        />
+      </Row>
+      <Row label="Pausar al cambiar el dispositivo de audio (auriculares/altavoces)">
+        <input
+          type="checkbox"
+          checked={settings.pauseOnAudioDeviceChange}
+          onChange={(e) => void update({ pauseOnAudioDeviceChange: e.target.checked })}
         />
       </Row>
     </div>

@@ -343,3 +343,45 @@ export class PlayerEngine {
 }
 
 export const engine = new PlayerEngine()
+
+/**
+ * F28 · Escucha cambios en los dispositivos de audio de salida. Cuando el
+ * dispositivo por defecto cambia (auriculares conectados/desconectados,
+ * altavoces bluetooth desemparejados…) y el ajuste `pauseOnAudioDeviceChange`
+ * está activo, pausamos el motor. Se enlaza una única vez desde este módulo
+ * y consulta el ajuste vía lazy import para no crear un ciclo con el store.
+ */
+function installAudioDeviceChangeGuard(): void {
+  if (typeof navigator === 'undefined' || !navigator.mediaDevices?.addEventListener) return
+  let lastDefault: string | null = null
+  const readDefault = async (): Promise<string | null> => {
+    try {
+      const devs = await navigator.mediaDevices.enumerateDevices()
+      const out = devs.find((d) => d.kind === 'audiooutput' && (d.deviceId === 'default' || d.deviceId === ''))
+      return out?.groupId || out?.label || out?.deviceId || null
+    } catch {
+      return null
+    }
+  }
+  void readDefault().then((id) => {
+    lastDefault = id
+  })
+  navigator.mediaDevices.addEventListener('devicechange', () => {
+    void (async () => {
+      const now = await readDefault()
+      const changed = now !== lastDefault
+      lastDefault = now
+      if (!changed) return
+      // Lee el ajuste sin importar el store (rompería el ciclo). El bundle
+      // expone la referencia bajo `__metrolistSettingsStore` para F27.
+      const w = window as unknown as {
+        __metrolistSettingsStore?: { useSettings: { getState: () => { settings: { pauseOnAudioDeviceChange?: boolean } } } }
+      }
+      const paused = engine.paused
+      const shouldPause = Boolean(w.__metrolistSettingsStore?.useSettings.getState().settings.pauseOnAudioDeviceChange)
+      if (shouldPause && !paused) engine.pause()
+    })()
+  })
+}
+
+installAudioDeviceChangeGuard()

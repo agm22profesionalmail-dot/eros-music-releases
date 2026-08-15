@@ -7,6 +7,7 @@ import {
   upscaleThumb
 } from './mappers'
 import { getAllPlaylistOverrides, getPlaylistOverride } from '../db'
+import { getAllSettings } from '../settings'
 import type {
   AlbumDetail,
   ArtistDetail,
@@ -101,6 +102,16 @@ export async function search(query: string, filter: SearchFilter): Promise<Searc
       }
     }
   }
+  // F28 · aplica filtros de contenido a todo el bloque
+  out.songs = applyTrackContentFilters(out.songs)
+  out.videos = applyTrackContentFilters(out.videos)
+  out.albums = applyCardContentFilters(out.albums)
+  out.artists = applyCardContentFilters(out.artists)
+  out.playlists = applyCardContentFilters(out.playlists)
+  if (out.topResult) {
+    const stillOk = applyCardContentFilters([out.topResult]).length > 0
+    if (!stillOk) out.topResult = undefined
+  }
   return out
 }
 
@@ -125,7 +136,9 @@ export async function getHome(): Promise<Shelf[]> {
     const shelf = mapShelf(section)
     if (shelf) shelves.push(shelf)
   }
-  return shelves
+  // F28 · filtra vídeos en las estanterías si el ajuste está activo
+  filterShelvesInPlace(shelves)
+  return shelves.filter((s) => s.items.length > 0)
 }
 
 export async function getLibrary(): Promise<LibrarySnapshot> {
@@ -211,15 +224,18 @@ export async function getPlaylist(id: string): Promise<PlaylistDetail> {
     header?.title?.toString?.() ?? pl?.title?.toString?.() ?? 'Playlist'
   const backendThumb = upscaleThumb(bestThumbnail(header) ?? bestThumbnail(pl))
 
+  // F28 · filtra tracks según ajustes de contenido
+  const filteredTracks = applyTrackContentFilters(tracks)
+
   return {
     id,
     title: override?.title ?? backendTitle,
     author: header?.author?.name ?? header?.subtitle?.toString?.(),
     description: header?.description?.toString?.(),
     thumbnailUrl: override?.thumbnailDataUrl ?? backendThumb,
-    trackCount: tracks.length,
+    trackCount: filteredTracks.length,
     durationText: header?.duration?.toString?.() ?? header?.second_subtitle?.toString?.(),
-    tracks,
+    tracks: filteredTracks,
     hasContinuation: Boolean(pl?.has_continuation),
     isEditable
   }
@@ -228,6 +244,42 @@ export async function getPlaylist(id: string): Promise<PlaylistDetail> {
 /** Los browseId de playlist llegan como VLPL...; los ids de escritura son PL... */
 function normalizePlaylistId(id: string): string {
   return id.startsWith('VL') ? id.slice(2) : id
+}
+
+/**
+ * F28 · Filtros de contenido: aplica los ajustes de usuario a un array de pistas.
+ * - hideExplicit: descarta las que tengan isExplicit=true.
+ * - hideVideos: descarta las kind='video'.
+ * - hideShorts: descarta vídeos con duración < 60 s (heurística de shorts).
+ */
+export function applyTrackContentFilters<T extends TrackSummary>(items: T[]): T[] {
+  const s = getAllSettings()
+  if (!s.hideExplicit && !s.hideVideos && !s.hideShorts) return items
+  return items.filter((t) => {
+    if (s.hideExplicit && t.isExplicit) return false
+    if (s.hideVideos && t.kind === 'video') return false
+    if (s.hideShorts && t.kind === 'video' && typeof t.durationSec === 'number' && t.durationSec < 60) {
+      return false
+    }
+    return true
+  })
+}
+
+/**
+ * F28 · Filtros para MediaCard: sólo `hideVideos` (con `kind==='video'`) aplica
+ * a tarjetas — el resto de tipos (álbum, artista, playlist) siempre pasan.
+ */
+export function applyCardContentFilters<T extends MediaCard>(items: T[]): T[] {
+  const s = getAllSettings()
+  if (!s.hideVideos) return items
+  return items.filter((c) => c.kind !== 'video')
+}
+
+/** Aplica los filtros a todas las estanterías in-place (tracks y cards). */
+function filterShelvesInPlace(shelves: Shelf[]): void {
+  for (const shelf of shelves) {
+    shelf.items = applyCardContentFilters(shelf.items)
+  }
 }
 
 export async function getAlbum(id: string): Promise<AlbumDetail> {
@@ -248,14 +300,17 @@ export async function getAlbum(id: string): Promise<AlbumDetail> {
     .filter((r: any) => r?.endpoint?.payload?.browseId)
     .map((r: any) => ({ name: r.text, id: r.endpoint.payload.browseId }))
 
+  // F28 · aplica filtros de contenido a las pistas del álbum
+  const filteredTracks = applyTrackContentFilters(tracks)
+
   return {
     id,
     title: header?.title?.toString?.() ?? 'Álbum',
     artists: artists.length ? artists : [{ name: header?.subtitle?.toString?.() ?? '' }],
     year: header?.subtitle?.runs?.at?.(-1)?.text,
     thumbnailUrl: upscaleThumb(bestThumbnail(header) ?? bestThumbnail(album)),
-    trackCount: tracks.length,
-    tracks,
+    trackCount: filteredTracks.length,
+    tracks: filteredTracks,
     playlistId: album?.url?.match(/list=([^&]+)/)?.[1]
   }
 }
@@ -271,13 +326,23 @@ export async function getArtist(id: string): Promise<ArtistDetail> {
   }
 
   const header: any = artist?.header
+  // F28 · filtra vídeos/tracks dentro de las estanterías del artista
+  filterShelvesInPlace(shelves)
+  const cleanShelves = shelves.filter((s) => s.items.length > 0)
+  // Los "oyentes mensuales" no existen en YT Music por norma general; algunos
+  // headers exponen `monthly_listeners` (raro), lo intentamos por si acaso.
+  const monthlyListeners =
+    header?.monthly_listeners?.toString?.() ??
+    header?.monthlyListeners?.toString?.() ??
+    undefined
   return {
     id,
     name: header?.title?.toString?.() ?? 'Artista',
     description: header?.description?.toString?.(),
     thumbnailUrl: upscaleThumb(bestThumbnail(header)),
     subscribers: header?.subscribers?.toString?.(),
-    shelves
+    monthlyListeners,
+    shelves: cleanShelves
   }
 }
 

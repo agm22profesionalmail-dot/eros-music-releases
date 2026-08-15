@@ -6,6 +6,7 @@ import { Innertube } from 'youtubei.js'
 import { EncryptedCache } from '../auth/encryptedCache'
 import { installJsEvaluator } from './evaluator'
 import { generatePoToken, type PoTokenResult } from './potoken'
+import { getAllSettings } from '../settings'
 import type { AuthMethod, AuthState } from '@shared/types'
 
 /**
@@ -154,9 +155,21 @@ class SessionManager extends EventEmitter {
       }
     }
 
+    // F28 · idioma y país de contenido configurables por el usuario. Los
+    // valores 'auto' se resuelven contra el locale del sistema.
+    const settings = getAllSettings()
+    const lang =
+      settings.contentLanguage && settings.contentLanguage !== 'auto'
+        ? settings.contentLanguage
+        : app.getLocale().slice(0, 2) || 'es'
+    const location =
+      settings.contentCountry && settings.contentCountry !== 'auto'
+        ? settings.contentCountry
+        : app.getLocaleCountryCode() || 'ES'
+
     const innertube = await Innertube.create({
-      lang: 'es',
-      location: 'ES',
+      lang,
+      location,
       cache: this.#cache,
       cookie: this.#cookieHeader ?? undefined,
       po_token: poToken,
@@ -330,6 +343,19 @@ class SessionManager extends EventEmitter {
     await this.#writeMarker('cookie')
     this.#setAuthState({ status: 'signedIn', method: 'cookie' })
     return true
+  }
+
+  /**
+   * F28 · Invalida la sesión actual (sin cerrar la cuenta) para reconstruirla
+   * con el `lang`/`location` actualizados desde ajustes. Reutiliza el mismo
+   * cookieHeader y estado de auth: solo tira y vuelve a crear el Innertube.
+   */
+  async invalidateForLocaleChange(): Promise<void> {
+    this.#innertube = null
+    this.#creating = null
+    this.#streamingReady = false
+    // Repara la sesión perezosa: se creará la próxima vez que alguien pida `get()`.
+    await this.get().catch(() => undefined)
   }
 
   async signOut(): Promise<void> {

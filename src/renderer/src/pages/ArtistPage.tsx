@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { ArtistDetail, MediaCard } from '@shared/types'
 import { ShelfRow } from '../components/Shelf'
 import { usePlayer } from '../player/store'
+import { useSettings } from '../app/settingsStore'
 import { cardToTrack } from './HomePage'
 import { PersonIcon, PlayIcon } from '../components/Icons'
 
@@ -9,6 +10,10 @@ export function ArtistPage({ id }: { id: string }): React.JSX.Element {
   const [artist, setArtist] = useState<ArtistDetail | null>(null)
   const [error, setError] = useState<string | null>(null)
   const playTracks = usePlayer((s) => s.playTracks)
+  // F28 · toggles de visibilidad de descripción / suscriptores / oyentes
+  const showDescription = useSettings((s) => s.settings.showArtistDescription)
+  const showSubscribers = useSettings((s) => s.settings.showArtistSubscribers)
+  const showMonthly = useSettings((s) => s.settings.showArtistMonthlyListeners)
 
   useEffect(() => {
     let cancelled = false
@@ -85,7 +90,16 @@ export function ArtistPage({ id }: { id: string }): React.JSX.Element {
         <div className="info">
           <div className="kind">Artista</div>
           <h1 className="name">{artist.name}</h1>
-          {artist.subscribers && <div className="meta">{artist.subscribers}</div>}
+          {showSubscribers && artist.subscribers && (
+            <div className="meta" data-testid="artist-subscribers">
+              {artist.subscribers}
+            </div>
+          )}
+          {showMonthly && artist.monthlyListeners && (
+            <div className="meta" data-testid="artist-monthly-listeners">
+              {artist.monthlyListeners}
+            </div>
+          )}
         </div>
       </div>
       <div className="detail-body">
@@ -94,6 +108,20 @@ export function ArtistPage({ id }: { id: string }): React.JSX.Element {
             <PlayIcon size={22} />
           </button>
         </div>
+        {showDescription && artist.description && (
+          <p
+            className="artist-description"
+            data-testid="artist-description"
+            style={{
+              padding: '0 24px 16px',
+              maxWidth: 900,
+              color: 'var(--text-secondary)',
+              whiteSpace: 'pre-wrap'
+            }}
+          >
+            {artist.description}
+          </p>
+        )}
         <div className="page" style={{ padding: 0 }}>
           {artist.shelves.map((shelf, i) => (
             <ShelfRow key={i} shelf={shelf} onPlayItem={playCard} limit={6} />

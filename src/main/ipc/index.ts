@@ -104,6 +104,12 @@ export function registerIpc(getMainWindow: () => BrowserWindow | null): void {
       const { setDiscordEnabled } = await import('../integrations/discord')
       setDiscordEnabled(Boolean(patch.discordRpc))
     }
+    // F28 · idioma/país de contenido: al cambiar hay que reconstruir la
+    // sesión de Innertube para que `lang` y `location` se re-emitan a la API.
+    if ('contentLanguage' in patch || 'contentCountry' in patch) {
+      const { sessionManager } = await import('../innertube/session')
+      await sessionManager.invalidateForLocaleChange().catch(() => undefined)
+    }
     // Notifica a todas las ventanas (la principal Y el mini) para que
     // tema/acento se mantengan sincronizados en vivo.
     for (const w of BrowserWindow.getAllWindows()) {

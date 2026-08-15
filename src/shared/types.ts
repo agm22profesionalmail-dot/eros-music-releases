@@ -64,6 +64,8 @@ export interface ArtistDetail {
   description?: string
   thumbnailUrl?: string
   subscribers?: string
+  /** F28 · Línea "oyentes mensuales" cuando la API la expone (rara vez en YT Music). */
+  monthlyListeners?: string
   isSubscribed?: boolean
   shelves: Shelf[]
   /** videoId de arranque para "reproducir radio" */
@@ -359,6 +361,27 @@ export interface AppSettings {
   /** Persistencia opcional del estado de shuffle/repeat (usado por rememberShuffleRepeat) */
   lastShuffle?: boolean
   lastRepeat?: 'off' | 'all' | 'one'
+
+  // ---------- F28 · Filtros de contenido ----------
+
+  /** Oculta pistas marcadas como explícitas (isExplicit=true) en búsquedas, home, álbumes y playlists */
+  hideExplicit: boolean
+  /** Oculta canciones/tarjetas de tipo vídeo (kind='video') en cualquier listado */
+  hideVideos: boolean
+  /** Oculta YouTube Shorts (heurística: kind='video' con durationSec < 60) */
+  hideShorts: boolean
+  /** Idioma de contenido pasado a Innertube.create como `lang` (código ISO 639-1). 'auto' = locale del sistema */
+  contentLanguage: string
+  /** País de contenido pasado a Innertube.create como `location`. 'auto' = país del sistema */
+  contentCountry: string
+  /** Página del artista: mostrar/ocultar la descripción bajo el título */
+  showArtistDescription: boolean
+  /** Página del artista: mostrar/ocultar el número de suscriptores */
+  showArtistSubscribers: boolean
+  /** Página del artista: mostrar/ocultar la línea de oyentes mensuales (si existe) */
+  showArtistMonthlyListeners: boolean
+  /** Pausar automáticamente al cambiar el dispositivo de salida de audio por defecto */
+  pauseOnAudioDeviceChange: boolean
 }
 
 export type MiniCorner = AppSettings['miniCorner']
@@ -396,7 +419,17 @@ export const DEFAULT_SETTINGS: AppSettings = {
   autoDownloadOnLike: false,
   enableSimilarContent: true,
   preloadMoreAt80Percent: false,
-  historyMaxEntries: 500
+  historyMaxEntries: 500,
+  // F28
+  hideExplicit: false,
+  hideVideos: false,
+  hideShorts: true,
+  contentLanguage: 'auto',
+  contentCountry: 'auto',
+  showArtistDescription: true,
+  showArtistSubscribers: true,
+  showArtistMonthlyListeners: true,
+  pauseOnAudioDeviceChange: false
 }
 
 export interface LyricWord {
