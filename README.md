@@ -144,8 +144,10 @@ Descarga el instalador desde la [última release](https://github.com/agm22profes
   Hecho con ☕ por <strong>Zero</strong> · Proyecto personal, sin ánimo de lucro.
 </p>
 
-<sub>
-
-ERO'S Music es un proyecto independiente y no oficial. No está afiliado, patrocinado ni respaldado por Google, YouTube, Spotify, Discord ni ninguna otra marca mencionada. Todos los nombres de productos y marcas son propiedad de sus respectivos titulares y se usan únicamente con fines descriptivos. El uso de esta aplicación queda bajo la responsabilidad del usuario.
-
-</sub>
+<p align="center">
+  <em>ERO'S Music es un proyecto independiente y no oficial.<br/>
+  No está afiliado, patrocinado ni respaldado por Google, YouTube, Spotify, Discord<br/>
+  ni ninguna otra marca mencionada. Todos los nombres de productos y marcas son<br/>
+  propiedad de sus respectivos titulares y se usan únicamente con fines descriptivos.<br/>
+  El uso de esta aplicación queda bajo la responsabilidad del usuario.</em>
+</p>
