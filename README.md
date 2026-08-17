@@ -2,12 +2,9 @@
 
 Cliente de escritorio de YouTube Music para Windows, con identidad visual heredada de la app Android original que lo inspiró y la ergonomía de un reproductor moderno tipo Spotify. Uso personal; nada de esto va a ningún servidor externo salvo las APIs de YouTube Music, LRCLIB, KuGou y (si lo activas) Discord.
 
-> La carpeta del proyecto sigue siendo `F:\MetrolistPC` (nombre histórico, no se renombra); todo lo interno — `package.json`, appId, userData, ganchos E2E — es "ERO'S Music"/`eros-music` desde v1.2.0.
-
 ## Arranque rápido
 
 ```powershell
-cd F:\MetrolistPC
 npm install
 npm run dev            # desarrollo (hot reload de renderer y main)
 npm run build          # compila a out/
@@ -15,7 +12,7 @@ npm run typecheck      # tsc estricto sobre main+preload y renderer
 npm run dist           # genera release/EROSMusic-Setup-X.Y.Z.exe (NSIS per-user, sin UAC)
 ```
 
-La app instalada vive en `%LOCALAPPDATA%\Programs\eros-music\` (las versiones ≤ v1.1.x vivían en `...\Programs\metrolist-pc\`; el instalador las desinstala solo). Sus datos (sesión, caché de biblioteca, ajustes, PoToken, spool de audio) en `%APPDATA%\ERO'S Music\` — al primer arranque de v1.2.0 la app migra sola la carpeta histórica `%APPDATA%\Metrolist PC` sin perder nada (ver CHANGELOG F63). La app de dev y la instalada **comparten esa carpeta**: si estás logueado en una, lo estás en la otra.
+La app instalada vive en `%LOCALAPPDATA%\Programs\eros-music\`. Sus datos (sesión, caché de biblioteca, ajustes, PoToken, spool de audio) en `%APPDATA%\ERO'S Music\`. La app de dev y la instalada **comparten esa carpeta**: si estás logueado en una, lo estás en la otra.
 
 ## Requisitos que ya están en este equipo
 
@@ -27,7 +24,7 @@ La app instalada vive en `%LOCALAPPDATA%\Programs\eros-music\` (las versiones �
 ## Arquitectura
 
 ```
-F:\MetrolistPC
+eros-music/
 ├─ src/
 │  ├─ main/                       Proceso principal (Node, todo el I/O)
 │  │  ├─ index.ts                 App lifecycle, ventanas, bandeja, teclas multimedia, ganchos smoke
@@ -98,7 +95,7 @@ Es la pieza más frágil por diseño de Google. Va así:
 4. `spool.getSpool(videoId)` descarga la canción a `%APPDATA%\ERO'S Music\spool\<videoId>.audio` con **una única petición secuencial** de rango prefijo (`0-N`) usando `net.fetch` (pila Chromium — la de undici la capa Google). Google no permite offsets > 0 con nuestro PoToken; por eso spool y no proxy directo.
 5. `stream/server.ts` sirve el `<audio>` desde ese fichero según crece. Si la canción está descargada localmente, sirve directamente el `.m4a`/`.opus`.
 
-**Trampas conocidas** (documentadas en `C:\Users\Zero\.claude\projects\F--\memory\metrolist-pc.md`):
+**Trampas conocidas:**
 - `visitor_data` del PoToken tiene que ir en la MISMA `Innertube.create()` que lo va a usar; regenerar visitor en cada arranque = Google desconfía. La solución: persistir el PoToken cifrado y reutilizarlo ~6 h.
 - Cookies caducadas ≠ error visible: se refrescan cada 6 h navegando a `music.youtube.com` en una ventana oculta con la partición `persist:ytauth`.
 - `yt.interact.like()` de youtubei.js devuelve HTTP 400 para YT Music. Hay que llamar directo a `/like/like` con `client: 'YTMUSIC'` y `target: { videoId }`.
@@ -178,7 +175,7 @@ Get-Process electron -EA 0 | Stop-Process -Force
 
 ## Bugs conocidos históricos (por si vuelven)
 
-Documentados en `tests/agent-report.md` y `metrolist-pc.md` de memoria. Los principales que ya están arreglados y por qué:
+Los principales que ya están arreglados y por qué:
 
 - **Biblioteca vacía** — En youtubei.js v18 los items cuelgan de `lib.contents`, no de `lib.items`. Además nunca cachear instantáneas vacías.
 - **Búsqueda que deja de funcionar tras horas** — Cookies rotadas por Google. Refresco cada 6 h desde `session.ts`.
@@ -197,7 +194,7 @@ Documentados en `tests/agent-report.md` y `metrolist-pc.md` de memoria. Los prin
 ## Regenerar iconos
 
 ```powershell
-& F:\MetrolistPC\node_modules\electron\dist\electron.exe F:\MetrolistPC\scripts\make-icon.mjs
+& .\node_modules\electron\dist\electron.exe .\scripts\make-icon.mjs
 ```
 
 Produce, desde `assets/logo.svg` (F60 · infinito «coffee cream»): `build/icon.png`
@@ -215,8 +212,7 @@ geometría sin fondo); si se retoca el dibujo hay que regenerar ambos.
 
 ## Cómo continuar en otra sesión
 
-1. `cd F:\MetrolistPC && git log --oneline | Select-Object -First 10` para ver el estado.
-2. Lee `metrolist-pc.md` en `C:\Users\Zero\.claude\projects\F--\memory\` — es el brief técnico corto con las trampas.
-3. `npm run typecheck && node tests/smoke.mjs all` para verificar que nada se ha roto.
+1. `git log --oneline | Select-Object -First 10` para ver el estado.
+2. `npm run typecheck && node tests/smoke.mjs all` para verificar que nada se ha roto.
 4. Para cambios visuales, edita `styles/global.css` y usa las variables `--amb-*`, `--ease-*` existentes.
 5. Para cambios funcionales, la regla es: I/O en `main/`, UI en `renderer/`, contrato en `shared/types.ts` con canal IPC nuevo si hace falta.
