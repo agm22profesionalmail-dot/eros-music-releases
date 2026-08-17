@@ -161,6 +161,12 @@ ERO'S Music es un proyecto vivo con la ambición de ir más allá. La idea a lar
 
 Descarga el instalador desde la [última release](https://github.com/agm22profesionalmail-dot/eros-music-releases/releases/latest) y ejecútalo. Si ya tienes una versión anterior instalada, el instalador la detecta y actualiza limpiamente sin que tengas que hacer nada.
 
+> ⚠️ **Nota sobre Windows SmartScreen**
+>
+> Al ejecutar el instalador es posible que Windows muestre un aviso de "Windows protegió su PC" con "Editor desconocido". Esto ocurre porque la app no tiene un certificado de firma de código de pago — es un proyecto personal sin ánimo de lucro.
+>
+> **Es seguro.** Para continuar, haz clic en **"Más información"** y luego en **"Ejecutar de todas formas"**. El código fuente es público y puedes revisarlo tú mismo.
+
 ---
 
 <p align="center">
