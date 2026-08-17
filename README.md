@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/versión-v1.3.0-6f4e37" alt="Versión v1.3.0" />
+  <img src="https://img.shields.io/badge/versión-v1.4.6-6f4e37" alt="Versión v1.4.6" />
   <img src="https://img.shields.io/badge/plataforma-Windows-0078d4" alt="Plataforma Windows" />
   <img src="https://img.shields.io/badge/licencia-GPL--3.0-green" alt="Licencia GPL-3.0" />
 </p>
@@ -37,11 +37,13 @@ ERO'S Music es un cliente de escritorio no oficial de **YouTube Music para Windo
 | | YouTube Music (web) | Spotify Desktop | Otros clientes de YT Music | ERO'S Music |
 |---|:---:|:---:|:---:|:---:|
 | Crossfade real entre pistas | ❌ | ⚠️ Solo con Premium | ❌ | ✅ |
-| Ecualizador de 10 bandas | ❌ | ❌ En escritorio no | ❌ | ✅ |
+| Ecualizador de 10/15/31 bandas | ❌ | ❌ En escritorio no | ❌ | ✅ |
 | Mini-player flotante | ❌ | ❌ | ⚠️ Limitado | ✅ |
 | Fondo ambient reactivo | ❌ | ❌ | ❌ | ✅ |
 | Karaoke palabra a palabra | ❌ | ⚠️ Parcial | ❌ | ✅ |
 | Estadísticas 100% locales | ❌ | ❌ | ❌ | ✅ |
+| Last.fm / ListenBrainz | ❌ | ❌ | ⚠️ Solo Last.fm | ✅ Ambos |
+| Importar playlists de Spotify | ❌ | ❌ | ❌ | ✅ |
 | Gratis, sin suscripción | ✅ | ❌ | ✅ | ✅ |
 
 **Frente a YouTube Music web** — la web oficial no tiene crossfade, ni EQ, ni mini-player, ni fondo ambient, ni karaoke por palabras, ni estadísticas locales. ERO'S Music añade todo eso encima de tu misma cuenta.
@@ -82,12 +84,24 @@ Letras con timing palabra a palabra sincronizadas con la música.
   <img src="screenshots/lyrics_karaoke.png" alt="Modo karaoke con letras sincronizadas" width="750" />
 </p>
 
-### 🎛️ Ecualizador de 10 bandas + visualizador
-6 presets (Flat, Bass, Treble, Rock, Pop, Vocal) y control manual completo con preamp. El visualizador muestra barras de frecuencia reactivas al audio en tiempo real.
+### 🎛️ Ecualizador de 10, 15 y 31 bandas + visualizador
+3 modos de ecualizador (10, 15 y 31 bandas) con 6 presets que se interpolan automáticamente a cualquier modo. Control manual completo con preamp. El visualizador muestra barras de frecuencia reactivas al audio en tiempo real.
 
 <p align="center">
   <img src="screenshots/visualizer.png" alt="Visualizador de audio reactivo" width="750" />
 </p>
+
+### 🌀 Espiral Musical
+Sección de descubrimiento en la pantalla principal con 3 filas de tarjetas en scroll continuo. Sugiere música basándose en tus artistas favoritos, historial y likes. Las canciones rotan automáticamente desde un pool de reserva para que siempre haya algo nuevo.
+
+### 🎧 Last.fm scrobbling
+Conecta tu cuenta de Last.fm desde Ajustes y tus escuchas se registran automáticamente. Envía nowPlaying al empezar cada canción y scrobble cuando llevas más del 50% o 30 segundos.
+
+### 📡 ListenBrainz sync
+Alternativa libre a Last.fm. Pega tu token en Ajustes y listo — playing_now y submit-listens, compartiendo el mismo trigger que Last.fm.
+
+### 📥 Importar playlists de Spotify y M3U/CSV
+Pega la URL de una playlist pública de Spotify y ERO'S Music busca cada canción en YouTube Music, te muestra los resultados y crea la playlist en tu cuenta. También acepta archivos M3U y CSV.
 
 ### 🖥️ Mini-player flotante
 Siempre visible encima de otras ventanas, se ancla a las esquinas, escalable y con modo karaoke.
@@ -114,6 +128,7 @@ ERO'S Music solo se conecta a lo imprescindible:
 - **YouTube Music** — para el streaming y tu cuenta.
 - **Servicios de letras** — para las letras sincronizadas.
 - **Discord** — solo si activas Rich Presence.
+- **Last.fm / ListenBrainz** — solo si conectas tu cuenta en Ajustes.
 
 Y lo que **no** hace:
 
