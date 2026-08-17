@@ -31,7 +31,7 @@ async function launch() {
   const app = await _electron.launch({
     args: ['.'],
     cwd: root,
-    env: { ...process.env, METROLIST_E2E: '1' }
+    env: { ...process.env, EROS_E2E: '1' }
   })
   app.process().stderr?.on('data', (d) => {
     const s = String(d).trim()

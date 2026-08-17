@@ -29,7 +29,7 @@ const check = (name, cond) => {
 const app = await _electron.launch({
   args: ['.'],
   cwd: root,
-  env: { ...process.env, METROLIST_E2E: '1' }
+  env: { ...process.env, EROS_E2E: '1' }
 })
 
 // Captura de trazas del proceso main
@@ -76,12 +76,12 @@ const saved = await win.evaluate(
   async ({ photo }) =>
     window.api.profile.set({
       enabled: true,
-      displayName: 'Test Metrolist F25',
+      displayName: 'Test EROS F25',
       photoDataUrl: photo
     }),
   { photo: TEST_PHOTO }
 )
-check('perfil guardado con displayName', saved.displayName === 'Test Metrolist F25')
+check('perfil guardado con displayName', saved.displayName === 'Test EROS F25')
 check('perfil guardado con photoDataUrl', Boolean(saved.photoDataUrl))
 check('perfil enabled=true', saved.enabled === true)
 
@@ -127,7 +127,7 @@ if (discordConnected) {
     // La presencia con perfil añade `perfil="…"` y opcionalmente `+foto`
     check(
       'la presencia menciona el perfil personalizado',
-      presenceLine.includes('perfil=') || presenceLine.includes('Test Metrolist F25')
+      presenceLine.includes('perfil=') || presenceLine.includes('Test EROS F25')
     )
   }
 } else {

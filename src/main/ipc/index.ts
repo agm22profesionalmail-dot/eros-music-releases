@@ -1,4 +1,4 @@
-import { BrowserWindow, ipcMain } from 'electron'
+import { BrowserWindow, app, ipcMain } from 'electron'
 import { IPC, type PreparedStream, type SearchFilter } from '@shared/types'
 import { sessionManager } from '../innertube/session'
 import * as music from '../innertube/api'
@@ -14,8 +14,11 @@ import {
   changeDownloadsDir,
   openDownloadsDir,
   getProfile,
-  setProfile
+  setProfile,
+  getOnboardingCompleted,
+  setOnboardingCompleted
 } from '../settings'
+import { checkForUpdatesManually, startUpdateDownload } from '../updater'
 import type {
   AppSettings,
   PlaylistEditPatch,
@@ -25,6 +28,15 @@ import type {
 
 /** Registra todos los handlers IPC. Llamar una sola vez en app.whenReady. */
 export function registerIpc(getMainWindow: () => BrowserWindow | null): void {
+  // ---- App (F65) ----
+  ipcMain.handle(IPC.APP_GET_VERSION, () => app.getVersion())
+
+  // ---- Auto-actualización (F67) ----
+  // La instalación (`UPDATE_INSTALL_NOW`) se registra en src/main/index.ts,
+  // donde vive el flag `isQuitting` que debe ponerse a true antes de instalar.
+  ipcMain.handle(IPC.UPDATE_CHECK, () => checkForUpdatesManually())
+  ipcMain.handle(IPC.UPDATE_START_DOWNLOAD, () => startUpdateDownload())
+
   // ---- Autenticación ----
   ipcMain.handle(IPC.AUTH_GET_STATE, () => sessionManager.authState)
   ipcMain.handle(IPC.AUTH_START_DEVICE, () => {
@@ -40,11 +52,104 @@ export function registerIpc(getMainWindow: () => BrowserWindow | null): void {
   })
 
   // ---- Música ----
-  ipcMain.handle(IPC.MUSIC_SEARCH, (_e, query: string, filter: SearchFilter = 'all') =>
-    music.search(query, filter)
+  // F43 · Último cortafuegos: si algo en `music.search` (o en las capas de
+  // debajo) escapa a los try/catch internos y lanza — típicamente un
+  // "Cannot read properties of undefined (reading 'url')" del parser de
+  // youtubei.js — no queremos que el renderer vea una banda roja. Devolvemos
+  // resultados vacíos y logueamos.
+  ipcMain.handle(
+    IPC.MUSIC_SEARCH,
+    async (_e, query: string, filter: SearchFilter = 'all') => {
+      try {
+        return await music.search(query, filter)
+      } catch (err) {
+        console.error('[ipc music:search] blindaje final atrapó:', err)
+        return { songs: [], videos: [], albums: [], artists: [], playlists: [] }
+      }
+    }
   )
   ipcMain.handle(IPC.MUSIC_SUGGESTIONS, (_e, input: string) => music.getSuggestions(input))
-  ipcMain.handle(IPC.MUSIC_HOME, () => music.getHome())
+  // F80 · getHome + estanterías fallback: si InnerTube no devuelve alguna
+  // categoría de las que los quick picks esperan, generamos un shelf sintético
+  // con contenido de discovery para que la estantería siempre esté activa.
+  ipcMain.handle(IPC.MUSIC_HOME, async () => {
+    const shelves = await music.getHome()
+    try {
+      const { categorizeShelf } = await import('../home/categorize')
+      const present = new Set(
+        shelves.map((s) => categorizeShelf(s)).filter((c): c is string => c !== null)
+      )
+
+      // Solo generamos fallback si tenemos semillas (usuario logueado con historial)
+      const profile = getProfile()
+      const favs = profile.favoriteArtists ?? []
+      let likedTracks: TrackSummary[] = []
+      if (favs.length > 0 || present.size > 0) {
+        try {
+          const liked = await music.getPlaylist('LM')
+          likedTracks = liked.tracks ?? []
+        } catch {
+          likedTracks = []
+        }
+      }
+      const hasSeeds = favs.length > 0 || likedTracks.length > 0
+
+      if (hasSeeds) {
+        const { getPersonalMixTracks, getSurpriseTrack } = await import('../innertube/discovery')
+        const { getUpNext } = await import('../innertube/api')
+
+        // Categorías que necesitan fallback y sus títulos
+        const fallbacks: { id: string; title: string }[] = [
+          { id: 'recientes', title: 'Escuchados recientemente' },
+          { id: 'novedades', title: 'Novedades para ti' },
+          { id: 'mixes', title: 'Tus mixes' },
+          { id: 'radios', title: 'Radios sugeridas' },
+          { id: 'topcharts', title: 'Más escuchado' },
+          { id: 'sugerencias', title: 'Sugerencias para ti' }
+        ]
+
+        for (const fb of fallbacks) {
+          if (present.has(fb.id)) continue
+          try {
+            let items: TrackSummary[] = []
+            if (fb.id === 'mixes' || fb.id === 'sugerencias') {
+              items = await getPersonalMixTracks(favs, likedTracks, 8)
+            } else {
+              // Para el resto, usamos getUpNext con semillas aleatorias
+              const seeds = [...likedTracks].sort(() => Math.random() - 0.5).slice(0, 2)
+              for (const seed of seeds) {
+                if (items.length >= 8) break
+                try {
+                  const res = await getUpNext(seed.videoId)
+                  if (res?.tracks?.length) {
+                    for (const t of res.tracks) {
+                      if (!items.find((x) => x.videoId === t.videoId)) items.push(t)
+                      if (items.length >= 8) break
+                    }
+                  }
+                } catch { /* silencioso */ }
+              }
+            }
+            if (items.length > 0) {
+              shelves.push({
+                title: fb.title,
+                items: items.map((t) => ({
+                  kind: t.kind === 'video' ? 'video' as const : 'song' as const,
+                  id: t.videoId,
+                  title: t.title,
+                  subtitle: t.artists?.map((a) => a.name).join(', ') ?? '',
+                  thumbnailUrl: t.thumbnailUrl
+                }))
+              })
+            }
+          } catch { /* individual fallback failure — skip silently */ }
+        }
+      }
+    } catch {
+      // Si el sistema de fallback falla entero, devolvemos los shelves originales
+    }
+    return shelves
+  })
   // F32 · Devuelve el índice ligero de estanterías (id + título + categoría)
   // que la UI de Ajustes necesita para mostrar el editor de orden/ocultas.
   ipcMain.handle(IPC.HOME_SHELF_INDEX, async () => {
@@ -60,7 +165,23 @@ export function registerIpc(getMainWindow: () => BrowserWindow | null): void {
   ipcMain.handle(IPC.MUSIC_PLAYLIST, (_e, id: string) => music.getPlaylist(id))
   ipcMain.handle(IPC.MUSIC_ALBUM, (_e, id: string) => music.getAlbum(id))
   ipcMain.handle(IPC.MUSIC_ARTIST, (_e, id: string) => music.getArtist(id))
-  ipcMain.handle(IPC.MUSIC_UP_NEXT, (_e, videoId: string) => music.getUpNext(videoId))
+  ipcMain.handle(IPC.MUSIC_UP_NEXT, async (_e, videoId: string) => {
+    // F50 · Gancho E2E: con perfil de pruebas activo, los videoIds `e2e-*`
+    // devuelven la lista canned que el runner dejó en el userData — permite
+    // probar la ampliación de cola por autoplay sin red (googlevideo
+    // rechaza streams concurrentes del mismo visitante que la app real).
+    if (process.env.EROS_E2E_PROFILE && videoId.startsWith('e2e-')) {
+      try {
+        const { readFile } = await import('fs/promises')
+        const { join } = await import('path')
+        const raw = await readFile(join(app.getPath('userData'), 'e2e-upnext.json'), 'utf8')
+        return JSON.parse(raw)
+      } catch {
+        return { tracks: [] }
+      }
+    }
+    return music.getUpNext(videoId)
+  })
   ipcMain.handle(
     IPC.MUSIC_LYRICS,
     async (
@@ -91,6 +212,8 @@ export function registerIpc(getMainWindow: () => BrowserWindow | null): void {
   ipcMain.handle(IPC.LIB_PLAYLIST_EDIT, (_e, id: string, patch: PlaylistEditPatch) =>
     lib.editPlaylist(id, patch)
   )
+  // F36 · borrar playlist (o quitarla de la biblioteca si es ajena)
+  ipcMain.handle(IPC.LIB_PLAYLIST_DELETE, (_e, id: string) => lib.deletePlaylist(id))
   ipcMain.handle(IPC.LIB_SUBSCRIBE, (_e, channelId: string, subscribed: boolean) =>
     lib.setSubscribed(channelId, subscribed)
   )
@@ -146,6 +269,12 @@ export function registerIpc(getMainWindow: () => BrowserWindow | null): void {
     }
     return merged
   })
+
+  // ---- Onboarding (F61) ----
+  ipcMain.handle(IPC.ONBOARDING_GET_COMPLETED, () => getOnboardingCompleted())
+  ipcMain.handle(IPC.ONBOARDING_SET_COMPLETED, (_e, v: boolean) =>
+    setOnboardingCompleted(Boolean(v))
+  )
 
   // ---- Perfil de usuario (F20) ----
   ipcMain.handle(IPC.PROFILE_GET, () => getProfile())
@@ -239,6 +368,62 @@ export function registerIpc(getMainWindow: () => BrowserWindow | null): void {
     return getPersonalMixTracks(favs, likedTracks, 25)
   })
 
+  ipcMain.handle(IPC.DISCOVERY_SPIRAL, async () => {
+    const { getSpiralTracks } = await import('../innertube/discovery')
+    const { getLibraryCached, getHistory } = await import('../innertube/library')
+    const profile = getProfile()
+    const favs = profile.favoriteArtists ?? []
+
+    // Liked songs
+    let likedTracks: TrackSummary[] = []
+    try {
+      const liked = await music.getPlaylist('LM')
+      likedTracks = liked.tracks
+    } catch {
+      likedTracks = []
+    }
+
+    // Pistas de las playlists del usuario (best effort, con timeout por playlist)
+    const userPlaylistTracks: TrackSummary[] = []
+    try {
+      const lib = await getLibraryCached()
+      const playlistIds = lib.playlists.map((p) => p.id).slice(0, 10) // max 10 playlists
+      const results = await Promise.allSettled(
+        playlistIds.map((id) =>
+          Promise.race([
+            music.getPlaylist(id).then((pl) => pl.tracks),
+            new Promise<TrackSummary[]>((_, reject) => setTimeout(() => reject('timeout'), 3000))
+          ])
+        )
+      )
+      for (const r of results) {
+        if (r.status === 'fulfilled') userPlaylistTracks.push(...r.value)
+      }
+    } catch {
+      /* best effort */
+    }
+
+    // Historial
+    const historyTracks = getHistory(200)
+
+    // Canciones ya visibles en Home — no duplicar en la Espiral
+    let homeVideoIds: string[] = []
+    try {
+      const { getHome } = await import('../innertube/api')
+      const homeShelves = await getHome()
+      homeVideoIds = homeShelves
+        .flatMap((s) => s.items)
+        .filter((item) => item.kind === 'song' || item.kind === 'video')
+        .map((item) => item.id)
+        .filter(Boolean)
+    } catch {
+      /* best effort */
+    }
+
+    if (!favs.length && !likedTracks.length) return []
+    return getSpiralTracks(favs, likedTracks, userPlaylistTracks, historyTracks, homeVideoIds, 60)
+  })
+
   // ---- Streaming ----
   ipcMain.handle(IPC.STREAM_PREPARE, async (_e, videoId: string): Promise<PreparedStream> => {
     // Descargada -> directo del disco, sin tocar la red (modo offline real)
@@ -260,6 +445,101 @@ export function registerIpc(getMainWindow: () => BrowserWindow | null): void {
       via: resolved.via
     }
   })
+
+  // ---- F68 · Last.fm scrobbling ----
+  ipcMain.handle(IPC.LASTFM_AUTH_URL, async () => {
+    const { getLastfmAuthUrl } = await import('../integrations/lastfm')
+    return getLastfmAuthUrl()
+  })
+  ipcMain.handle(IPC.LASTFM_AUTH_COMPLETE, async (_e, token: string) => {
+    const { completeLastfmAuth } = await import('../integrations/lastfm')
+    return completeLastfmAuth(token)
+  })
+  ipcMain.handle(IPC.LASTFM_DISCONNECT, async () => {
+    const { disconnectLastfm } = await import('../integrations/lastfm')
+    disconnectLastfm()
+  })
+  ipcMain.handle(IPC.LASTFM_NOW_PLAYING, async (_e, params) => {
+    const s = getAllSettings()
+    if (!s.lastfmEnabled || !s.lastfmSessionKey) return
+    const { lastfmNowPlaying } = await import('../integrations/lastfm')
+    return lastfmNowPlaying(params)
+  })
+  ipcMain.handle(IPC.LASTFM_SCROBBLE, async (_e, params) => {
+    const s = getAllSettings()
+    if (!s.lastfmEnabled || !s.lastfmSessionKey) return
+    const { lastfmScrobble } = await import('../integrations/lastfm')
+    return lastfmScrobble(params)
+  })
+
+  // ---- F69 · ListenBrainz sync ----
+  ipcMain.handle(IPC.LISTENBRAINZ_VALIDATE, async (_e, token: string) => {
+    const { listenbrainzValidateToken } = await import('../integrations/listenbrainz')
+    return listenbrainzValidateToken(token)
+  })
+  ipcMain.handle(IPC.LISTENBRAINZ_NOW_PLAYING, async (_e, params) => {
+    const s = getAllSettings()
+    if (!s.listenbrainzEnabled || !s.listenbrainzToken) return
+    const { listenbrainzNowPlaying } = await import('../integrations/listenbrainz')
+    return listenbrainzNowPlaying(s.listenbrainzToken, params)
+  })
+  ipcMain.handle(IPC.LISTENBRAINZ_SUBMIT, async (_e, params) => {
+    const s = getAllSettings()
+    if (!s.listenbrainzEnabled || !s.listenbrainzToken) return
+    const { listenbrainzSubmitListen } = await import('../integrations/listenbrainz')
+    return listenbrainzSubmitListen(s.listenbrainzToken, params)
+  })
+
+  // ---- F71 · Importación de playlists ----
+  ipcMain.handle(IPC.IMPORT_FILE_DIALOG, async () => {
+    const { dialog } = await import('electron')
+    const result = await dialog.showOpenDialog({
+      properties: ['openFile'],
+      filters: [{ name: 'Playlists', extensions: ['m3u', 'm3u8', 'csv'] }]
+    })
+    return result.filePaths[0] || null
+  })
+  ipcMain.handle(IPC.IMPORT_SPOTIFY, async (_e, url: string) => {
+    const { parseSpotifyPlaylist, matchTracksToYtMusic } = await import('../import/spotify')
+    const { name, tracks } = await parseSpotifyPlaylist(url)
+    const searchFn = async (query: string) => {
+      const res = await music.search(query, 'song')
+      return res.songs ?? []
+    }
+    const matches = await matchTracksToYtMusic(tracks, searchFn, (current, total, m) => {
+      getMainWindow()?.webContents.send(IPC.IMPORT_PROGRESS, {
+        state: 'matching', current, total, matches: m
+      })
+    })
+    return { name, matches }
+  })
+  ipcMain.handle(IPC.IMPORT_FILE, async (_e, filePath: string) => {
+    const { parsePlaylistFile } = await import('../import/fileImport')
+    const { matchTracksToYtMusic } = await import('../import/spotify')
+    const { name, tracks: fileTracks } = await parsePlaylistFile(filePath)
+    const searchFn = async (query: string) => {
+      const res = await music.search(query, 'song')
+      return res.songs ?? []
+    }
+    // Convertir FileTrack[] a SpotifyTrack[] (misma forma)
+    const asTracks = fileTracks.map((t) => ({ title: t.title, artist: t.artist, album: t.album }))
+    const matches = await matchTracksToYtMusic(asTracks, searchFn, (current, total, m) => {
+      getMainWindow()?.webContents.send(IPC.IMPORT_PROGRESS, {
+        state: 'matching', current, total, matches: m
+      })
+    })
+    return { name, matches }
+  })
+
+  // Hidrata la session key de Last.fm al arrancar
+  {
+    const s = getAllSettings()
+    if (s.lastfmSessionKey) {
+      void import('../integrations/lastfm').then(({ setLastfmSessionKey }) => {
+        setLastfmSessionKey(s.lastfmSessionKey)
+      })
+    }
+  }
 
   // ---- Ventana ----
   ipcMain.handle(IPC.WIN_MINIMIZE, () => getMainWindow()?.minimize())

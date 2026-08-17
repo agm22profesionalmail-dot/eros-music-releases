@@ -65,13 +65,72 @@ export async function getLibraryCached(forceRefresh = false): Promise<LibraryRes
   return refreshLibrary()
 }
 
+/**
+ * F36 · Ventana de "estado optimista": tras crear/borrar una playlist, la
+ * caché local ya refleja el cambio pero YT Music tarda unos segundos en
+ * devolverlo (consistencia eventual). Mientras dure la ventana, un refresh
+ * plano serviría datos VIEJOS y pisaría el parche — así que lo bloqueamos y
+ * la reconvergencia la hace `convergeLibrary()` cuando el backend confirma.
+ */
+let suppressRefreshUntil = 0
+
 export async function refreshLibrary(): Promise<LibraryResult> {
+  if (Date.now() < suppressRefreshUntil) {
+    const cached = readLibrarySection<LibrarySnapshot>(SECTION)
+    if (cached) return { ...cached.data, fromCache: true, updatedAt: cached.updatedAt }
+  }
   const fresh = await getLibrary()
   // No machacar una caché buena con una instantánea vacía (fallo transitorio)
   const hasContent =
     fresh.playlists.length || fresh.albums.length || fresh.artists.length || fresh.songs.length
   if (hasContent) cacheLibrarySection(SECTION, fresh)
   return { ...fresh, fromCache: false, updatedAt: Date.now() }
+}
+
+/**
+ * F36 · Aplica un parche optimista a la instantánea cacheada y avisa a todas
+ * las ventanas AL INSTANTE (el renderer sirve la caché, así que el cambio se
+ * ve sin esperar a YT). Abre la ventana anti-pisado de 20 s.
+ */
+function patchCachedLibrary(
+  mutate: (snap: LibrarySnapshot) => LibrarySnapshot,
+  reason: string
+): void {
+  const cached = readLibrarySection<LibrarySnapshot>(SECTION)
+  if (cached) cacheLibrarySection(SECTION, mutate(cached.data))
+  suppressRefreshUntil = Date.now() + 20_000
+  notifyLibraryChanged(reason)
+}
+
+/**
+ * F36 · Reconverge con el backend: reintenta hasta que la instantánea fresca
+ * satisfaga `confirmed` (p. ej. "la playlist nueva ya aparece") o se agoten
+ * los intentos. Solo entonces cachea la verdad del servidor y re-notifica.
+ */
+async function convergeLibrary(
+  confirmed: (snap: LibrarySnapshot) => boolean,
+  reason: string,
+  attempts = 5,
+  delayMs = 2500
+): Promise<void> {
+  for (let i = 0; i < attempts; i++) {
+    await new Promise((r) => setTimeout(r, delayMs))
+    try {
+      const fresh = await getLibrary()
+      const hasContent =
+        fresh.playlists.length || fresh.albums.length || fresh.artists.length || fresh.songs.length
+      if (!hasContent) continue
+      if (confirmed(fresh)) {
+        cacheLibrarySection(SECTION, fresh)
+        suppressRefreshUntil = 0
+        notifyLibraryChanged(reason)
+        return
+      }
+    } catch {
+      /* red caída: siguiente intento */
+    }
+  }
+  // El backend no confirmó a tiempo: deja expirar la ventana sin pisar nada.
 }
 
 // ---------- Escrituras contra la cuenta ----------
@@ -120,13 +179,76 @@ export async function removeFromPlaylist(playlistId: string, videoIds: string[])
     .finally(() => notifyLibraryChanged('playlistRemove'))
 }
 
+/**
+ * F36 · Borra una playlist de la cuenta. Para playlists propias usa el
+ * endpoint de borrado real; si YT lo rechaza (p. ej. una playlist ajena
+ * guardada en la biblioteca) cae a "quitar de la biblioteca", que es la
+ * misma semántica que ofrece la app oficial en ese caso.
+ * Devuelve 'deleted' | 'removedFromLibrary' según lo que ocurrió.
+ */
+export async function deletePlaylist(id: string): Promise<'deleted' | 'removedFromLibrary'> {
+  const yt = await sessionManager.get()
+  const nid = normalizePlaylistId(id)
+  let outcome: 'deleted' | 'removedFromLibrary' = 'deleted'
+  // Nota: los managers de youtubei.js (playlist.delete / removeFromLibrary)
+  // mandan `target` como string y cliente web → YT Music responde 400 (mismo
+  // bug conocido que el like). Llamadas directas con cliente YTMUSIC:
+  try {
+    await yt.actions.execute('/playlist/delete', {
+      client: 'YTMUSIC',
+      playlistId: nid
+    } as never)
+  } catch {
+    // Playlist ajena (guardada): quitarla de la biblioteca sí está permitido
+    await yt.actions.execute('/like/removelike', {
+      client: 'YTMUSIC',
+      target: { playlistId: nid }
+    } as never)
+    outcome = 'removedFromLibrary'
+  }
+  // El override local (título/carátula editados) ya no aplica a nada
+  setPlaylistOverride(nid, { title: null, thumbnailDataUrl: null })
+  // Optimista: fuera de la caché YA (YT tarda en dejar de devolverla)
+  patchCachedLibrary(
+    (snap) => ({
+      ...snap,
+      playlists: snap.playlists.filter((p) => normalizePlaylistId(p.id) !== nid)
+    }),
+    'playlistDelete'
+  )
+  void convergeLibrary(
+    (snap) => !snap.playlists.some((p) => normalizePlaylistId(p.id) === nid),
+    'playlistDelete'
+  )
+  return outcome
+}
+
 export async function createPlaylist(title: string, videoIds: string[]): Promise<string | null> {
   const yt = await sessionManager.get()
   const res = await yt.playlist.create(title, videoIds)
-  void refreshLibrary()
-    .catch(() => undefined)
-    .finally(() => notifyLibraryChanged('playlistCreate'))
-  return (res as { playlist_id?: string })?.playlist_id ?? null
+  const pid = (res as { playlist_id?: string })?.playlist_id ?? null
+  if (pid) {
+    // Optimista: la playlist entra en la caché YA (YT tarda en listarla)
+    const card = {
+      kind: 'playlist' as const,
+      id: `VL${pid}`,
+      title,
+      subtitle: videoIds.length ? `${videoIds.length} canciones` : 'Playlist'
+    }
+    patchCachedLibrary(
+      (snap) => ({ ...snap, playlists: [card, ...snap.playlists] }),
+      'playlistCreate'
+    )
+    void convergeLibrary(
+      (snap) => snap.playlists.some((p) => normalizePlaylistId(p.id) === pid),
+      'playlistCreate'
+    )
+  } else {
+    void refreshLibrary()
+      .catch(() => undefined)
+      .finally(() => notifyLibraryChanged('playlistCreate'))
+  }
+  return pid
 }
 
 /**

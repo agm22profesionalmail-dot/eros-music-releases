@@ -181,6 +181,14 @@ export interface DiscoverySurpriseResult {
   reason: string
 }
 
+/** F80 · Pista para la Espiral Musical con metadatos de descubrimiento. */
+export interface SpiralTrack extends TrackSummary {
+  /** Canción que encaja con los gustos del usuario */
+  isMatch: boolean
+  /** Artista con pocos seguidores / poco conocido */
+  isSmallArtist: boolean
+}
+
 // ---------- Géneros (F23) ----------
 
 /**
@@ -223,6 +231,7 @@ export interface ArtistStats {
   name: string
   playCount: number
   totalSec: number
+  thumbnailUrl?: string
 }
 
 /** Resumen tipo "Wrapped" de los últimos N días (por defecto 30). */
@@ -270,6 +279,8 @@ export const IPC = {
   LIB_PLAYLIST_REMOVE: 'library:playlistRemove',
   LIB_PLAYLIST_CREATE: 'library:playlistCreate',
   LIB_PLAYLIST_EDIT: 'library:playlistEdit',
+  /** F36 · Borra (propia) o quita de la biblioteca (ajena) una playlist */
+  LIB_PLAYLIST_DELETE: 'library:playlistDelete',
   LIB_SUBSCRIBE: 'library:subscribe',
   LIB_LIKED_IDS: 'library:likedIds',
   /** main -> renderer: la biblioteca cambió (crear/editar playlist, like, sub…) */
@@ -287,6 +298,9 @@ export const IPC = {
   SETTINGS_GET: 'settings:get',
   SETTINGS_SET: 'settings:set',
   SETTINGS_CHANGED: 'settings:changed', // main -> todas las ventanas (evento)
+  // onboarding (F61): flag "asistente de bienvenida completado"
+  ONBOARDING_GET_COMPLETED: 'onboarding:getCompleted',
+  ONBOARDING_SET_COMPLETED: 'onboarding:setCompleted',
   // perfil de usuario (F20)
   PROFILE_GET: 'profile:get',
   PROFILE_SET: 'profile:set',
@@ -296,6 +310,7 @@ export const IPC = {
   // descubrimiento (F24): tarjetas "Sorpréndeme" y "Mix Personal"
   DISCOVERY_SURPRISE: 'discovery:surprise',
   DISCOVERY_MIX: 'discovery:mix',
+  DISCOVERY_SPIRAL: 'discovery:spiral',
   // estadísticas (F31): Wrapped, Top semanal/mensual, playlist auto-generada
   STATS_TOP_TRACKS: 'stats:topTracks',
   STATS_TOP_ARTISTS: 'stats:topArtists',
@@ -318,7 +333,33 @@ export const IPC = {
   WIN_MAXIMIZE: 'win:maximize',
   WIN_CLOSE: 'win:close',
   WIN_IS_MAXIMIZED: 'win:isMaximized',
-  WIN_MAXIMIZED_CHANGED: 'win:maximizedChanged'
+  WIN_MAXIMIZED_CHANGED: 'win:maximizedChanged',
+  // app (F65): metadatos de la aplicación
+  APP_GET_VERSION: 'app:getVersion',
+  // auto-actualización (F67)
+  UPDATE_CHECK: 'update:check', // renderer -> main (comprobación manual, botón en Ajustes)
+  UPDATE_START_DOWNLOAD: 'update:startDownload', // renderer -> main (tras pulsar "Actualizar ahora")
+  UPDATE_INSTALL_NOW: 'update:installNow', // renderer -> main (instala lo descargado y reinicia)
+  UPDATE_AVAILABLE: 'update:available', // main -> renderer (evento): { version: string }
+  UPDATE_NOT_AVAILABLE: 'update:notAvailable', // main -> renderer (evento, solo tras comprobación MANUAL)
+  UPDATE_DOWNLOAD_PROGRESS: 'update:downloadProgress', // main -> renderer (evento): { percent: number }
+  UPDATE_DOWNLOADED: 'update:downloaded', // main -> renderer (evento): { version: string }
+  UPDATE_ERROR: 'update:error', // main -> renderer (evento): { message: string }
+  // ---- F68 · Last.fm scrobbling ----
+  LASTFM_AUTH_URL: 'lastfm:authUrl',
+  LASTFM_AUTH_COMPLETE: 'lastfm:authComplete',
+  LASTFM_DISCONNECT: 'lastfm:disconnect',
+  LASTFM_SCROBBLE: 'lastfm:scrobble',
+  LASTFM_NOW_PLAYING: 'lastfm:nowPlaying',
+  // ---- F69 · ListenBrainz sync ----
+  LISTENBRAINZ_SUBMIT: 'listenbrainz:submit',
+  LISTENBRAINZ_NOW_PLAYING: 'listenbrainz:nowPlaying',
+  LISTENBRAINZ_VALIDATE: 'listenbrainz:validate',
+  // ---- F71 · Importación de playlists ----
+  IMPORT_SPOTIFY: 'import:spotify',
+  IMPORT_FILE: 'import:file',
+  IMPORT_FILE_DIALOG: 'import:fileDialog',
+  IMPORT_PROGRESS: 'import:progress' // main -> renderer (evento)
 } as const
 
 export interface PreparedStream {
@@ -343,6 +384,12 @@ export interface AppSettings {
   downloadsDir: string
   /** Tema visual */
   theme: 'dark' | 'black' | 'light'
+  /**
+   * F36 · Tema predefinido con colores fijos (paletas estilo Discord Nitro).
+   * 'none' = usar el tema clásico de arriba. Cualquier otro valor debe casar
+   * con un id de THEME_PRESETS; si no casa, se ignora (equivale a 'none').
+   */
+  themePreset: string
   /** Color de acento (hex) */
   accent: string
   /** 'fixed' usa el acento elegido; 'dynamic' lo saca de la carátula en reproducción */
@@ -377,7 +424,7 @@ export interface AppSettings {
   miniX?: number
   miniY?: number
 
-  // ---------- F27 · Paridad de reproducción con Metrolist Android ----------
+  // ---------- F27 · Paridad de reproducción con la app Android original ----------
 
   /** Calidad de sonido: auto (mejor disponible), alta (>=192k), media (<=192k), baja (<=96k) */
   audioQuality: 'auto' | 'high' | 'medium' | 'low'
@@ -510,6 +557,54 @@ export interface AppSettings {
    * NO afecta a `contentLanguage` (F28) — ese sigue rigiendo InnerTube.
    */
   uiLanguage: 'auto' | 'es' | 'en'
+
+  // ---------- F68 · Last.fm scrobbling ----------
+  /** Last.fm habilitado */
+  lastfmEnabled: boolean
+  /** Session key de Last.fm (obtenida tras auth) */
+  lastfmSessionKey: string
+  /** Nombre de usuario de Last.fm (para mostrar en la UI) */
+  lastfmUsername: string
+
+  // ---------- F69 · ListenBrainz sync ----------
+  /** ListenBrainz habilitado */
+  listenbrainzEnabled: boolean
+  /** Token de usuario de ListenBrainz */
+  listenbrainzToken: string
+
+  // ---------- F70 · EQ multi-banda ----------
+  /** Modo del ecualizador: 10, 15 o 31 bandas */
+  eqMode: '10' | '15' | '31'
+  /** Ganancias del EQ de 15 bandas en dB */
+  eqGains15: number[]
+  /** Ganancias del EQ de 31 bandas en dB */
+  eqGains31: number[]
+
+  // ---------- F72 · Desfase de letras por canción ----------
+  /** Desfase global de letras en ms (se suma al timing sincronizado) */
+  lyricsOffsetMs: number
+}
+
+// ---------- Importación de playlists (F71) ----------
+
+export interface ImportTrackMatch {
+  /** Título original del track en la fuente */
+  sourceTitle: string
+  /** Artista original del track en la fuente */
+  sourceArtist: string
+  /** Track encontrado en YouTube Music (null si no se encontró) */
+  match: TrackSummary | null
+  /** Calidad del match: 'exact', 'partial', 'none' */
+  quality: 'exact' | 'partial' | 'none'
+}
+
+export interface ImportProgress {
+  state: 'parsing' | 'matching' | 'creating' | 'done' | 'error'
+  current: number
+  total: number
+  matches: ImportTrackMatch[]
+  error?: string
+  playlistId?: string
 }
 
 /**
@@ -517,13 +612,16 @@ export interface AppSettings {
  * El id coincide con los que devuelve `categorizeShelf()` para permitir hacer
  * scroll a la primera estantería que matchee.
  */
-export const HOME_QUICK_PICK_CATEGORIES: { id: string; label: string; emoji: string }[] = [
-  { id: 'recientes', label: 'Recientes', emoji: '⏱️' },
-  { id: 'novedades', label: 'Novedades', emoji: '✨' },
-  { id: 'mixes', label: 'Mixes', emoji: '🎧' },
-  { id: 'radios', label: 'Radios', emoji: '📻' },
-  { id: 'topcharts', label: 'Top Charts', emoji: '📈' },
-  { id: 'sugerencias', label: 'Sugerencias', emoji: '💡' }
+/** F57/F58 · Identificadores de icono SVG (ver Icons.tsx) para cada categoría. */
+export type HomeQuickPickIcon = 'recent' | 'sparkle' | 'headphones' | 'radio' | 'chart' | 'lightbulb'
+
+export const HOME_QUICK_PICK_CATEGORIES: { id: string; label: string; icon: HomeQuickPickIcon }[] = [
+  { id: 'recientes', label: 'Recientes', icon: 'recent' },
+  { id: 'novedades', label: 'Novedades', icon: 'sparkle' },
+  { id: 'mixes', label: 'Mixes', icon: 'headphones' },
+  { id: 'radios', label: 'Radios', icon: 'radio' },
+  { id: 'topcharts', label: 'Top Charts', icon: 'chart' },
+  { id: 'sugerencias', label: 'Sugerencias', icon: 'lightbulb' }
 ]
 
 /** F32 · Selecciones rápidas por defecto. */
@@ -569,7 +667,11 @@ export type MiniCorner = AppSettings['miniCorner']
 export const DEFAULT_SETTINGS: AppSettings = {
   downloadsDir: '',
   theme: 'dark',
-  accent: '#f43f4f',
+  // F60 · Rediseño café: los usuarios nuevos arrancan con el tema de la casa
+  // (preset "Coffee Cream", a juego con el logo) y acento caramelo. Quien ya
+  // tiene ajustes guardados en SQLite no se ve afectado.
+  themePreset: 'coffee-cream',
+  accent: '#c98f55',
   accentMode: 'fixed',
   bgMode: 'ambient',
   ambientTint: 60,
@@ -586,7 +688,9 @@ export const DEFAULT_SETTINGS: AppSettings = {
   miniScale: 1,
   // F27
   audioQuality: 'auto',
-  disableCrossfadeOnGapless: true,
+  // F50 · false: el crossfade suena también entre pistas del mismo álbum
+  // (el usuario puede reactivar la excepción gapless en Ajustes)
+  disableCrossfadeOnGapless: false,
   normalize: false,
   normalizeLevel: 'normal',
   progressiveSeek: false,
@@ -631,7 +735,20 @@ export const DEFAULT_SETTINGS: AppSettings = {
   proxyMode: 'off',
   proxyUrl: '',
   // F34 · idioma de la UI (auto = detecta del sistema)
-  uiLanguage: 'auto'
+  uiLanguage: 'auto',
+  // F68 · Last.fm scrobbling
+  lastfmEnabled: false,
+  lastfmSessionKey: '',
+  lastfmUsername: '',
+  // F69 · ListenBrainz sync
+  listenbrainzEnabled: false,
+  listenbrainzToken: '',
+  // F70 · EQ multi-banda
+  eqMode: '10' as const,
+  eqGains15: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  eqGains31: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  // F72 · Desfase de letras
+  lyricsOffsetMs: 0
 }
 
 export interface LyricWord {

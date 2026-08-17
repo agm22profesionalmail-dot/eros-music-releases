@@ -1,0 +1,330 @@
+{
+  "results": [
+    {
+      "block": "A",
+      "name": "15 claves F27 presentes en settings.get()",
+      "status": "OK",
+      "severity": "high",
+      "note": ""
+    },
+    {
+      "block": "A",
+      "name": "botón sleep timer [data-testid=\"sleep-timer-btn\"] presente",
+      "status": "OK",
+      "severity": "medium",
+      "note": "count=1"
+    },
+    {
+      "block": "A",
+      "name": "audioQuality:high persiste",
+      "status": "OK",
+      "severity": "high",
+      "note": ""
+    },
+    {
+      "block": "A",
+      "name": "avoidDuplicatesInQueue:false persiste",
+      "status": "OK",
+      "severity": "high",
+      "note": ""
+    },
+    {
+      "block": "B",
+      "name": "9 claves F28 presentes en settings.get()",
+      "status": "OK",
+      "severity": "high",
+      "note": ""
+    },
+    {
+      "block": "B",
+      "name": "con hideVideos:true no hay kind:video en resultados",
+      "status": "OK",
+      "severity": "high",
+      "note": "total=7 videos=0"
+    },
+    {
+      "block": "C",
+      "name": "streamingSources es array con ≥4 items",
+      "status": "OK",
+      "severity": "high",
+      "note": "len=4"
+    },
+    {
+      "block": "C",
+      "name": "useYtDlpFallback es boolean",
+      "status": "OK",
+      "severity": "medium",
+      "note": "value=true"
+    },
+    {
+      "block": "C",
+      "name": "contiene los 4 clientes históricos",
+      "status": "OK",
+      "severity": "medium",
+      "note": "ids=YTMUSIC,IOS,ANDROID,TV_EMBEDDED"
+    },
+    {
+      "block": "C",
+      "name": "sección \"Fuentes de streaming\" visible en Ajustes",
+      "status": "OK",
+      "severity": "medium",
+      "note": ""
+    },
+    {
+      "block": "D",
+      "name": "lyricsProviders es array con 3 items",
+      "status": "OK",
+      "severity": "high",
+      "note": "len=3"
+    },
+    {
+      "block": "D",
+      "name": "romanizeLyrics es boolean",
+      "status": "OK",
+      "severity": "medium",
+      "note": "value=false"
+    },
+    {
+      "block": "D",
+      "name": "contiene los 3 proveedores esperados",
+      "status": "OK",
+      "severity": "medium",
+      "note": "ids=LRCLIB,KUGOU,YTMUSIC"
+    },
+    {
+      "block": "D",
+      "name": "music.lyrics(...) responde sin lanzar",
+      "status": "OK",
+      "severity": "medium",
+      "note": "type=object"
+    },
+    {
+      "block": "E",
+      "name": "wrappedTopN es number",
+      "status": "OK",
+      "severity": "high",
+      "note": "value=50"
+    },
+    {
+      "block": "E",
+      "name": "showWrappedRecapCard es boolean",
+      "status": "OK",
+      "severity": "medium",
+      "note": ""
+    },
+    {
+      "block": "E",
+      "name": "showTopWeekly es boolean",
+      "status": "OK",
+      "severity": "medium",
+      "note": ""
+    },
+    {
+      "block": "E",
+      "name": "showTopMonthly es boolean",
+      "status": "OK",
+      "severity": "medium",
+      "note": ""
+    },
+    {
+      "block": "E",
+      "name": "stats.recap() devuelve estructura correcta",
+      "status": "OK",
+      "severity": "high",
+      "note": "hours=7.2"
+    },
+    {
+      "block": "E",
+      "name": "Home muestra ≥1 .recap-card con showWrappedRecapCard=true",
+      "status": "OK",
+      "severity": "medium",
+      "note": "cards=3"
+    },
+    {
+      "block": "E",
+      "name": ".recap-page renderiza al navegar a Recap",
+      "status": "OK",
+      "severity": "medium",
+      "note": ""
+    },
+    {
+      "block": "F",
+      "name": "homeShuffleShelves es boolean",
+      "status": "OK",
+      "severity": "high",
+      "note": ""
+    },
+    {
+      "block": "F",
+      "name": "homeShelvesOrder es array",
+      "status": "OK",
+      "severity": "high",
+      "note": ""
+    },
+    {
+      "block": "F",
+      "name": "homeHiddenShelves es array",
+      "status": "OK",
+      "severity": "high",
+      "note": ""
+    },
+    {
+      "block": "F",
+      "name": "homeQuickPicks es array",
+      "status": "OK",
+      "severity": "high",
+      "note": "value=[\"recientes\",\"novedades\",\"mixes\",\"radios\"]"
+    },
+    {
+      "block": "F",
+      "name": "sidebar-nav contiene item \"Recap\"",
+      "status": "OK",
+      "severity": "high",
+      "note": ""
+    },
+    {
+      "block": "F",
+      "name": "Home renderiza al menos una sección conocida",
+      "status": "OK",
+      "severity": "medium",
+      "note": ""
+    },
+    {
+      "block": "G",
+      "name": "proxyMode default 'off'",
+      "status": "OK",
+      "severity": "high",
+      "note": "value=off"
+    },
+    {
+      "block": "G",
+      "name": "proxyUrl default ''",
+      "status": "OK",
+      "severity": "medium",
+      "note": "value=\"\""
+    },
+    {
+      "block": "G",
+      "name": "settings.set proxy http no lanza",
+      "status": "OK",
+      "severity": "high",
+      "note": "proxyMode=http proxyUrl=127.0.0.1:9999"
+    },
+    {
+      "block": "G",
+      "name": "ventana sigue viva tras aplicar proxy inexistente",
+      "status": "OK",
+      "severity": "critical",
+      "note": ""
+    },
+    {
+      "block": "H",
+      "name": "uiLanguage está definido",
+      "status": "OK",
+      "severity": "high",
+      "note": "value=auto"
+    },
+    {
+      "block": "H",
+      "name": "uiLanguage con valor válido (auto|es|en)",
+      "status": "OK",
+      "severity": "medium",
+      "note": "value=auto"
+    },
+    {
+      "block": "H",
+      "name": "sidebar cambia con uiLanguage=en (Home)",
+      "status": "OK",
+      "severity": "high",
+      "note": "\"Inicio\" → \"Home\""
+    },
+    {
+      "block": "H",
+      "name": "sidebar vuelve a \"Inicio\" con uiLanguage=es",
+      "status": "OK",
+      "severity": "high",
+      "note": "got=\"Inicio\""
+    },
+    {
+      "block": "I",
+      "name": "sidebar tiene ≥1 .library-row",
+      "status": "OK",
+      "severity": "high",
+      "note": "rows=13"
+    },
+    {
+      "block": "I",
+      "name": "clic derecho en .media-card abre .context-menu",
+      "status": "OK",
+      "severity": "high",
+      "note": ""
+    },
+    {
+      "block": "I",
+      "name": "reproducción arranca (audio.src cambia)",
+      "status": "OK",
+      "severity": "high",
+      "note": ""
+    },
+    {
+      "block": "I",
+      "name": "sin errores del renderer",
+      "status": "OK",
+      "severity": "medium",
+      "note": ""
+    },
+    {
+      "block": "I",
+      "name": "sin líneas Error en stderr del main",
+      "status": "OK",
+      "severity": "medium",
+      "note": "errCount=0"
+    },
+    {
+      "block": "J",
+      "name": "tras 8 navegaciones no hay pantalla en blanco",
+      "status": "OK",
+      "severity": "high",
+      "note": ""
+    },
+    {
+      "block": "J",
+      "name": "spam siguiente x5 no cuelga",
+      "status": "OK",
+      "severity": "medium",
+      "note": ""
+    },
+    {
+      "block": "J",
+      "name": "viewport 900×600 sin overflow horizontal",
+      "status": "OK",
+      "severity": "medium",
+      "note": ""
+    },
+    {
+      "block": "restore",
+      "name": "ajustes restaurados al snapshot inicial",
+      "status": "OK",
+      "severity": "high",
+      "note": "uiLang=auto proxy=off hideV=false aq=auto"
+    },
+    {
+      "block": "restore",
+      "name": "perfil restaurado a valores originales",
+      "status": "OK",
+      "severity": "high",
+      "note": ""
+    },
+    {
+      "block": "restore",
+      "name": "sesión intacta (no signOut)",
+      "status": "OK",
+      "severity": "critical",
+      "note": "status=signedIn"
+    }
+  ],
+  "bugs": [],
+  "mainErrCount": 0,
+  "rendererErrors": [],
+  "veredicto": "LISTO PARA v0.3"
+}

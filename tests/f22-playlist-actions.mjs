@@ -31,10 +31,10 @@ const check = (name, cond) => {
   if (!cond) failures++
 }
 
-function metrolistIsRunning() {
+function erosMusicIsRunning() {
   try {
     const out = execSync(
-      'powershell -NoProfile -Command "Get-Process -Name \'Metrolist PC\' -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Id"',
+      'powershell -NoProfile -Command "Get-Process -Name \'ERO\'\'S Music\' -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Id"',
       { encoding: 'utf8', windowsHide: true }
     )
     return out.trim().length > 0
@@ -43,11 +43,11 @@ function metrolistIsRunning() {
   }
 }
 
-const running = metrolistIsRunning()
+const running = erosMusicIsRunning()
 const mode = running ? 'boot' : 'full'
 console.log(`[mode] ${mode} (app del usuario ${running ? 'abierta' : 'cerrada'})`)
 
-const tmpUserData = join(os.tmpdir(), `metrolist-e2e-userdata-f22-${Date.now()}`)
+const tmpUserData = join(os.tmpdir(), `eros-e2e-userdata-f22-${Date.now()}`)
 
 async function launch() {
   const args = ['.']
@@ -55,7 +55,7 @@ async function launch() {
   const app = await _electron.launch({
     args,
     cwd: root,
-    env: { ...process.env, METROLIST_E2E: '1' }
+    env: { ...process.env, EROS_E2E: '1' }
   })
   app.process().stderr?.on('data', (d) => {
     const s = String(d).trim()
@@ -254,7 +254,7 @@ check('PlaylistEditModal abierto', await win.locator('.edit-card').isVisible())
 
 const titleInput = win.locator('.edit-card .edit-title-input').first()
 const originalTitle = await titleInput.inputValue()
-await titleInput.fill('Metrolist test 2026')
+await titleInput.fill('EROS test 2026')
 const counterTxt = await win
   .locator('.edit-card .edit-counter')
   .first()
@@ -283,7 +283,7 @@ const headerAfter = await win
 check(
   `título de la playlist intacto ("${headerAfter?.trim()}" vs "${originalTitle}" en el input)`,
   typeof headerAfter === 'string' &&
-    headerAfter.trim() !== 'Metrolist test 2026'
+    headerAfter.trim() !== 'EROS test 2026'
 )
 
 await app.close()

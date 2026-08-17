@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 
 /**
  * Extrae un color dominante "vibrante" de una carátula (estilo Material You
- * de Metrolist): media de los píxeles más saturados de una miniatura 24x24,
+ * de la app Android original): media de los píxeles más saturados de una miniatura 24x24,
  * con recorte de luminosidad para que siempre sea usable como acento.
  */
 

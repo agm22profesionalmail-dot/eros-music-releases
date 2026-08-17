@@ -1,4 +1,5 @@
 import type { MediaCard } from '@shared/types'
+import { useT } from '../app/i18n'
 import { PlayIcon, MusicNoteIcon, PersonIcon } from './Icons'
 import { useRouter } from '../app/router'
 import { openContextMenu } from './ContextMenu'
@@ -25,6 +26,7 @@ export function Card({
   artistId,
   artistName
 }: CardProps): React.JSX.Element {
+  const t = useT()
   const navigate = useRouter((s) => s.navigate)
 
   const open = (): void => {
@@ -74,7 +76,7 @@ export function Card({
         {onPlay && item.kind !== 'artist' && (
           <button
             className="hover-play"
-            aria-label="Reproducir"
+            aria-label={t('common.play')}
             onClick={(e) => {
               e.stopPropagation()
               onPlay(item)

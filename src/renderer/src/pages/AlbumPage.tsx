@@ -5,12 +5,22 @@ import { ListSearchInput } from '../components/ListSearchInput'
 import { usePlayer } from '../player/store'
 import { useRouter } from '../app/router'
 import { openContextMenu } from '../components/ContextMenu'
-import { trackMenu } from '../app/libraryStore'
+import { cardMenu, trackMenu } from '../app/libraryStore'
 import { useArtworkColor } from '../app/artworkColor'
 import { matchesTrack, useDebouncedValue } from '../app/listFilter'
-import { MusicNoteIcon, PauseIcon, PlayIcon } from '../components/Icons'
+import { pushToast } from '../components/Toast'
+import { useT } from '../app/i18n'
+import {
+  MoreVerticalIcon,
+  MusicNoteIcon,
+  PauseIcon,
+  PlayIcon,
+  ShareIcon,
+  ShuffleIcon
+} from '../components/Icons'
 
 export function AlbumPage({ id }: { id: string }): React.JSX.Element {
+  const t = useT()
   const [album, setAlbum] = useState<AlbumDetail | null>(null)
   const [error, setError] = useState<string | null>(null)
   // F21: filtro local con debounce (mismo helper que PlaylistPage).
@@ -52,7 +62,7 @@ export function AlbumPage({ id }: { id: string }): React.JSX.Element {
   if (error) {
     return (
       <div className="page">
-        <div className="error-banner">No se pudo cargar el álbum: {error}</div>
+        <div className="error-banner">{t('album.loadError', { msg: error })}</div>
       </div>
     )
   }
@@ -84,7 +94,7 @@ export function AlbumPage({ id }: { id: string }): React.JSX.Element {
           </div>
         )}
         <div className="info">
-          <div className="kind">Álbum</div>
+          <div className="kind">{t('media.album')}</div>
           <h1 className="name">{album.title}</h1>
           <div className="meta">
             {album.artists.map((a, i) => (
@@ -108,17 +118,22 @@ export function AlbumPage({ id }: { id: string }): React.JSX.Element {
             {album.trackCount != null && (
               <>
                 <span>·</span>
-                <span>{album.trackCount} canciones</span>
+                <span>{t('media.songCount', { n: album.trackCount })}</span>
               </>
             )}
           </div>
         </div>
       </div>
       <div className="detail-body">
+        {/* F43 · agente E — barra de acciones del álbum:
+            Play + Shuffle + Compartir + ⋯  (la acción "Guardar en biblioteca"
+            de álbumes requiere API que aún no existe en el renderer, así que
+            no se pinta el botón; el ⋯ ofrece Play/Next/Cola/Compartir vía
+            `cardMenu('album')`, que sí funciona hoy). */}
         <div className="detail-actions">
           <button
             className={`big-play ${isThisPlaying ? 'is-playing' : ''}`}
-            aria-label="Reproducir álbum"
+            aria-label={t('album.playAria')}
             onClick={() => {
               if (isThisPlaying) togglePlay()
               else if (album.tracks.length) void playTracks(album.tracks)
@@ -127,10 +142,62 @@ export function AlbumPage({ id }: { id: string }): React.JSX.Element {
             {isThisPlaying ? <PauseIcon size={22} /> : <PlayIcon size={22} />}
           </button>
           {album.tracks.length > 0 && (
+            <button
+              className="action-shuffle"
+              aria-label={t('common.shufflePlay')}
+              title={t('common.shufflePlay')}
+              onClick={() => {
+                void (async () => {
+                  await playTracks(album.tracks, 0)
+                  if (!usePlayer.getState().shuffle) usePlayer.getState().toggleShuffle()
+                })()
+              }}
+            >
+              <ShuffleIcon size={20} />
+            </button>
+          )}
+          <button
+            className="action-mini"
+            aria-label={t('album.shareAria')}
+            title={t('common.share')}
+            onClick={() => {
+              void (async () => {
+                try {
+                  await navigator.clipboard.writeText(
+                    `https://music.youtube.com/browse/${album.id}`
+                  )
+                  pushToast(t('toast.linkCopied'))
+                } catch {
+                  pushToast(t('toast.linkCopyFailed'))
+                }
+              })()
+            }}
+          >
+            <ShareIcon size={18} />
+          </button>
+          <button
+            className="action-mini"
+            aria-label={t('common.moreActions')}
+            title={t('common.moreActions')}
+            onClick={(e) =>
+              openContextMenu(
+                e,
+                cardMenu({
+                  kind: 'album',
+                  id: album.id,
+                  title: album.title,
+                  thumbnailUrl: album.thumbnailUrl
+                })
+              )
+            }
+          >
+            <MoreVerticalIcon size={20} />
+          </button>
+          {album.tracks.length > 0 && (
             <ListSearchInput
               value={filter}
               onChange={setFilter}
-              ariaLabel="Buscar en el álbum"
+              ariaLabel={t('album.searchAria')}
             />
           )}
         </div>
@@ -141,7 +208,7 @@ export function AlbumPage({ id }: { id: string }): React.JSX.Element {
           onContextMenu={(e, t) => openContextMenu(e, trackMenu(t))}
         />
         {debounced && album.tracks.length > 0 && filteredTracks.length === 0 && (
-          <div className="empty-state">Sin resultados para «{filter}»</div>
+          <div className="empty-state">{t('search.empty', { q: filter })}</div>
         )}
       </div>
     </>

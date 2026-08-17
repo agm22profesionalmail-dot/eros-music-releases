@@ -3,7 +3,7 @@ import { AUTH_PARTITION, sessionManager } from '../innertube/session'
 
 /**
  * Ventana de login con la página REAL de Google (mismo enfoque que el WebView
- * de Metrolist en Android). El usuario escribe sus credenciales directamente
+ * de la app Android original). El usuario escribe sus credenciales directamente
  * en accounts.google.com; la app solo conserva las cookies de sesión que
  * quedan en la partición persistente.
  */

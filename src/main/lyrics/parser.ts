@@ -3,7 +3,7 @@
 // timestamps por línea ([00:12.00][00:24.00]texto). Ignora las etiquetas de
 // metadatos ([ar:], [ti:], [al:], [length:], [offset:], [id:], etc.) porque
 // no empiezan por dígitos. El [offset:] se ignora deliberadamente, igual que
-// hace Metrolist en Android.
+// hace la app Android original.
 
 export interface LrcLine {
   timeMs: number

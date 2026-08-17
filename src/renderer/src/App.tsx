@@ -18,11 +18,16 @@ import { RecapPage } from './pages/RecapPage'
 import { ContextMenuHost } from './components/ContextMenu'
 import { TextModalHost } from './components/TextModal'
 import { ToastHost } from './components/Toast'
+import { UpdateBanner } from './components/UpdateBanner'
 import { AmbientBackground } from './components/AmbientBackground'
+import { OnboardingWizard } from './components/onboarding/OnboardingWizard'
+import { LoadingSpinner } from './components/LoadingSpinner'
 import { useLibrary } from './app/libraryStore'
 import { useSettings } from './app/settingsStore'
 import { useProfile } from './app/profileStore'
 import { useAmbient } from './app/ambientStore'
+import { useOnboarding } from './app/onboardingStore'
+import { useUpdater } from './app/updaterStore'
 import { initMediaIntegration } from './player/mediaSession'
 import { useRouter } from './app/router'
 import { useAuth } from './app/authStore'
@@ -51,6 +56,21 @@ export default function App(): React.JSX.Element {
   const [scrolled, setScrolled] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
 
+  // F60 · Navegar a `search` con query programática (p. ej. clic en un artista
+  // sin id desde la barra inferior) rellena la caja. El ref evita pisar lo que
+  // el usuario teclee después: la misma query de ruta solo se aplica una vez.
+  const appliedRouteQuery = useRef<string | undefined>(undefined)
+  useEffect(() => {
+    if (route.name !== 'search') {
+      appliedRouteQuery.current = undefined
+      return
+    }
+    if (route.query && route.query !== appliedRouteQuery.current) {
+      appliedRouteQuery.current = route.query
+      setSearchText(route.query)
+    }
+  }, [route])
+
   const routeKey = (r: { name: string; id?: string }): string =>
     r.id ? `${r.name}-${r.id}` : r.name
 
@@ -58,13 +78,23 @@ export default function App(): React.JSX.Element {
   const initAmbient = useAmbient((s) => s.init)
   const initProfile = useProfile((s) => s.init)
   const profile = useProfile((s) => s.profile)
+  // F61 · Asistente de bienvenida: `init()` consulta el flag persistido en
+  // SQLite. Hasta que responde, la zona de páginas muestra el LoadingSpinner
+  // (nunca un flash de LoginPage que el wizard taparía un frame después).
+  const initOnboarding = useOnboarding((s) => s.init)
+  const onbLoaded = useOnboarding((s) => s.loaded)
+  const onbActive = useOnboarding((s) => s.active)
+  // F67 · Registra los listeners de actualización una sola vez (guard interno).
+  const initUpdater = useUpdater((s) => s.init)
   useEffect(() => {
     initAuth()
     void initSettings()
     void initProfile()
+    void initOnboarding()
     initAmbient()
+    initUpdater()
     return initMediaIntegration()
-  }, [initAuth, initSettings, initProfile, initAmbient])
+  }, [initAuth, initSettings, initProfile, initOnboarding, initAmbient, initUpdater])
 
   // Carga la biblioteca cuando hay sesión; límpiala al cerrar sesión
   const loadLibrary = useLibrary((s) => s.load)
@@ -169,8 +199,18 @@ export default function App(): React.JSX.Element {
               </div>
             </div>
 
-            {/* Página activa (con transición cross-fade suave) */}
-            {auth.status !== 'signedIn' && route.name === 'home' ? (
+            {/* Página activa (con transición cross-fade suave).
+                F61 · El onboarding intercepta ANTES de decidir LoginPage/rutas:
+                mientras init() consulta el flag → spinner; con el wizard activo
+                → overlay modal (la shell —sidebar, barra inferior— queda
+                visible detrás, difuminada por el propio overlay). */}
+            {!onbLoaded ? (
+              <div className="onb-boot-loading">
+                <LoadingSpinner size={84} label={t('common.loading')} />
+              </div>
+            ) : onbActive ? (
+              <OnboardingWizard />
+            ) : auth.status !== 'signedIn' && route.name === 'home' ? (
               <LoginPage />
             ) : (
               <div key={routeKey(route)} className="page-transition">
@@ -194,6 +234,7 @@ export default function App(): React.JSX.Element {
       <NowPlayingBar queueOpen={queueOpen} onToggleQueue={() => setQueueOpen((v) => !v)} />
       <ContextMenuHost />
       <TextModalHost />
+      <UpdateBanner />
       <ToastHost />
     </div>
   )

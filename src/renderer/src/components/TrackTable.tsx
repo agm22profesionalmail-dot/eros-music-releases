@@ -2,6 +2,7 @@ import type { TrackSummary } from '@shared/types'
 import { formatTime } from '../app/authStore'
 import { usePlayer } from '../player/store'
 import { useRouter } from '../app/router'
+import { useT } from '../app/i18n'
 import { ClockIcon, MusicNoteIcon, PlayIcon } from './Icons'
 
 interface TrackTableProps {
@@ -20,15 +21,17 @@ export function TrackTable({
   onPlayIndex,
   onContextMenu
 }: TrackTableProps): React.JSX.Element {
+  const t = useT()
   const current = usePlayer((s) => s.current())
+  const pendingJump = usePlayer((s) => s.pendingJump)
   const navigate = useRouter((s) => s.navigate)
 
   return (
     <div className={`track-table ${showAlbum ? 'with-album' : ''}`}>
       <div className="thead">
         <span style={{ textAlign: 'right' }}>#</span>
-        <span>Título</span>
-        {showAlbum && <span>Álbum</span>}
+        <span>{t('table.title')}</span>
+        {showAlbum && <span>{t('table.album')}</span>}
         <span></span>
         <span style={{ display: 'grid', placeItems: 'center' }}>
           <ClockIcon size={16} />
@@ -36,10 +39,12 @@ export function TrackTable({
       </div>
       {tracks.map((t, i) => {
         const isPlaying = current?.videoId === t.videoId
+        // F54 · Fila clicada mientras se resuelve su stream: pulso "cargando"
+        const isPending = pendingJump?.videoId === t.videoId && !isPlaying
         return (
           <button
             key={`${t.videoId}-${i}`}
-            className={`track-row ${isPlaying ? 'playing' : ''}`}
+            className={`track-row ${isPlaying ? 'playing' : ''} ${isPending ? 'pending-jump' : ''}`}
             style={{ ['--i' as string]: Math.min(i, 30) }}
             onDoubleClick={() => onPlayIndex?.(i)}
             onContextMenu={(e) => onContextMenu?.(e, t, i)}

@@ -99,7 +99,7 @@ async function fetchLastFmTags(name: string): Promise<string[]> {
   url.searchParams.set('autocorrect', '1')
   try {
     const res = await fetch(url, {
-      headers: { 'User-Agent': 'MetrolistPC/0.1' },
+      headers: { 'User-Agent': 'EROSMusic/1.2' },
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS)
     })
     if (!res.ok) return []

@@ -4,6 +4,8 @@ import type { MenuItem } from '../components/ContextMenu'
 import { usePlayer } from '../player/store'
 import { useRouter } from './router'
 import { pushToast } from '../components/Toast'
+// F58 · i18n imperativa (código no-React): `t` lee useI18n.getState().t
+import { t } from './i18n'
 
 /**
  * Estado global de la biblioteca del usuario + fábrica del menú contextual
@@ -66,11 +68,11 @@ export const useLibrary = create<LibraryState>((set, get) => ({
       try {
         const settingsMod = (
           window as unknown as {
-            __metrolistSettingsStore?: {
+            __erosMusicSettingsStore?: {
               useSettings: { getState: () => { settings: { autoDownloadOnLike?: boolean } } }
             }
           }
-        ).__metrolistSettingsStore
+        ).__erosMusicSettingsStore
         if (settingsMod?.useSettings.getState().settings.autoDownloadOnLike) {
           void window.api.downloads.add(track).catch(() => undefined)
         }
@@ -108,27 +110,27 @@ export function trackMenu(track: TrackSummary, opts?: { playlistId?: string }): 
   )
 
   const items: MenuItem[] = [
-    { label: 'Reproducir ahora', action: () => void player.playNow(track) },
-    { label: 'Iniciar radio', action: () => void player.startRadio(track) },
-    { label: 'Siguiente en la cola', action: () => player.enqueueNext(track) },
-    { label: 'Añadir a la cola', action: () => player.enqueueLast([track]) },
+    { label: t('menu.playNow'), action: () => void player.playNow(track) },
+    { label: t('menu.startRadio'), action: () => void player.startRadio(track) },
+    { label: t('menu.playNext'), action: () => player.enqueueNext(track) },
+    { label: t('menu.addToQueue'), action: () => player.enqueueLast([track]) },
     { separator: true, label: '' },
     {
-      label: liked ? 'Quitar de Me gusta' : 'Me gusta',
+      label: liked ? t('menu.unlike') : t('menu.like'),
       action: () => void library.toggleLike(track)
     },
-    { label: 'Descargar', action: () => void window.api.downloads.add(track) },
+    { label: t('menu.download'), action: () => void window.api.downloads.add(track) },
     {
-      label: 'Añadir a playlist',
+      label: t('menu.addToPlaylist'),
       submenu: [
         {
-          label: '+ Nueva playlist…',
+          label: t('menu.newPlaylist'),
           action: () => {
             void import('../components/TextModal').then(({ askText }) =>
               askText({
-                title: 'Nueva playlist',
-                placeholder: 'Nombre de la playlist',
-                confirmLabel: 'Crear'
+                title: t('sidebar.newPlaylist'),
+                placeholder: t('sidebar.newPlaylistPlaceholder'),
+                confirmLabel: t('btn.create')
               }).then((title) => {
                 if (title) {
                   void window.api.library
@@ -149,7 +151,7 @@ export function trackMenu(track: TrackSummary, opts?: { playlistId?: string }): 
 
   if (opts?.playlistId) {
     items.push({
-      label: 'Quitar de esta playlist',
+      label: t('menu.removeFromPlaylist'),
       action: () =>
         void window.api.library
           .playlistRemove(opts.playlistId!, [track.videoId])
@@ -161,13 +163,13 @@ export function trackMenu(track: TrackSummary, opts?: { playlistId?: string }): 
   const artist = track.artists.find((a) => a.id)
   if (artist?.id) {
     items.push({
-      label: `Ir a ${artist.name}`,
+      label: t('menu.goTo', { name: artist.name }),
       action: () => router.navigate({ name: 'artist', id: artist.id! })
     })
   }
   if (track.album?.id) {
     items.push({
-      label: 'Ir al álbum',
+      label: t('menu.goToAlbum'),
       action: () => router.navigate({ name: 'album', id: track.album!.id! })
     })
   }
@@ -199,9 +201,9 @@ function mediaCardToTrack(card: MediaCard): TrackSummary {
 async function copyToClipboard(text: string): Promise<void> {
   try {
     await navigator.clipboard.writeText(text)
-    pushToast('Enlace copiado')
+    pushToast(t('toast.linkCopied'))
   } catch {
-    pushToast('No se pudo copiar el enlace')
+    pushToast(t('toast.linkCopyFailed'))
   }
 }
 
@@ -261,33 +263,33 @@ export function cardMenu(
       (p: MediaCard) => !p.id.includes('LM')
     )
     items.push(
-      { label: 'Reproducir ahora', action: () => void player.playNow(track) },
-      { label: 'Iniciar radio', action: () => void player.startRadio(track) },
-      { label: 'Siguiente en la cola', action: () => player.enqueueNext(track) },
+      { label: t('menu.playNow'), action: () => void player.playNow(track) },
+      { label: t('menu.startRadio'), action: () => void player.startRadio(track) },
+      { label: t('menu.playNext'), action: () => player.enqueueNext(track) },
       {
-        label: 'Añadir a la cola',
+        label: t('menu.addToQueue'),
         action: () => {
           player.enqueueLast([track])
-          pushToast('Añadido a la cola')
+          pushToast(t('toast.addedToQueue'))
         }
       },
       { separator: true, label: '' },
       {
-        label: liked ? 'Quitar de Me gusta' : 'Me gusta',
+        label: liked ? t('menu.unlike') : t('menu.like'),
         action: () => void library.toggleLike(track)
       },
-      { label: 'Descargar', action: () => void window.api.downloads.add(track) },
+      { label: t('menu.download'), action: () => void window.api.downloads.add(track) },
       {
-        label: 'Añadir a playlist',
+        label: t('menu.addToPlaylist'),
         submenu: [
           {
-            label: '+ Nueva playlist…',
+            label: t('menu.newPlaylist'),
             action: () => {
               void import('../components/TextModal').then(({ askText }) =>
                 askText({
-                  title: 'Nueva playlist',
-                  placeholder: 'Nombre de la playlist',
-                  confirmLabel: 'Crear'
+                  title: t('sidebar.newPlaylist'),
+                  placeholder: t('sidebar.newPlaylistPlaceholder'),
+                  confirmLabel: t('btn.create')
                 }).then((title) => {
                   if (title) {
                     void window.api.library
@@ -312,12 +314,12 @@ export function cardMenu(
     // navegar al detalle usando `card.id` si es un vídeo/canción con URL.
     if (opts?.artistId) {
       items.push({
-        label: opts.artistName ? `Ir a ${opts.artistName}` : 'Ir al artista',
+        label: opts.artistName ? t('menu.goTo', { name: opts.artistName }) : t('menu.goToArtist'),
         action: () => router.navigate({ name: 'artist', id: opts.artistId! })
       })
     }
     items.push({
-      label: 'Compartir',
+      label: t('common.share'),
       action: () => void copyToClipboard(`https://music.youtube.com/watch?v=${card.id}`)
     })
     return items
@@ -326,30 +328,30 @@ export function cardMenu(
   if (card.kind === 'album') {
     items.push(
       {
-        label: 'Reproducir',
+        label: t('menu.play'),
         action: () =>
           void loadContainerTracks('album', card.id).then((tracks) => {
             if (tracks.length) void player.playTracks(tracks)
-            else pushToast('Álbum vacío')
+            else pushToast(t('toast.albumEmpty'))
           })
       },
       {
-        label: 'Reproducir siguiente',
+        label: t('menu.playNextAll'),
         action: () =>
           void loadContainerTracks('album', card.id).then((tracks) => {
             // enqueueNext es de una en una: recorremos al revés para
             // conservar el orden del álbum
             for (let i = tracks.length - 1; i >= 0; i--) player.enqueueNext(tracks[i])
-            if (tracks.length) pushToast(`${tracks.length} canciones a continuación`)
+            if (tracks.length) pushToast(t('toast.songsQueuedNext', { n: tracks.length }))
           })
       },
       {
-        label: 'Añadir a la cola',
+        label: t('menu.addToQueue'),
         action: () =>
           void loadContainerTracks('album', card.id).then((tracks) => {
             if (tracks.length) {
               player.enqueueLast(tracks)
-              pushToast(`${tracks.length} canciones a la cola`)
+              pushToast(t('toast.songsQueued', { n: tracks.length }))
             }
           })
       },
@@ -357,12 +359,12 @@ export function cardMenu(
     )
     if (opts?.artistId) {
       items.push({
-        label: opts.artistName ? `Ir a ${opts.artistName}` : 'Ir al artista',
+        label: opts.artistName ? t('menu.goTo', { name: opts.artistName }) : t('menu.goToArtist'),
         action: () => router.navigate({ name: 'artist', id: opts.artistId! })
       })
     }
     items.push({
-      label: 'Compartir',
+      label: t('common.share'),
       action: () => void copyToClipboard(`https://music.youtube.com/browse/${card.id}`)
     })
     return items
@@ -373,72 +375,105 @@ export function cardMenu(
     const rawId = card.id.startsWith('VL') ? card.id.slice(2) : card.id
     items.push(
       {
-        label: 'Reproducir',
+        label: t('menu.play'),
         action: () =>
           void loadContainerTracks('playlist', card.id).then((tracks) => {
             if (tracks.length) void player.playTracks(tracks)
-            else pushToast('Playlist vacía')
+            else pushToast(t('toast.playlistEmpty'))
           })
       },
       {
-        label: 'Reproducir siguiente',
+        label: t('menu.playNextAll'),
         action: () =>
           void loadContainerTracks('playlist', card.id).then((tracks) => {
             for (let i = tracks.length - 1; i >= 0; i--) player.enqueueNext(tracks[i])
-            if (tracks.length) pushToast(`${tracks.length} canciones a continuación`)
+            if (tracks.length) pushToast(t('toast.songsQueuedNext', { n: tracks.length }))
           })
       },
       {
-        label: 'Añadir a la cola',
+        label: t('menu.addToQueue'),
         action: () =>
           void loadContainerTracks('playlist', card.id).then((tracks) => {
             if (tracks.length) {
               player.enqueueLast(tracks)
-              pushToast(`${tracks.length} canciones a la cola`)
+              pushToast(t('toast.songsQueued', { n: tracks.length }))
             }
           })
       },
       { separator: true, label: '' },
       {
-        label: 'Editar',
+        label: t('common.edit'),
         disabled: !editable,
         action: () => router.navigate({ name: 'playlist', id: card.id })
       },
       {
-        label: 'Compartir',
+        label: t('menu.rename'),
+        disabled: !editable,
+        action: () =>
+          void import('../components/TextModal').then(({ askText }) =>
+            askText({
+              title: t('menu.renamePlaylistTitle'),
+              placeholder: card.title,
+              initial: card.title,
+              confirmLabel: t('menu.rename')
+            }).then((title) => {
+              if (!title || title === card.title) return
+              void window.api.library
+                .playlistEdit(card.id, { title })
+                .then(() => {
+                  pushToast(t('toast.playlistRenamed'))
+                  void library.refresh()
+                })
+                .catch(() => pushToast(t('toast.renameFailed')))
+            })
+          )
+      },
+      {
+        label: t('common.share'),
         action: () =>
           void copyToClipboard(`https://music.youtube.com/playlist?list=${rawId}`)
       }
     )
-    if (editable) {
-      items.push({
-        label: 'Quitar de biblioteca',
-        action: () =>
-          void (async () => {
-            try {
-              // Elimina cada video de la playlist es lo más cerca del
-              // "quitar de biblioteca" que ofrece la API pública. No hay
-              // endpoint público para eliminar la playlist entera, así que
-              // dejamos aviso y refrescamos.
-              pushToast('Elimina la playlist desde YT Music en tu cuenta')
-              await library.refresh()
-            } catch {
-              /* silencio */
-            }
-          })()
-      })
-    }
+    // F36 · Borrado real desde la app: propia → se elimina de la cuenta;
+    // ajena guardada → se quita de la biblioteca. Con confirmación previa.
+    items.push({
+      label: t('menu.deletePlaylist'),
+      /* F43 · Rojo en el menú contextual para señalar acción destructiva. */
+      danger: true,
+      action: () =>
+        void import('../components/TextModal').then(({ askConfirm }) =>
+          askConfirm({
+            title: t('menu.deletePlaylist'),
+            message: t('menu.deletePlaylistMsg', { title: card.title }),
+            confirmLabel: t('btn.delete'),
+            danger: true
+          }).then((ok) => {
+            if (!ok) return
+            void window.api.library
+              .playlistDelete(card.id)
+              .then((outcome) => {
+                pushToast(
+                  outcome === 'deleted'
+                    ? t('toast.playlistDeleted')
+                    : t('toast.playlistRemovedFromLibrary')
+                )
+                void library.refresh()
+              })
+              .catch(() => pushToast(t('toast.playlistDeleteFailed')))
+          })
+        )
+    })
     return items
   }
 
   if (card.kind === 'artist') {
     items.push(
       {
-        label: 'Ir al artista',
+        label: t('menu.goToArtist'),
         action: () => router.navigate({ name: 'artist', id: card.id })
       },
       {
-        label: 'Reproducir radio',
+        label: t('menu.playRadio'),
         action: () =>
           void (async () => {
             // Radio directa: tomamos como semilla el propio artista abriendo
@@ -462,30 +497,30 @@ export function cardMenu(
       },
       { separator: true, label: '' },
       {
-        label: 'Seguir',
+        label: t('menu.follow'),
         action: () =>
           void window.api.library
             .subscribe(card.id, true)
             .then(() => {
-              pushToast('Ahora sigues a este artista')
+              pushToast(t('toast.nowFollowing'))
               void library.refresh()
             })
-            .catch(() => pushToast('No se pudo seguir'))
+            .catch(() => pushToast(t('toast.followFailed')))
       },
       {
-        label: 'Dejar de seguir',
+        label: t('menu.unfollow'),
         action: () =>
           void window.api.library
             .subscribe(card.id, false)
             .then(() => {
-              pushToast('Has dejado de seguir')
+              pushToast(t('toast.unfollowed'))
               void library.refresh()
             })
-            .catch(() => pushToast('No se pudo cambiar el seguimiento'))
+            .catch(() => pushToast(t('toast.followChangeFailed')))
       },
       { separator: true, label: '' },
       {
-        label: 'Compartir',
+        label: t('common.share'),
         action: () =>
           void copyToClipboard(`https://music.youtube.com/channel/${card.id}`)
       }
@@ -495,7 +530,7 @@ export function cardMenu(
 
   // kind === 'unknown' u otro futuro: solo compartir por id como fallback.
   items.push({
-    label: 'Compartir',
+    label: t('common.share'),
     action: () => void copyToClipboard(`https://music.youtube.com/watch?v=${card.id}`)
   })
   return items

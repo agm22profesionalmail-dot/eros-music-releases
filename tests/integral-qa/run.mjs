@@ -1,5 +1,5 @@
 /**
- * QA integral de Metrolist PC.
+ * QA integral de ERO'S Music.
  * Cobertura: arranque, sesión, home, búsqueda, sidebar/biblioteca, detalles,
  * reproducción, descargas/offline, letras, visualizador, mini-player, ajustes,
  * integración Windows, robustez. Restaura ajustes al final.

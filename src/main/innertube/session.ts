@@ -14,7 +14,8 @@ import type { AuthMethod, AuthState } from '@shared/types'
  *
  * - Mantiene un singleton de Innertube y lo reconstruye al iniciar/cerrar sesión.
  * - Dos métodos de login: OAuth device-code (vincular desde el móvil) y cookies
- *   (ventana con el login real de Google, como el WebView de Metrolist).
+ *   (ventana con el login real de Google, como el WebView de la app Android
+ *   original).
  * - El PoToken se genera de forma perezosa: la navegación no lo necesita,
  *   el streaming sí. `ensureStreamingReady()` lo añade y reconstruye la sesión.
  */
@@ -120,7 +121,10 @@ class SessionManager extends EventEmitter {
         if (!this.#poToken) {
           // Intenta reutilizar el par visitor+token de arranques anteriores:
           // crear un visitante nuevo en cada arranque dispara la sospecha de Google.
-          const cached = await this.#cache.get('metrolist_potoken')
+          // F63 · clave renombrada en el rebranding v1.2.0 (antes
+          // `metrolist_potoken`): la caché vieja simplemente expira — el par
+          // visitor+token se regenera igual que cuando pasa su TTL de 6 h.
+          const cached = await this.#cache.get('eros_potoken')
           if (cached) {
             try {
               const parsed = JSON.parse(Buffer.from(cached).toString('utf-8')) as PoTokenResult
@@ -144,7 +148,7 @@ class SessionManager extends EventEmitter {
             this.#poToken = await generatePoToken(vd)
             const buf = Buffer.from(JSON.stringify(this.#poToken), 'utf-8')
             await this.#cache
-              .set('metrolist_potoken', buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength))
+              .set('eros_potoken', buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength))
               .catch(() => undefined)
           }
         }

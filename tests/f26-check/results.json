@@ -1,0 +1,456 @@
+{
+  "results": [
+    {
+      "block": "1",
+      "name": "sesión iniciada (auth.getState === signedIn)",
+      "status": "OK",
+      "severity": null,
+      "note": "status=signedIn"
+    },
+    {
+      "block": "1",
+      "name": "sin errores no controlados del renderer al arrancar",
+      "status": "OK",
+      "severity": "high",
+      "note": ""
+    },
+    {
+      "block": "1",
+      "name": "sin errores del main al arrancar",
+      "status": "OK",
+      "severity": "high",
+      "note": ""
+    },
+    {
+      "block": "1",
+      "name": "biblioteca en sidebar (≥1 fila)",
+      "status": "OK",
+      "severity": "high",
+      "note": "rows=13"
+    },
+    {
+      "block": "1",
+      "name": "window.api.music.library() responde",
+      "status": "OK",
+      "severity": "high",
+      "note": ""
+    },
+    {
+      "block": "1",
+      "name": "reproducción arranca (audio.src cambia)",
+      "status": "OK",
+      "severity": "high",
+      "note": ""
+    },
+    {
+      "block": "1",
+      "name": "seek al 50% aplica sin excepción",
+      "status": "OK",
+      "severity": "medium",
+      "note": ""
+    },
+    {
+      "block": "1",
+      "name": "botón siguiente presente",
+      "status": "OK",
+      "severity": "medium",
+      "note": ""
+    },
+    {
+      "block": "1",
+      "name": "botón anterior presente",
+      "status": "OK",
+      "severity": "medium",
+      "note": ""
+    },
+    {
+      "block": "2",
+      "name": "topbar tiene ≥2 .avatar-btn (Ajustes + Perfil)",
+      "status": "OK",
+      "severity": "high",
+      "note": "count=2"
+    },
+    {
+      "block": "2",
+      "name": "clic en foto de topbar navega DIRECTO a Perfil",
+      "status": "OK",
+      "severity": "high",
+      "note": ""
+    },
+    {
+      "block": "2",
+      "name": "displayName autoguardado",
+      "status": "OK",
+      "severity": "high",
+      "note": "got=\"F26 Check\""
+    },
+    {
+      "block": "2",
+      "name": "bio autoguardada",
+      "status": "OK",
+      "severity": "high",
+      "note": ""
+    },
+    {
+      "block": "2",
+      "name": "enabled=true persistido",
+      "status": "OK",
+      "severity": "high",
+      "note": ""
+    },
+    {
+      "block": "2",
+      "name": "añadir artista favorito crece la lista",
+      "status": "OK",
+      "severity": "medium",
+      "note": "0 → 1"
+    },
+    {
+      "block": "2",
+      "name": "quitar artista favorito reduce la lista",
+      "status": "OK",
+      "severity": "medium",
+      "note": "1 → 0"
+    },
+    {
+      "block": "3",
+      "name": "ListSearchInput visible en playlist \"Música que me gusta\"",
+      "status": "OK",
+      "severity": "high",
+      "note": ""
+    },
+    {
+      "block": "3",
+      "name": "filtro \"a\" reduce 12→10",
+      "status": "OK",
+      "severity": "medium",
+      "note": ""
+    },
+    {
+      "block": "3",
+      "name": "borrar filtro devuelve todas (12/12)",
+      "status": "OK",
+      "severity": "medium",
+      "note": ""
+    },
+    {
+      "block": "3",
+      "name": "filtro en playlist funciona",
+      "status": "OK",
+      "severity": "high",
+      "note": ""
+    },
+    {
+      "block": "3",
+      "name": ".library-toolbar visible en Tu biblioteca",
+      "status": "OK",
+      "severity": "medium",
+      "note": ""
+    },
+    {
+      "block": "3",
+      "name": "input de búsqueda visible en Tu biblioteca (algún tab)",
+      "status": "OK",
+      "severity": "medium",
+      "note": "tab=\"Playlists\""
+    },
+    {
+      "block": "3",
+      "name": "filtro biblioteca \"la\" reduce 5→1",
+      "status": "OK",
+      "severity": "medium",
+      "note": ""
+    },
+    {
+      "block": "4",
+      "name": "preload expone library.playlistEdit",
+      "status": "OK",
+      "severity": "high",
+      "note": ""
+    },
+    {
+      "block": "4",
+      "name": "abierta playlist editable",
+      "status": "OK",
+      "severity": "high",
+      "note": ""
+    },
+    {
+      "block": "4",
+      "name": "botón + (Añadir) visible",
+      "status": "OK",
+      "severity": "high",
+      "note": ""
+    },
+    {
+      "block": "4",
+      "name": "botón ↗ (Compartir) visible",
+      "status": "OK",
+      "severity": "high",
+      "note": ""
+    },
+    {
+      "block": "4",
+      "name": "botón ✎ (Editar) visible",
+      "status": "OK",
+      "severity": "high",
+      "note": ""
+    },
+    {
+      "block": "4",
+      "name": "clipboard contiene music.youtube.com/playlist?list=",
+      "status": "OK",
+      "severity": "high",
+      "note": "clip=\"https://music.youtube.com/playlist?list=PLe9dA42WpKnw\""
+    },
+    {
+      "block": "4",
+      "name": "TrackPickerModal abre con +",
+      "status": "OK",
+      "severity": "high",
+      "note": ""
+    },
+    {
+      "block": "4",
+      "name": "chip contador \"2 canciones seleccionadas\"",
+      "status": "OK",
+      "severity": "high",
+      "note": "chip=\"2 canciones seleccionadas\" r1=20 r2=20"
+    },
+    {
+      "block": "4",
+      "name": "PlaylistEditModal abre con ✎",
+      "status": "OK",
+      "severity": "high",
+      "note": ""
+    },
+    {
+      "block": "4",
+      "name": "preview cuadrado en modal editar",
+      "status": "OK",
+      "severity": "medium",
+      "note": "w=240 h=240"
+    },
+    {
+      "block": "4",
+      "name": "título de la playlist intacto tras Cancelar",
+      "status": "OK",
+      "severity": "high",
+      "note": "header=\"Me gusta · Pop\""
+    },
+    {
+      "block": "5",
+      "name": "clic derecho en .media-card abre .context-menu",
+      "status": "OK",
+      "severity": "high",
+      "note": ""
+    },
+    {
+      "block": "5",
+      "name": "menú de tarjeta con ≥3 items",
+      "status": "OK",
+      "severity": "medium",
+      "note": "items=8"
+    },
+    {
+      "block": "5",
+      "name": "clic derecho en .library-row abre .context-menu",
+      "status": "OK",
+      "severity": "high",
+      "note": ""
+    },
+    {
+      "block": "5",
+      "name": "menú sidebar con ≥3 items",
+      "status": "OK",
+      "severity": "medium",
+      "note": "items=5"
+    },
+    {
+      "block": "5",
+      "name": "chips de género aparecen (≤10s)",
+      "status": "OK",
+      "severity": "medium",
+      "note": "chips=9"
+    },
+    {
+      "block": "5",
+      "name": "multi-select (\"Pop\" + \"Rap\")",
+      "status": "OK",
+      "severity": "high",
+      "note": "active=2"
+    },
+    {
+      "block": "5",
+      "name": "botón \"Crear playlist con [A+B]\" visible",
+      "status": "OK",
+      "severity": "medium",
+      "note": ""
+    },
+    {
+      "block": "5",
+      "name": "label del botón menciona ambos géneros",
+      "status": "OK",
+      "severity": "medium",
+      "note": "label=\"Crear playlist con Pop + Rap\""
+    },
+    {
+      "block": "7",
+      "name": "chip \"Todos\" resetea a un chip activo",
+      "status": "OK",
+      "severity": "medium",
+      "note": "active=1"
+    },
+    {
+      "block": "7",
+      "name": "tras \"Todos\" hay filas visibles",
+      "status": "OK",
+      "severity": "medium",
+      "note": "rows=12"
+    },
+    {
+      "block": "6",
+      "name": "library.onChanged expuesto y devuelve cleanup",
+      "status": "OK",
+      "severity": "high",
+      "note": ""
+    },
+    {
+      "block": "6",
+      "name": "avatar <img> cambia a data:image/png tras profile.set (<1s)",
+      "status": "OK",
+      "severity": "high",
+      "note": "src=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAA"
+    },
+    {
+      "block": "8",
+      "name": "window.api.discovery.surprise expuesto",
+      "status": "OK",
+      "severity": "high",
+      "note": ""
+    },
+    {
+      "block": "8",
+      "name": "window.api.discovery.mix expuesto",
+      "status": "OK",
+      "severity": "high",
+      "note": ""
+    },
+    {
+      "block": "8",
+      "name": "hay exactamente 2 tarjetas .hero-card",
+      "status": "OK",
+      "severity": "high",
+      "note": "count=2"
+    },
+    {
+      "block": "8",
+      "name": "una tarjeta se titula \"Sorpréndeme\"",
+      "status": "OK",
+      "severity": "medium",
+      "note": "[\"Sorpréndeme\",\"Mix Personal\"]"
+    },
+    {
+      "block": "8",
+      "name": "una tarjeta se titula \"Mix Personal\"",
+      "status": "OK",
+      "severity": "medium",
+      "note": ""
+    },
+    {
+      "block": "8",
+      "name": "Sorpréndeme responde (toast o cambio de pista)",
+      "status": "OK",
+      "severity": "high",
+      "note": "toast=\"Radio de Kordhell\" changed=true"
+    },
+    {
+      "block": "9",
+      "name": "botón [aria-label=\"Visualizador\"] presente",
+      "status": "OK",
+      "severity": "high",
+      "note": ""
+    },
+    {
+      "block": "9",
+      "name": "hay ≥1 canvas visible con dimensiones > 0",
+      "status": "OK",
+      "severity": "high",
+      "note": "{\"total\":2,\"vis\":2,\"first\":{\"w\":64,\"h\":40},\"imgs\":1}"
+    },
+    {
+      "block": "9",
+      "name": "hay ≥1 <img> centrado con src http",
+      "status": "OK",
+      "severity": "medium",
+      "note": "imgs=1"
+    },
+    {
+      "block": "9",
+      "name": "canvas se congela en ventana minimizada (rAF pausado) — no bug de la app",
+      "status": "OK",
+      "severity": "warn",
+      "note": "tries=3 h1=800x240:5067638 h2=800x240:5067638 audio={\"paused\":false,\"currentTime\":11.55066,\"readyState\":4}"
+    },
+    {
+      "block": "10",
+      "name": "main emite trazas [discord]",
+      "status": "OK",
+      "severity": "medium",
+      "note": "2 líneas"
+    },
+    {
+      "block": "10",
+      "name": "traza de presencia enviada tras conectar",
+      "status": "OK",
+      "severity": "medium",
+      "note": "[discord] presencia: Get Lucky (feat. Pharrell Williams and Nile Rodgers) · Daft Punk, Pharrell Williams, Nile Rodgers  · perfil=\"F26 Check\" +foto"
+    },
+    {
+      "block": "10",
+      "name": "presencia menciona perfil \"F26 Check\"",
+      "status": "OK",
+      "severity": "medium",
+      "note": ""
+    },
+    {
+      "block": "11",
+      "name": "tras 8 navegaciones no hay pantalla en blanco",
+      "status": "OK",
+      "severity": "high",
+      "note": ""
+    },
+    {
+      "block": "11",
+      "name": "viewport 900×600 sin overflow horizontal",
+      "status": "OK",
+      "severity": "medium",
+      "note": ""
+    },
+    {
+      "block": "restore",
+      "name": "ajustes restaurados a defaults exigidos",
+      "status": "OK",
+      "severity": "high",
+      "note": ""
+    },
+    {
+      "block": "restore",
+      "name": "perfil restaurado a valores originales",
+      "status": "OK",
+      "severity": "high",
+      "note": ""
+    },
+    {
+      "block": "restore",
+      "name": "sesión intacta (no signOut)",
+      "status": "OK",
+      "severity": "critical",
+      "note": "status=signedIn"
+    }
+  ],
+  "bugs": [],
+  "mainErrCount": 0,
+  "rendererErrors": [],
+  "veredicto": "LISTO PARA v0.2"
+}

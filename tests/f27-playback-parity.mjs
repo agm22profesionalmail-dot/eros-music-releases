@@ -1,5 +1,5 @@
 /**
- * F27 · Paridad de reproducción con Metrolist Android.
+ * F27 · Paridad de reproducción con la app Android original.
  *
  * Verifica los ajustes nuevos y su efecto real en el store del reproductor:
  *  - Ajustes se persisten tras settings.set / settings.get.
@@ -30,7 +30,7 @@ const check = (name, cond) => {
 const app = await _electron.launch({
   args: ['.'],
   cwd: root,
-  env: { ...process.env, METROLIST_E2E: '1' }
+  env: { ...process.env, EROS_E2E: '1' }
 })
 
 const win = await app.firstWindow()
@@ -77,7 +77,7 @@ console.log('\n[2] Evitar pistas duplicadas en la cola')
 const dedupResult = await win.evaluate(() => {
   const w = window
   // Los stores no están expuestos por defecto: los buscamos via módulo.
-  // La ventana expone __metrolistSettingsStore; el player store lo alcanzamos
+  // La ventana expone __erosMusicSettingsStore; el player store lo alcanzamos
   // a través del audio interno. Truco: pedimos que el propio settings apunte
   // avoidDuplicates y usamos el usePlayer que vive en el módulo.
   // Como el bundle es ESM y no exporta el store al globalThis, hacemos el
@@ -103,7 +103,7 @@ const dedupOk = await win.evaluate(async () => {
   // de un import dinámico local (Vite/Electron sirven los módulos con nombres
   // hasheados, así que no podemos importar por path). En su lugar, hacemos
   // que el propio bundle nos exponga el store: existirá porque
-  // libraryStore.toggleLike ya usa __metrolistSettingsStore. Aquí, como no
+  // libraryStore.toggleLike ya usa __erosMusicSettingsStore. Aquí, como no
   // hemos añadido un handle equivalente para el player store, medimos el
   // comportamiento del store creando pistas y usando `enqueueLast` mediante
   // un fetch al store expuesto por un modulo Zustand global si existiera.

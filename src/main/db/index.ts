@@ -17,6 +17,10 @@ export function getDb(): DatabaseSync {
   if (db) return db
   const dir = app.getPath('userData')
   mkdirSync(dir, { recursive: true })
+  // F63 · El FICHERO conserva su nombre histórico `metrolist.db` a propósito
+  // (rebranding v1.2.0): la migración de userData mueve la carpeta entera y
+  // renombrar también la BD (+WAL/SHM) sería otro punto de fallo sin ganancia
+  // — el nombre no se ve en ninguna UI. Solo cambió la carpeta contenedora.
   db = new DatabaseSync(join(dir, 'metrolist.db'))
   db.exec(`
     PRAGMA journal_mode = WAL;
@@ -50,6 +54,11 @@ export function getDb(): DatabaseSync {
     CREATE TABLE IF NOT EXISTS artist_tags (
       artist_key TEXT PRIMARY KEY,
       tags_json TEXT NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS artist_thumbs (
+      artist_id TEXT PRIMARY KEY,
+      thumbnail_url TEXT,
       updated_at INTEGER NOT NULL
     );
   `)
@@ -324,4 +333,33 @@ export function setArtistTags(name: string, tags: string[]): void {
   getDb()
     .prepare('INSERT OR REPLACE INTO artist_tags (artist_key, tags_json, updated_at) VALUES (?, ?, ?)')
     .run(key, JSON.stringify(tags), Date.now())
+}
+
+// ---------- Caché de fotos de artista (Recap) ----------
+//
+// Reutiliza `getArtist()` (innertube/api.ts) para obtener `ArtistDetail.thumbnailUrl`,
+// pero cachea el resultado en SQLite para no golpear la API en cada apertura del
+// Recap. Mismo patrón que `artist_tags` (F23): caché por clave estable (aquí el
+// channel id del artista, que ya es único) con `updated_at` y TTL en el llamador.
+
+/** Devuelve la foto cacheada de un artista por su id, o null si nunca se resolvió o expiró. */
+export function getArtistThumb(
+  id: string,
+  maxAgeMs: number
+): { thumbnailUrl: string | null; updatedAt: number } | null {
+  if (!id) return null
+  const row = getDb()
+    .prepare('SELECT thumbnail_url, updated_at FROM artist_thumbs WHERE artist_id = ?')
+    .get(id) as { thumbnail_url: string | null; updated_at: number } | undefined
+  if (!row) return null
+  if (Date.now() - row.updated_at > maxAgeMs) return null
+  return { thumbnailUrl: row.thumbnail_url, updatedAt: row.updated_at }
+}
+
+/** Guarda o actualiza la foto de un artista en la caché (null si no tiene foto). */
+export function setArtistThumb(id: string, thumbnailUrl: string | null): void {
+  if (!id) return
+  getDb()
+    .prepare('INSERT OR REPLACE INTO artist_thumbs (artist_id, thumbnail_url, updated_at) VALUES (?, ?, ?)')
+    .run(id, thumbnailUrl, Date.now())
 }

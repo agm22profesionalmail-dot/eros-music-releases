@@ -1,9 +1,12 @@
 /**
- * Genera el icono de Windows de Metrolist PC a partir de assets/logo.svg.
+ * Genera los iconos de Windows de ERO'S Music a partir de assets/logo.svg.
  *
  * Salidas:
- *   - build/icon.ico     (ICO con PNGs embebidos: 16, 24, 32, 48, 64, 128, 256)
- *   - assets/icon-256.png (PNG suelto de 256px, para bandeja del sistema, etc.)
+ *   - build/icon.png      (PNG 512px: el que usa electron-builder como win.icon)
+ *   - build/icon-512.png  (copia del anterior, por si algún flujo lo espera)
+ *   - build/icon-256.png  (PNG 256px)
+ *   - build/icon.ico      (ICO con PNGs embebidos: 16, 24, 32, 48, 64, 128, 256)
+ *   - assets/icon-256.png (PNG suelto de 256px: bandeja del sistema e icono de ventana)
  *
  * Ejecutar (desde cualquier cwd, es un main de Electron independiente):
  *   & F:\MetrolistPC\node_modules\electron\dist\electron.exe F:\MetrolistPC\scripts\make-icon.mjs
@@ -14,7 +17,8 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
-const SIZES = [16, 24, 32, 48, 64, 128, 256]
+const ICO_SIZES = [16, 24, 32, 48, 64, 128, 256]
+const SIZES = [...ICO_SIZES, 512]
 const PNG_SIG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
 
 app.disableHardwareAcceleration()
@@ -117,20 +121,29 @@ app
     mkdirSync(join(ROOT, 'build'), { recursive: true })
     mkdirSync(join(ROOT, 'assets'), { recursive: true })
 
+    const icoPngs = ICO_SIZES.map((s) => pngs[SIZES.indexOf(s)])
     const icoPath = join(ROOT, 'build', 'icon.ico')
-    writeFileSync(icoPath, buildIco(pngs, SIZES))
-    const png256Path = join(ROOT, 'assets', 'icon-256.png')
-    writeFileSync(png256Path, pngs[SIZES.indexOf(256)])
+    writeFileSync(icoPath, buildIco(icoPngs, ICO_SIZES))
+
+    const png512 = pngs[SIZES.indexOf(512)]
+    const png256 = pngs[SIZES.indexOf(256)]
+    const flat = [
+      [join(ROOT, 'build', 'icon.png'), png512], // win.icon de electron-builder
+      [join(ROOT, 'build', 'icon-512.png'), png512],
+      [join(ROOT, 'build', 'icon-256.png'), png256],
+      [join(ROOT, 'assets', 'icon-256.png'), png256]
+    ]
+    for (const [file, buf] of flat) writeFileSync(file, buf)
 
     const report = verifyIco(icoPath)
     console.log(`OK ${icoPath} (${report.totalBytes} bytes, ${report.count} imagenes)`)
     for (const img of report.images) {
       console.log(`  - ${img.width}x${img.height} PNG (${img.bytes} bytes)`)
     }
-    if (report.count !== SIZES.length) {
-      throw new Error(`Se esperaban ${SIZES.length} entradas y hay ${report.count}`)
+    if (report.count !== ICO_SIZES.length) {
+      throw new Error(`Se esperaban ${ICO_SIZES.length} entradas y hay ${report.count}`)
     }
-    console.log(`OK ${png256Path} (${pngs[SIZES.indexOf(256)].length} bytes)`)
+    for (const [file, buf] of flat) console.log(`OK ${file} (${buf.length} bytes)`)
 
     clearTimeout(watchdog)
     app.quit()

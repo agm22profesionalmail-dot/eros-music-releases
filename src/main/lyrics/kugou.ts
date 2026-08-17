@@ -1,5 +1,5 @@
 // Cliente de KuGou — respaldo de letras, con el mismo flujo en tres pasos que
-// usa Metrolist/InnerTune en Android:
+// usan InnerTune y derivados en Android:
 //   1) buscar la canción por "{artista} - {título}" para obtener su hash
 //   2) pedir candidatos de letra (id + accesskey) con el hash y la duración
 //   3) descargar la letra en LRC (viene como base64) y decodificarla
@@ -118,9 +118,9 @@ export async function fetchKugouLyrics(params: KugouParams): Promise<string | nu
   }
 }
 
-// ---------- KRC: tiempos por palabra (karaoke real, como Metrolist) ----------
+// ---------- KRC: tiempos por palabra (karaoke real, como en la app Android original) ----------
 
-/** Clave XOR pública del formato KRC (la misma que usan InnerTune/Metrolist). */
+/** Clave XOR pública del formato KRC (la misma que usa InnerTune). */
 const KRC_KEY = Buffer.from([
   0x40, 0x47, 0x61, 0x77, 0x5e, 0x32, 0x74, 0x47, 0x51, 0x36, 0x31, 0x2d, 0xce, 0xd2, 0x6e, 0x69
 ])

@@ -29,15 +29,20 @@ export interface GetLyricsParams {
 
 /** Palabras que delatan que un paréntesis/corchete es "ruido" del título */
 const NOISE_RE =
-  /\b(?:feat|ft|featuring|official|oficial|video|videoclip|audio|lyric|lyrics|letra|visuali[sz]er|remaster(?:ed|izad[oa])?|explicit|hd|4k|m\/?v)\b/i
+  /\b(?:feat|ft|featuring|official|oficial|video|videoclip|audio|lyric|lyrics|letra|visuali[sz]er|remaster(?:ed|izad[oa])?|explicit|hd|4k|m\/?v|deluxe|expanded|anniversary|bonus|track|edition|edici[oó]n|version|versi[oó]n|live|en\s*vivo|single|acoustic|ac[uú]stic[oa]?|remix|from\s+[""].+?[""])\b/i
+
+/** Año suelto entre paréntesis/corchetes: "(2021)" / "[1999 Remaster]" */
+const YEAR_PAREN_RE = /[(\[]\s*\d{4}\s*(?:remaster(?:ed|izad[oa])?)?\s*[)\]]/gi
 
 /**
- * Limpia el título antes de buscar: quita "(feat. X)", "(Official Video)",
- * "[Lyric Video]" y variantes, y los "feat. X" sin paréntesis al final.
+ * F71 · Limpia el título antes de buscar: quita "(feat. X)", "(Official Video)",
+ * "[Lyric Video]", "(Remastered 2021)", "(Deluxe Edition)", etc.
  * Conserva los paréntesis legítimos ("(I Can't Get No) Satisfaction").
  */
 export function normalizeTitle(title: string): string {
   let out = title
+  // Año entre paréntesis/corchetes (con o sin "Remastered"): "(2021)", "[1999 Remaster]"
+  out = out.replace(YEAR_PAREN_RE, '')
   // Paréntesis o corchetes cuyo contenido es ruido
   out = out.replace(/\(([^)]*)\)|\[([^\]]*)\]/g, (match, paren: string | undefined, bracket: string | undefined) => {
     const inner = paren ?? bracket ?? ''
@@ -45,6 +50,8 @@ export function normalizeTitle(title: string): string {
   })
   // "feat. X" / "ft. X" colgando al final sin paréntesis
   out = out.replace(/\s+(?:feat\.?|ft\.?|featuring)\s+.+$/i, '')
+  // "- Remastered 2021" / "- Deluxe Edition" colgando al final
+  out = out.replace(/\s*[-–—]\s*(?:remaster(?:ed|izad[oa])?|deluxe|expanded|anniversary)\s*(?:\d{4})?\s*(?:edition|edici[oó]n|version|versi[oó]n)?\s*$/i, '')
   // Sufijo "- Topic" (canales autogenerados de YouTube) por si llega en el título
   out = out.replace(/\s*-\s*topic\s*$/i, '')
   // Separadores colgantes y espacios duplicados

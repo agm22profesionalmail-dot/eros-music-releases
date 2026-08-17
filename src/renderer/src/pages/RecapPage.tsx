@@ -3,6 +3,7 @@ import type { ArtistStats, StatsPeriod, TrackStats } from '@shared/types'
 import { pushToast } from '../components/Toast'
 import { useSettings } from '../app/settingsStore'
 import { useLibrary } from '../app/libraryStore'
+import { t as ti18n, useT } from '../app/i18n'
 
 /**
  * F31 · Página Recap. Muestra un resumen tipo Wrapped configurable por
@@ -34,9 +35,9 @@ function periodOf(range: RangeKey): StatsPeriod {
 }
 
 function rangeLabel(range: RangeKey): string {
-  if (range === 'week') return 'esta semana'
-  if (range === 'month') return 'este mes'
-  return 'los últimos 30 días'
+  if (range === 'week') return ti18n('recap.range.week')
+  if (range === 'month') return ti18n('recap.range.month')
+  return ti18n('recap.range.last30')
 }
 
 function formatHours(sec: number): string {
@@ -45,6 +46,7 @@ function formatHours(sec: number): string {
 }
 
 export function RecapPage(): React.JSX.Element {
+  const t = useT()
   const { settings } = useSettings()
   const loadLibrary = useLibrary((s) => s.load)
   const [range, setRange] = useState<RangeKey>('last30')
@@ -88,13 +90,13 @@ export function RecapPage(): React.JSX.Element {
         Math.max(10, Math.min(500, settings.wrappedTopN ?? 50))
       )
       if (!id) {
-        pushToast('No hay historial suficiente para crear la playlist')
+        pushToast(t('recap.noHistoryForPlaylist'))
       } else {
-        pushToast(which === 'week' ? 'Playlist "Mi Top semanal" creada' : 'Playlist "Mi Top mensual" creada')
+        pushToast(which === 'week' ? t('recap.weeklyCreated') : t('recap.monthlyCreated'))
         void loadLibrary()
       }
     } catch {
-      pushToast('No se pudo crear la playlist')
+      pushToast(t('toast.playlistCreateFailed'))
     } finally {
       setCreating(false)
     }
@@ -102,26 +104,26 @@ export function RecapPage(): React.JSX.Element {
 
   return (
     <div className="page recap-page">
-      <h1>Tu Recap</h1>
+      <h1>{t('recap.title')}</h1>
       <p className="recap-subtitle">
-        Métricas de escucha en {rangeLabel(range)}, calculadas desde tu historial local.
+        {t('recap.subtitle', { range: rangeLabel(range) })}
       </p>
 
       {/* Selector de rango */}
       <div className="recap-range">
         {(
           [
-            ['week', 'Semana'],
-            ['month', 'Mes'],
-            ['last30', 'Últimos 30 días']
+            ['week', 'recap.chip.week'],
+            ['month', 'recap.chip.month'],
+            ['last30', 'recap.chip.last30']
           ] as const
-        ).map(([value, label]) => (
+        ).map(([value, labelKey]) => (
           <button
             key={value}
             className={`chip ${range === value ? 'active' : ''}`}
             onClick={() => setRange(value)}
           >
-            {label}
+            {t(labelKey)}
           </button>
         ))}
       </div>
@@ -130,21 +132,21 @@ export function RecapPage(): React.JSX.Element {
       <div className="recap-metrics">
         <div className="recap-metric">
           <div className="recap-metric-value">{formatHours(totalSec)}</div>
-          <div className="recap-metric-label">Escuchadas</div>
+          <div className="recap-metric-label">{t('recap.listened')}</div>
         </div>
         <div className="recap-metric">
           <div className="recap-metric-value">{uniqueTracks}</div>
-          <div className="recap-metric-label">Canciones únicas</div>
+          <div className="recap-metric-label">{t('recap.uniqueTracks')}</div>
         </div>
         <div className="recap-metric">
           <div className="recap-metric-value">{uniqueArtists}</div>
-          <div className="recap-metric-label">Artistas únicos</div>
+          <div className="recap-metric-label">{t('recap.uniqueArtists')}</div>
         </div>
         <div className="recap-metric">
           <div className="recap-metric-value" title={topArtist?.name ?? ''}>
             {topArtist?.name ?? '—'}
           </div>
-          <div className="recap-metric-label">Top artista</div>
+          <div className="recap-metric-label">{t('recap.topArtist')}</div>
         </div>
       </div>
 
@@ -155,23 +157,23 @@ export function RecapPage(): React.JSX.Element {
           disabled={creating}
           onClick={() => void onCreatePlaylist('month')}
         >
-          {creating ? 'Creando…' : `Crear playlist con top ${Math.max(10, Math.min(500, settings.wrappedTopN ?? 50))} del mes`}
+          {creating ? t('recap.creating') : t('recap.createMonthly', { n: Math.max(10, Math.min(500, settings.wrappedTopN ?? 50)) })}
         </button>
         <button
           className="btn btn-secondary"
           disabled={creating}
           onClick={() => void onCreatePlaylist('week')}
         >
-          Crear top de la semana
+          {t('recap.createWeekly')}
         </button>
       </div>
 
       {/* Top canciones */}
-      <h2>Top canciones</h2>
-      {!tracks && <div className="empty-state">Calculando…</div>}
+      <h2>{t('recap.topSongs')}</h2>
+      {!tracks && <div className="empty-state">{t('recap.calculating')}</div>}
       {tracks && !tracks.length && (
         <div className="empty-state">
-          Aún no hay historial en este período. Escucha algo y vuelve más tarde.
+          {t('recap.noHistory')}
         </div>
       )}
       {tracks && tracks.length > 0 && (
@@ -195,11 +197,11 @@ export function RecapPage(): React.JSX.Element {
       )}
 
       {/* Top artistas */}
-      <h2>Top artistas</h2>
-      {!artists && <div className="empty-state">Calculando…</div>}
+      <h2>{t('recap.topArtists')}</h2>
+      {!artists && <div className="empty-state">{t('recap.calculating')}</div>}
       {artists && !artists.length && (
         <div className="empty-state">
-          Aún no hay artistas escuchados en este período.
+          {t('recap.noArtists')}
         </div>
       )}
       {artists && artists.length > 0 && (
@@ -207,10 +209,14 @@ export function RecapPage(): React.JSX.Element {
           {artists.slice(0, 5).map((a, i) => (
             <li key={a.name} className="recap-row">
               <span className="recap-rank">{i + 1}</span>
-              <div className="recap-thumb recap-thumb--placeholder" aria-hidden="true" />
+              {a.thumbnailUrl ? (
+                <img className="recap-thumb recap-thumb--artist" src={a.thumbnailUrl} alt="" />
+              ) : (
+                <div className="recap-thumb recap-thumb--placeholder" aria-hidden="true" />
+              )}
               <div className="recap-row-text">
                 <div className="recap-row-title">{a.name}</div>
-                <div className="recap-row-sub">{formatHours(a.totalSec)} · {a.playCount} reproducciones</div>
+                <div className="recap-row-sub">{formatHours(a.totalSec)} · {t('recap.playCount', { n: a.playCount })}</div>
               </div>
             </li>
           ))}

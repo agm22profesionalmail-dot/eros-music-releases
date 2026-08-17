@@ -19,6 +19,7 @@ import type {
   SearchFilter,
   SearchResults,
   Shelf,
+  SpiralTrack,
   StatsPeriod,
   TrackStats,
   TrackSummary,
@@ -27,6 +28,48 @@ import type {
 
 const api = {
   ping: (): Promise<string> => ipcRenderer.invoke('app:ping'),
+
+  // F65 · Metadatos de la aplicación (versión visible en Ajustes → Sistema)
+  app: {
+    getVersion: (): Promise<string> => ipcRenderer.invoke(IPC.APP_GET_VERSION)
+  },
+
+  // F67 · Auto-actualización: acciones renderer→main + eventos main→renderer
+  // (mismo patrón on/cleanup que settings.onChanged / profile.onChanged).
+  updater: {
+    /** Comprobación manual (botón de Ajustes). */
+    check: (): Promise<void> => ipcRenderer.invoke(IPC.UPDATE_CHECK),
+    /** Descarga la actualización anunciada (tras "Actualizar ahora"). */
+    startDownload: (): Promise<void> => ipcRenderer.invoke(IPC.UPDATE_START_DOWNLOAD),
+    /** Instala lo descargado y reinicia la app. */
+    installNow: (): Promise<void> => ipcRenderer.invoke(IPC.UPDATE_INSTALL_NOW),
+    onAvailable: (cb: (payload: { version: string }) => void): (() => void) => {
+      const listener = (_e: unknown, payload: { version: string }): void => cb(payload)
+      ipcRenderer.on(IPC.UPDATE_AVAILABLE, listener)
+      return () => ipcRenderer.removeListener(IPC.UPDATE_AVAILABLE, listener)
+    },
+    /** Solo se emite tras una comprobación MANUAL sin novedades. */
+    onNotAvailable: (cb: () => void): (() => void) => {
+      const listener = (): void => cb()
+      ipcRenderer.on(IPC.UPDATE_NOT_AVAILABLE, listener)
+      return () => ipcRenderer.removeListener(IPC.UPDATE_NOT_AVAILABLE, listener)
+    },
+    onDownloadProgress: (cb: (payload: { percent: number }) => void): (() => void) => {
+      const listener = (_e: unknown, payload: { percent: number }): void => cb(payload)
+      ipcRenderer.on(IPC.UPDATE_DOWNLOAD_PROGRESS, listener)
+      return () => ipcRenderer.removeListener(IPC.UPDATE_DOWNLOAD_PROGRESS, listener)
+    },
+    onDownloaded: (cb: (payload: { version: string }) => void): (() => void) => {
+      const listener = (_e: unknown, payload: { version: string }): void => cb(payload)
+      ipcRenderer.on(IPC.UPDATE_DOWNLOADED, listener)
+      return () => ipcRenderer.removeListener(IPC.UPDATE_DOWNLOADED, listener)
+    },
+    onError: (cb: (payload: { message: string }) => void): (() => void) => {
+      const listener = (_e: unknown, payload: { message: string }): void => cb(payload)
+      ipcRenderer.on(IPC.UPDATE_ERROR, listener)
+      return () => ipcRenderer.removeListener(IPC.UPDATE_ERROR, listener)
+    }
+  },
 
   auth: {
     getState: (): Promise<AuthState> => ipcRenderer.invoke(IPC.AUTH_GET_STATE),
@@ -79,6 +122,13 @@ const api = {
     openDownloadsDir: (): Promise<void> => ipcRenderer.invoke(IPC.DL_OPEN_DIR)
   },
 
+  // F61 · Flag persistido del asistente de bienvenida
+  onboarding: {
+    getCompleted: (): Promise<boolean> => ipcRenderer.invoke(IPC.ONBOARDING_GET_COMPLETED),
+    setCompleted: (v: boolean): Promise<void> =>
+      ipcRenderer.invoke(IPC.ONBOARDING_SET_COMPLETED, v)
+  },
+
   profile: {
     get: (): Promise<UserProfile> => ipcRenderer.invoke(IPC.PROFILE_GET),
     set: (patch: Partial<UserProfile>): Promise<UserProfile> =>
@@ -111,7 +161,9 @@ const api = {
      * F24 · "Mix Personal" — devuelve ~25 pistas mezclando favoritas,
      * top de artistas favoritos y recomendaciones. Vacío si no hay semillas.
      */
-    mix: (): Promise<TrackSummary[]> => ipcRenderer.invoke(IPC.DISCOVERY_MIX)
+    mix: (): Promise<TrackSummary[]> => ipcRenderer.invoke(IPC.DISCOVERY_MIX),
+    /** F80 · Espiral Musical — ~45 pistas únicas para el scroll infinito. */
+    spiral: (): Promise<SpiralTrack[]> => ipcRenderer.invoke(IPC.DISCOVERY_SPIRAL)
   },
 
   stats: {
@@ -161,6 +213,43 @@ const api = {
     setScale: (scale: number): Promise<void> => ipcRenderer.invoke(IPC.MINI_SET_SCALE, scale)
   },
 
+  // F68 · Last.fm scrobbling
+  lastfm: {
+    authUrl: (): Promise<string> => ipcRenderer.invoke(IPC.LASTFM_AUTH_URL),
+    authComplete: (token: string): Promise<{ username: string; sessionKey: string }> =>
+      ipcRenderer.invoke(IPC.LASTFM_AUTH_COMPLETE, token),
+    disconnect: (): Promise<void> => ipcRenderer.invoke(IPC.LASTFM_DISCONNECT),
+    nowPlaying: (params: { title: string; artist: string; album?: string; duration?: number }): Promise<void> =>
+      ipcRenderer.invoke(IPC.LASTFM_NOW_PLAYING, params),
+    scrobble: (params: { title: string; artist: string; album?: string; duration?: number; timestamp: number }): Promise<void> =>
+      ipcRenderer.invoke(IPC.LASTFM_SCROBBLE, params)
+  },
+
+  // F69 · ListenBrainz sync
+  listenbrainz: {
+    validate: (token: string): Promise<{ valid: boolean; userName?: string }> =>
+      ipcRenderer.invoke(IPC.LISTENBRAINZ_VALIDATE, token),
+    nowPlaying: (params: { title: string; artist: string; album?: string }): Promise<void> =>
+      ipcRenderer.invoke(IPC.LISTENBRAINZ_NOW_PLAYING, params),
+    submit: (params: { title: string; artist: string; album?: string; timestamp: number }): Promise<void> =>
+      ipcRenderer.invoke(IPC.LISTENBRAINZ_SUBMIT, params)
+  },
+
+  // F71 · Importación de playlists
+  import: {
+    spotify: (url: string): Promise<{ name: string; matches: import('@shared/types').ImportTrackMatch[] }> =>
+      ipcRenderer.invoke(IPC.IMPORT_SPOTIFY, url),
+    file: (filePath: string): Promise<{ name: string; matches: import('@shared/types').ImportTrackMatch[] }> =>
+      ipcRenderer.invoke(IPC.IMPORT_FILE, filePath),
+    fileDialog: (): Promise<string | null> =>
+      ipcRenderer.invoke(IPC.IMPORT_FILE_DIALOG),
+    onProgress: (cb: (progress: import('@shared/types').ImportProgress) => void): (() => void) => {
+      const listener = (_e: unknown, p: import('@shared/types').ImportProgress): void => cb(p)
+      ipcRenderer.on(IPC.IMPORT_PROGRESS, listener)
+      return () => ipcRenderer.removeListener(IPC.IMPORT_PROGRESS, listener)
+    }
+  },
+
   player: {
     prepare: (videoId: string): Promise<PreparedStream> =>
       ipcRenderer.invoke(IPC.STREAM_PREPARE, videoId)
@@ -182,6 +271,9 @@ const api = {
       patch: PlaylistEditPatch
     ): Promise<{ remoteTitleOk: boolean; override: PlaylistOverride | null }> =>
       ipcRenderer.invoke(IPC.LIB_PLAYLIST_EDIT, id, patch),
+    /** F36 · Borra la playlist (propia) o la quita de la biblioteca (ajena) */
+    playlistDelete: (id: string): Promise<'deleted' | 'removedFromLibrary'> =>
+      ipcRenderer.invoke(IPC.LIB_PLAYLIST_DELETE, id),
     subscribe: (channelId: string, subscribed: boolean): Promise<void> =>
       ipcRenderer.invoke(IPC.LIB_SUBSCRIBE, channelId, subscribed),
     likedIds: (): Promise<string[]> => ipcRenderer.invoke(IPC.LIB_LIKED_IDS),

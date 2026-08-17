@@ -3,7 +3,15 @@ import type { MediaCard, ProfileArtistRef, SearchResults } from '@shared/types'
 import { useProfile } from '../app/profileStore'
 import { useAuth } from '../app/authStore'
 import { useLibrary } from '../app/libraryStore'
-import { PersonIcon, SearchIcon, CloseIcon, MusicNoteIcon } from '../components/Icons'
+import { t as ti18n, useT } from '../app/i18n'
+import {
+  CheckIcon,
+  CloseIcon,
+  MusicNoteIcon,
+  PersonIcon,
+  PlusIcon,
+  SearchIcon
+} from '../components/Icons'
 
 /**
  * Página de perfil personalizado (F20).
@@ -21,18 +29,18 @@ const PHOTO_MAX_DIM = 512
 /** Redimensiona una imagen a máx 512×512 y devuelve una data URL JPEG 0.85. */
 async function readAndResize(file: File): Promise<string> {
   if (file.size > PHOTO_MAX_BYTES) {
-    throw new Error(`La imagen es demasiado grande (${(file.size / 1e6).toFixed(1)} MB). Máx 5 MB.`)
+    throw new Error(ti18n('profile.imgTooBig', { mb: (file.size / 1e6).toFixed(1) }))
   }
   const dataUrl: string = await new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.onload = (): void => resolve(String(reader.result))
-    reader.onerror = (): void => reject(reader.error ?? new Error('No se pudo leer el archivo'))
+    reader.onerror = (): void => reject(reader.error ?? new Error(ti18n('profile.fileReadError')))
     reader.readAsDataURL(file)
   })
   const img: HTMLImageElement = await new Promise((resolve, reject) => {
     const el = new Image()
     el.onload = (): void => resolve(el)
-    el.onerror = (): void => reject(new Error('Formato de imagen no soportado'))
+    el.onerror = (): void => reject(new Error(ti18n('profile.imgFormatError')))
     el.src = dataUrl
   })
   const scale = Math.min(1, PHOTO_MAX_DIM / Math.max(img.width, img.height))
@@ -42,12 +50,13 @@ async function readAndResize(file: File): Promise<string> {
   canvas.width = w
   canvas.height = h
   const ctx = canvas.getContext('2d')
-  if (!ctx) throw new Error('El navegador no soporta canvas 2D')
+  if (!ctx) throw new Error(ti18n('profile.canvasError'))
   ctx.drawImage(img, 0, 0, w, h)
   return canvas.toDataURL('image/jpeg', 0.85)
 }
 
 export function ProfilePage(): React.JSX.Element {
+  const t = useT()
   const { profile, update } = useProfile()
   const auth = useAuth((s) => s.state)
   const library = useLibrary((s) => s.library)
@@ -85,12 +94,16 @@ export function ProfilePage(): React.JSX.Element {
     window.setTimeout(() => setSavedFlash(false), 1500)
   }
 
-  const displayed = profile.enabled && profile.photoDataUrl
-    ? profile.photoDataUrl
-    : auth.accountPhotoUrl
+  // F35 · esta página es la que EDITA la foto, así que su vista previa debe
+  // reflejar siempre lo que hay guardado (aunque el interruptor "usar perfil
+  // personalizado" esté apagado) — si no, subir una foto con el interruptor
+  // desactivado parece no hacer nada aunque el backend sí la guardó.
+  // El gating por `profile.enabled` se mantiene en la topbar/Discord
+  // (App.tsx), que es donde de verdad importa si se "usa" o no.
+  const displayed = profile.photoDataUrl || auth.accountPhotoUrl
   const displayedName = profile.enabled && (profile.displayName ?? '').trim()
     ? profile.displayName
-    : auth.accountName ?? 'Invitado'
+    : auth.accountName ?? t('profile.guest')
 
   // ---- Foto ----
   const onPickPhoto = (): void => fileInputRef.current?.click()
@@ -101,7 +114,11 @@ export function ProfilePage(): React.JSX.Element {
     if (!file) return
     try {
       const dataUrl = await readAndResize(file)
-      await update({ photoDataUrl: dataUrl })
+      // F35b · subir una foto es una señal inequívoca de que se quiere usar:
+      // activa el perfil personalizado a la vez, si no el icono pequeño de
+      // la topbar (y Discord) se quedan con la foto de Google y parece que
+      // "no ha hecho nada" aunque la foto sí se guardó.
+      await update({ photoDataUrl: dataUrl, enabled: true })
       flashSaved()
     } catch (err) {
       setPhotoErr(String((err as Error)?.message ?? err))
@@ -164,8 +181,10 @@ export function ProfilePage(): React.JSX.Element {
   }
 
   return (
-    <div className="page profile-page" style={{ maxWidth: 780 }}>
-      <h1>Perfil</h1>
+    // F43 · agente C · task #16: quitamos el max-width inline (780px) — el ancho
+    // lo controla `.profile-page` en global.css (min(1000px, 100% - 48px) + margin-inline: auto).
+    <div className="page profile-page">
+      <h1>{t('nav.profile')}</h1>
 
       {/* Cabecera con foto grande, nombre y descripción */}
       <div className="profile-header">
@@ -182,17 +201,17 @@ export function ProfilePage(): React.JSX.Element {
         </div>
         <div className="profile-header-meta">
           <div className="eyebrow">
-            {profile.enabled ? 'Perfil personalizado' : 'Usando datos de tu cuenta'}
+            {profile.enabled ? t('profile.customProfile') : t('profile.usingAccount')}
           </div>
           <div className="profile-name">{displayedName}</div>
           {profile.bio && <div className="profile-bio">{profile.bio}</div>}
           <div style={{ display: 'flex', gap: 10, marginTop: 12, flexWrap: 'wrap' }}>
             <button className="btn btn-secondary" onClick={onPickPhoto}>
-              Cambiar foto
+              {t('profile.changePhoto')}
             </button>
             {profile.photoDataUrl && (
               <button className="btn btn-secondary" onClick={onClearPhoto}>
-                Quitar foto
+                {t('profile.removePhoto')}
               </button>
             )}
             <input
@@ -212,18 +231,16 @@ export function ProfilePage(): React.JSX.Element {
       </div>
 
       {/* Toggle principal */}
-      <h2>Ajustes del perfil</h2>
+      <h2>{t('profile.settings')}</h2>
       <div className="profile-row">
         <div>
-          <div style={{ fontWeight: 600 }}>Usar perfil personalizado en la app</div>
+          <div style={{ fontWeight: 600 }}>{t('profile.useCustom')}</div>
           <div style={{ color: 'var(--text-subdued)', fontSize: 12 }}>
-            Cuando esté activo, tu foto y nombre sustituyen a los de Google en la barra
-            superior y en Discord.
+            {t('profile.useCustomHint')}
           </div>
           {/* F25 · nota informativa sobre Discord Rich Presence */}
           <div style={{ color: 'var(--text-subdued)', fontSize: 12, marginTop: 4 }}>
-            Si activas Discord Rich Presence en Ajustes, se mostrará esta foto y este
-            nombre en tu perfil de Discord mientras escuches música.
+            {t('profile.discordHint')}
           </div>
         </div>
         <input
@@ -235,14 +252,14 @@ export function ProfilePage(): React.JSX.Element {
 
       <div className="profile-row">
         <label style={{ fontWeight: 600 }} htmlFor="pf-name">
-          Nombre visible
+          {t('profile.displayName')}
         </label>
         <input
           id="pf-name"
           className="profile-input"
           maxLength={NAME_MAX}
           value={displayName}
-          placeholder={auth.accountName ?? 'Tu nombre'}
+          placeholder={auth.accountName ?? t('profile.yourName')}
           onChange={(e) => setDisplayName(e.target.value)}
         />
       </div>
@@ -250,7 +267,7 @@ export function ProfilePage(): React.JSX.Element {
       <div className="profile-block">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <label style={{ fontWeight: 600 }} htmlFor="pf-bio">
-            Descripción
+            {t('profile.bio')}
           </label>
           <span style={{ color: 'var(--text-subdued)', fontSize: 12 }}>
             {bio.length}/{BIO_MAX}
@@ -261,18 +278,18 @@ export function ProfilePage(): React.JSX.Element {
           className="profile-textarea"
           maxLength={BIO_MAX}
           value={bio}
-          placeholder="Cuenta algo sobre ti (200 caracteres)"
+          placeholder={t('profile.bioPlaceholder')}
           rows={3}
           onChange={(e) => setBio(e.target.value.slice(0, BIO_MAX))}
         />
       </div>
 
       {/* Artistas favoritos */}
-      <h2>Artistas favoritos</h2>
+      <h2>{t('profile.favArtists')}</h2>
       <div className="profile-chips">
         {profile.favoriteArtists.length === 0 && (
           <span style={{ color: 'var(--text-subdued)', fontSize: 13 }}>
-            Aún no has añadido ninguno.
+            {t('profile.noFavs')}
           </span>
         )}
         {profile.favoriteArtists.map((a) => (
@@ -287,7 +304,7 @@ export function ProfilePage(): React.JSX.Element {
             <span className="txt">{a.name}</span>
             <button
               className="x"
-              aria-label={`Quitar ${a.name}`}
+              aria-label={t('profile.removeArtist', { name: a.name })}
               onClick={() => removeFavArtist(a.id)}
             >
               <CloseIcon size={12} />
@@ -301,7 +318,7 @@ export function ProfilePage(): React.JSX.Element {
         </span>
         <input
           value={artistQuery}
-          placeholder="Buscar artistas para añadir…"
+          placeholder={t('profile.searchArtists')}
           onChange={(e) => setArtistQuery(e.target.value)}
         />
       </div>
@@ -309,12 +326,12 @@ export function ProfilePage(): React.JSX.Element {
         <div className="profile-artist-results">
           {searchingArtists && artistResults.length === 0 && (
             <div style={{ color: 'var(--text-subdued)', fontSize: 13, padding: 12 }}>
-              Buscando…
+              {t('profile.searching')}
             </div>
           )}
           {!searchingArtists && artistResults.length === 0 && (
             <div style={{ color: 'var(--text-subdued)', fontSize: 13, padding: 12 }}>
-              Sin resultados.
+              {t('profile.noResults')}
             </div>
           )}
           {artistResults.map((a) => {
@@ -325,7 +342,7 @@ export function ProfilePage(): React.JSX.Element {
                 className="profile-artist-result"
                 disabled={already}
                 onClick={() => addFavArtist(a)}
-                title={already ? 'Ya lo tienes' : `Añadir ${a.title}`}
+                title={already ? t('profile.alreadyAdded') : t('profile.addArtist', { name: a.title })}
               >
                 {a.thumbnailUrl ? (
                   <img src={a.thumbnailUrl} alt="" />
@@ -338,7 +355,9 @@ export function ProfilePage(): React.JSX.Element {
                   <span className="t">{a.title}</span>
                   {a.subtitle && <span className="s">{a.subtitle}</span>}
                 </span>
-                <span className="plus">{already ? '✓' : '+'}</span>
+                <span className="plus">
+                  {already ? <CheckIcon size={13} /> : <PlusIcon size={13} />}
+                </span>
               </button>
             )
           })}
@@ -346,14 +365,13 @@ export function ProfilePage(): React.JSX.Element {
       )}
 
       {/* Playlists públicas */}
-      <h2>Playlists públicas</h2>
+      <h2>{t('profile.publicPlaylists')}</h2>
       <p style={{ color: 'var(--text-subdued)', fontSize: 12, padding: '0 0 8px' }}>
-        Elige qué playlists de tu biblioteca considerar públicas. Otras funciones futuras
-        podrán compartirlas.
+        {t('profile.publicHint')}
       </p>
       {userPlaylists.length === 0 && (
         <div className="empty-state" style={{ padding: 20 }}>
-          No tienes playlists en tu biblioteca (o aún no ha cargado).
+          {t('profile.noPlaylists')}
         </div>
       )}
       <div className="profile-playlist-list">
@@ -394,17 +412,20 @@ export function ProfilePage(): React.JSX.Element {
             }).then(() => flashSaved())
           }}
         >
-          Guardar cambios
+          {t('profile.saveChanges')}
         </button>
         <span
           style={{
             color: 'var(--accent)',
             fontSize: 13,
             opacity: savedFlash ? 1 : 0,
-            transition: 'opacity 0.25s var(--ease-out)'
+            transition: 'opacity 0.25s var(--ease-out)',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 4
           }}
         >
-          Guardado ✓
+          {t('profile.saved')} <CheckIcon size={12} />
         </span>
       </div>
     </div>

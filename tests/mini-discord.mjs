@@ -61,9 +61,9 @@ if (miniPage) {
   await miniPage.waitForLoadState('domcontentloaded')
   // El estado tarda ≤1 s en publicarse
   await miniPage.waitForTimeout(2500)
-  const miniTitle = await miniPage.locator('div[title="Abrir Metrolist"]').textContent()
+  const miniTitle = await miniPage.locator('div[title="Abrir ERO\'S Music"]').textContent()
   console.log('  título en mini:', miniTitle)
-  check('el mini muestra la pista actual', Boolean(miniTitle) && miniTitle !== 'Metrolist')
+  check('el mini muestra la pista actual', Boolean(miniTitle) && miniTitle !== "ERO'S Music")
   await miniPage.screenshot({ path: join(shots, 'miniplayer.png') })
 
   // 4. Control desde el mini: pausa
@@ -159,7 +159,7 @@ if (miniPage) {
     await settingsPage.locator('input[type="checkbox"]').check()
     await miniPage.waitForTimeout(6000) // deja cargar la letra
     const karaokeText = await miniPage
-      .locator('div[title="Abrir Metrolist"] div')
+      .locator('div[title="Abrir ERO\'S Music"] div')
       .first()
       .textContent()
       .catch(() => null)

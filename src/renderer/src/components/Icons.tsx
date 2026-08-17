@@ -66,9 +66,13 @@ export function SkipPrevIcon({ size, className }: IconProps): React.JSX.Element 
   )
 }
 
+// F44 · viewBox arreglado: los paths de este icono se dibujan en el rango
+// 0-16 (no 0-24 como decía antes), así que con viewBox 24 el dibujo se
+// quedaba en la esquina superior izquierda del hueco y se veía pequeño y
+// descentrado. Ahora viewBox 16 hace que el icono llene su caja.
 export function ShuffleIcon({ size, className }: IconProps): React.JSX.Element {
   return (
-    <svg {...S({ size })} className={className} viewBox="0 0 24 24" fill="currentColor">
+    <svg {...S({ size })} className={className} viewBox="0 0 16 16" fill="currentColor">
       <path d="M13.151.922a.75.75 0 1 0-1.06 1.06L13.109 3H11.16a3.75 3.75 0 0 0-2.873 1.34l-6.173 7.356A2.25 2.25 0 0 1 .39 12.5H0V14h.391a3.75 3.75 0 0 0 2.873-1.34l6.173-7.356a2.25 2.25 0 0 1 1.724-.804h1.947l-1.017 1.018a.75.75 0 0 0 1.06 1.06L15.98 3.75 13.15.922zM.391 3.5H0V2h.391c1.109 0 2.16.49 2.873 1.34L4.89 5.277l-.979 1.167-1.796-2.14A2.25 2.25 0 0 0 .39 3.5z" />
       <path d="m7.5 10.723.98-1.167.957 1.14a2.25 2.25 0 0 0 1.724.804h1.947l-1.017-1.018a.75.75 0 1 1 1.06-1.06l2.829 2.828-2.829 2.828a.75.75 0 1 1-1.06-1.06L13.109 13H11.16a3.75 3.75 0 0 1-2.873-1.34l-.787-.937z" />
     </svg>
@@ -136,6 +140,83 @@ export function MoreIcon({ size, className }: IconProps): React.JSX.Element {
   return (
     <svg {...S({ size })} className={className} viewBox="0 0 16 16" fill="currentColor">
       <path d="M3 8a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm6.5 0a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zM16 8a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z" />
+    </svg>
+  )
+}
+
+/* F43 · Iconos añadidos para las barras de acción de detalle. */
+export function MoreVerticalIcon({ size, className }: IconProps): React.JSX.Element {
+  return (
+    <svg {...S({ size })} className={className} viewBox="0 0 16 16" fill="currentColor">
+      <path d="M8 3a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm0 6.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm0 6.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z" />
+    </svg>
+  )
+}
+
+export function ShareIcon({ size, className }: IconProps): React.JSX.Element {
+  return (
+    <svg {...S({ size })} className={className} viewBox="0 0 16 16" fill="currentColor">
+      <path d="M5.25 2.5a.75.75 0 0 1 0-1.5H14.5a.5.5 0 0 1 .5.5v9.25a.75.75 0 0 1-1.5 0V3.56L2.28 14.78a.75.75 0 1 1-1.06-1.06L12.44 2.5H5.25z" />
+    </svg>
+  )
+}
+
+export function PlusIcon({ size, className }: IconProps): React.JSX.Element {
+  return (
+    <svg {...S({ size })} className={className} viewBox="0 0 16 16" fill="currentColor">
+      <path d="M15.25 8a.75.75 0 0 1-.75.75H8.75v5.75a.75.75 0 0 1-1.5 0V8.75H1.5a.75.75 0 0 1 0-1.5h5.75V1.5a.75.75 0 0 1 1.5 0v5.75h5.75a.75.75 0 0 1 .75.75z" />
+    </svg>
+  )
+}
+
+export function MinusIcon({ size, className }: IconProps): React.JSX.Element {
+  return (
+    <svg {...S({ size })} className={className} viewBox="0 0 16 16" fill="currentColor">
+      <path d="M15.25 8a.75.75 0 0 1-.75.75H1.5a.75.75 0 0 1 0-1.5h13a.75.75 0 0 1 .75.75z" />
+    </svg>
+  )
+}
+
+// F44 · Icono de plumilla para "Editar" — reemplaza el carácter ✎ que se
+// usaba antes en los botones (no encajaba con los SVG del resto).
+export function EditIcon({ size, className }: IconProps): React.JSX.Element {
+  return (
+    <svg {...S({ size })} className={className} viewBox="0 0 16 16" fill="currentColor">
+      <path d="M11.293 1.293a1 1 0 0 1 1.414 0l2 2a1 1 0 0 1 0 1.414l-9 9A1 1 0 0 1 5 14H3a1 1 0 0 1-1-1v-2a1 1 0 0 1 .293-.707l9-9zM3.5 11.207V12.5h1.293l7.5-7.5-1.293-1.293-7.5 7.5z" />
+    </svg>
+  )
+}
+
+// F57 · Iconos que sustituyen a los emojis/dingbats de la interfaz
+// (📊 Recap, ✨ acento dinámico, ✥ posición libre del mini-player).
+export function ChartIcon({ size, className }: IconProps): React.JSX.Element {
+  return (
+    <svg {...S({ size })} className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M5 10a1 1 0 0 1 1 1v8H4v-8a1 1 0 0 1 1-1zm5.5-6a1 1 0 0 1 1 1v14h-2V5a1 1 0 0 1 1-1zM16 13a1 1 0 0 1 1 1v5h-2v-5a1 1 0 0 1 1-1zm5.5-9a1 1 0 0 1 1 1v14h-2V5a1 1 0 0 1 1-1zM2 20h20a1 1 0 1 1 0 2H2a1 1 0 1 1 0-2z" />
+    </svg>
+  )
+}
+
+export function SparkleIcon({ size, className }: IconProps): React.JSX.Element {
+  return (
+    <svg {...S({ size })} className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M10 2l1.7 5.6L17.3 9.3l-5.6 1.7L10 16.6 8.3 11 2.7 9.3 8.3 7.6 10 2zm8 10l1.1 3.4L22.5 16.5l-3.4 1.1L18 21l-1.1-3.4-3.4-1.1 3.4-1.1L18 12z" />
+    </svg>
+  )
+}
+
+export function MoveIcon({ size, className }: IconProps): React.JSX.Element {
+  return (
+    <svg {...S({ size })} className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 1.5l3 3h-2v5h5v-2l3 3-3 3v-2h-5v5h2l-3 3-3-3h2v-5H6v2l-3-3 3-3v2h5v-5H9l3-3z" />
+    </svg>
+  )
+}
+
+export function CheckIcon({ size, className }: IconProps): React.JSX.Element {
+  return (
+    <svg {...S({ size })} className={className} viewBox="0 0 16 16" fill="currentColor">
+      <path d="M13.985 2.383a.75.75 0 0 1 .132 1.052l-7.5 9.5a.75.75 0 0 1-1.077.113l-3.5-3a.75.75 0 1 1 .976-1.138l2.905 2.49 7.014-8.885a.75.75 0 0 1 1.05-.132z" />
     </svg>
   )
 }
@@ -218,6 +299,34 @@ export function MusicNoteIcon({ size, className }: IconProps): React.JSX.Element
   return (
     <svg {...S({ size })} className={className} viewBox="0 0 24 24" fill="currentColor">
       <path d="M9 3v12.5A3.5 3.5 0 1 1 5.5 12H7V3h11v9.5A3.5 3.5 0 1 1 14.5 9H16V5H9z" opacity="0.6" />
+    </svg>
+  )
+}
+
+// F58 · Iconos de las categorías del catálogo de selecciones rápidas de
+// Inicio (HOME_QUICK_PICK_CATEGORIES), sustituyendo a los emojis 🎧/📻/💡
+// que quedaban sin migrar (reloj/destello/gráfico ya reutilizan
+// ClockIcon/SparkleIcon/ChartIcon de más arriba).
+export function HeadphonesIcon({ size, className }: IconProps): React.JSX.Element {
+  return (
+    <svg {...S({ size })} className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 3a8 8 0 0 0-8 8v1.17A2.5 2.5 0 0 0 3 14.5v3A2.5 2.5 0 0 0 5.5 20H7a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1H6v-1a6 6 0 1 1 12 0v1h-1a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h1.5a2.5 2.5 0 0 0 2.5-2.5v-3a2.5 2.5 0 0 0-1-2.33V11a8 8 0 0 0-8-8z" />
+    </svg>
+  )
+}
+
+export function RadioIcon({ size, className }: IconProps): React.JSX.Element {
+  return (
+    <svg {...S({ size })} className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M7.05 4.343a1 1 0 1 0-1.414-1.415L3.222 5.343a1 1 0 0 0 1.414 1.414L7.05 4.343zM3 10a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-9zm2 0v9h14v-9H5zm2.5 6a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zM14 14.75a.75.75 0 0 1 .75-.75h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1-.75-.75zm.75 2.25a.75.75 0 0 0 0 1.5h4.5a.75.75 0 0 0 0-1.5h-4.5z" />
+    </svg>
+  )
+}
+
+export function LightbulbIcon({ size, className }: IconProps): React.JSX.Element {
+  return (
+    <svg {...S({ size })} className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 2a7 7 0 0 0-4 12.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26A7 7 0 0 0 12 2zm-2 18a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-1h-4v1z" />
     </svg>
   )
 }

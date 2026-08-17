@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import type { AppSettings, MiniCorner } from '@shared/types'
-import { CloseIcon } from './components/Icons'
+import { CloseIcon, MoveIcon } from './components/Icons'
 import { applyThemeDom } from './app/themeDom'
+import { resolveLocale, useI18n, useT } from './app/i18n'
 
 /**
  * Ventana independiente de ajustes del mini-player.
@@ -10,6 +11,7 @@ import { applyThemeDom } from './app/themeDom'
  */
 
 export default function MiniSettings(): React.JSX.Element {
+  const t = useT()
   const [corner, setCorner] = useState<MiniCorner>('br')
   const [karaoke, setKaraoke] = useState(false)
   const [scale, setScale] = useState(1)
@@ -20,6 +22,8 @@ export default function MiniSettings(): React.JSX.Element {
       setKaraoke(s.miniKaraoke)
       setScale(s.miniScale || 1)
       applyThemeDom(s)
+      // F58 · Esta ventana no pasa por settingsStore: aplica el idioma aquí.
+      useI18n.getState().setLocale(resolveLocale(s.uiLanguage))
     }
     void window.api.settings.get().then(apply)
     return window.api.settings.onChanged(apply)
@@ -34,7 +38,7 @@ export default function MiniSettings(): React.JSX.Element {
     <button
       onClick={() => pick(c)}
       title={
-        { tl: 'Arriba izquierda', tr: 'Arriba derecha', bl: 'Abajo izquierda', br: 'Abajo derecha' }[c]
+        { tl: t('mini.cornerTl'), tr: t('mini.cornerTr'), bl: t('mini.cornerBl'), br: t('mini.cornerBr') }[c]
       }
       style={{
         position: 'absolute',
@@ -70,19 +74,19 @@ export default function MiniSettings(): React.JSX.Element {
           ['WebkitAppRegion' as string]: 'drag'
         }}
       >
-        <b style={{ fontSize: 15 }}>Ajustes del mini-player</b>
+        <b style={{ fontSize: 15 }}>{t('mini.settings')}</b>
         <button
           className="icon-btn"
           style={{ ['WebkitAppRegion' as string]: 'no-drag' }}
           onClick={() => void window.api.mini.openSettings()}
-          aria-label="Cerrar"
+          aria-label={t('btn.close')}
         >
           <CloseIcon size={14} />
         </button>
       </div>
 
       <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
-        Elige en qué esquina se ancla, o suéltalo en posición libre:
+        {t('mini.pickCorner')}
       </span>
 
       {/* Diagrama de pantalla */}
@@ -117,7 +121,9 @@ export default function MiniSettings(): React.JSX.Element {
             transition: 'all 0.15s'
           }}
         >
-          ✥ Libre
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+            <MoveIcon size={13} /> {t('mini.free')}
+          </span>
         </button>
         {/* Barra de tareas simulada */}
         <div
@@ -134,15 +140,13 @@ export default function MiniSettings(): React.JSX.Element {
       </div>
 
       <span style={{ fontSize: 12, color: 'var(--text-subdued)', lineHeight: 1.5 }}>
-        {corner === 'free'
-          ? 'Arrastra el mini desde los puntitos superiores. Si lo sueltas cerca de una esquina, se ancla solo.'
-          : 'Las esquinas respetan la barra de tareas. La posición se recuerda entre sesiones.'}
+        {corner === 'free' ? t('mini.freeHint') : t('mini.cornerHint')}
       </span>
 
       {/* Tamaño de la tarjeta */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <span style={{ fontSize: 13, whiteSpace: 'nowrap' }}>
-          Tamaño: <b>{Math.round(scale * 100)}%</b>
+          {t('mini.size')} <b>{Math.round(scale * 100)}%</b>
         </span>
         <input
           type="range"
@@ -162,7 +166,7 @@ export default function MiniSettings(): React.JSX.Element {
       {/* Modo karaoke */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span style={{ fontSize: 13 }}>
-          Modo karaoke <span style={{ color: 'var(--text-subdued)' }}>(letra en la tarjeta)</span>
+          {t('mini.karaokeMode')} <span style={{ color: 'var(--text-subdued)' }}>{t('mini.karaokeHint')}</span>
         </span>
         <input
           type="checkbox"

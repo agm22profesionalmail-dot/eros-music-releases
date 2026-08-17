@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { CloseIcon, MusicNoteIcon } from './Icons'
+import { t as ti18n, useT } from '../app/i18n'
 
 /**
  * F22 · Modal para editar título y carátula de una playlist propia.
@@ -32,6 +33,7 @@ export function PlaylistEditModal({
   currentThumbnailUrl,
   onClose
 }: Props): React.JSX.Element {
+  const t = useT()
   const [title, setTitle] = useState(currentTitle)
   // `thumb` puede ser: undefined (sin cambio), string (nueva data URL),
   // null (quitar override → vuelve a la original).
@@ -61,14 +63,14 @@ export function PlaylistEditModal({
       const cropped = await cropAndResize(dataUrl, OUT_SIZE, JPEG_QUALITY)
       setThumb(cropped)
     } catch (err) {
-      setError('No se pudo procesar la imagen: ' + String((err as Error)?.message ?? err))
+      setError(t('edit.imgError', { msg: String((err as Error)?.message ?? err) }))
     }
   }
 
   const save = async (): Promise<void> => {
     const cleanTitle = title.trim().slice(0, MAX_TITLE)
     if (!cleanTitle.length) {
-      setError('El título no puede estar vacío')
+      setError(t('edit.emptyTitle'))
       return
     }
     setSaving(true)
@@ -97,15 +99,15 @@ export function PlaylistEditModal({
       <div
         className="edit-card"
         role="dialog"
-        aria-label="Editar playlist"
+        aria-label={t('edit.aria')}
         onClick={(e) => e.stopPropagation()}
       >
         <header className="picker-head">
           <div className="picker-title">
-            <div className="eyebrow">Editar</div>
-            <div className="name">Playlist</div>
+            <div className="eyebrow">{t('common.edit')}</div>
+            <div className="name">{t('edit.playlistNoun')}</div>
           </div>
-          <button className="picker-x" onClick={() => onClose(false)} aria-label="Cerrar">
+          <button className="picker-x" onClick={() => onClose(false)} aria-label={t('btn.close')}>
             <CloseIcon size={16} />
           </button>
         </header>
@@ -121,15 +123,15 @@ export function PlaylistEditModal({
             )}
             <div className="edit-cover-actions">
               <button className="btn btn-secondary edit-cover-btn" onClick={pickFile}>
-                Cambiar carátula
+                {t('edit.changeCover')}
               </button>
               {(thumb || (thumb === undefined && currentThumbnailUrl)) && (
                 <button
                   className="btn btn-secondary edit-cover-btn"
                   onClick={() => setThumb(null)}
-                  title="Vuelve a la carátula original"
+                  title={t('edit.removeCoverTitle')}
                 >
-                  Quitar carátula
+                  {t('edit.removeCover')}
                 </button>
               )}
             </div>
@@ -148,7 +150,7 @@ export function PlaylistEditModal({
           </div>
 
           <label className="edit-title-block">
-            <span className="edit-label">Título</span>
+            <span className="edit-label">{t('edit.title')}</span>
             <input
               className="edit-title-input"
               value={title}
@@ -169,10 +171,10 @@ export function PlaylistEditModal({
 
         <footer className="picker-foot">
           <button className="btn btn-secondary" onClick={() => onClose(false)}>
-            Cancelar
+            {t('btn.cancel')}
           </button>
           <button className="btn btn-primary" disabled={disabled} onClick={() => void save()}>
-            {saving ? 'Guardando…' : 'Guardar'}
+            {saving ? t('edit.saving') : t('btn.save')}
           </button>
         </footer>
       </div>
@@ -186,7 +188,7 @@ function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const fr = new FileReader()
     fr.onload = () => resolve(String(fr.result))
-    fr.onerror = () => reject(new Error('No se pudo leer el fichero'))
+    fr.onerror = () => reject(new Error(ti18n('edit.fileReadError')))
     fr.readAsDataURL(file)
   })
 }

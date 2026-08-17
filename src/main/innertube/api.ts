@@ -11,6 +11,7 @@ import { getAllSettings } from '../settings'
 import type {
   AlbumDetail,
   ArtistDetail,
+  ArtistRef,
   LibrarySnapshot,
   MediaCard,
   PlaylistDetail,
@@ -60,57 +61,108 @@ function topResultCard(section: any): MediaCard | null {
 }
 
 export async function search(query: string, filter: SearchFilter): Promise<SearchResults> {
-  const yt = await sessionManager.get()
-  const filters =
-    filter === 'all' ? undefined : ({ type: filter } as { type: Exclude<SearchFilter, 'all'> })
-  const res: any = await yt.music.search(query, filters)
+  const emptyResults = (): SearchResults => ({
+    songs: [],
+    videos: [],
+    albums: [],
+    artists: [],
+    playlists: []
+  })
 
-  const out: SearchResults = { songs: [], videos: [], albums: [], artists: [], playlists: [] }
+  // F43 · Blindaje total: cualquier fallo del parser de youtubei.js (miniaturas
+  // vacías, endpoints sin payload, secciones con forma nueva…) no debe reventar
+  // la búsqueda. Envolvemos la llamada de red por si `yt.music.search` propaga
+  // un TypeError al construir el árbol, y devolvemos resultados vacíos.
+  let res: any
+  try {
+    const yt = await sessionManager.get()
+    const filters =
+      filter === 'all' ? undefined : ({ type: filter } as { type: Exclude<SearchFilter, 'all'> })
+    res = await yt.music.search(query, filters)
+  } catch (err) {
+    console.error('[search] fallo al invocar yt.music.search:', err)
+    return emptyResults()
+  }
+
+  const out: SearchResults = emptyResults()
 
   const sections: any[] = res?.contents ?? []
   for (const section of sections) {
-    const typeName = String(section?.type ?? '')
-    const contents: any[] = section?.contents ?? []
-    if (typeName.includes('MusicCardShelf')) {
-      // "Mejor resultado" — MusicCardShelf tiene su propia estructura: los
-      // `contents` son solo badges/textos; los datos útiles están en la propia
-      // sección (title, subtitle, thumbnail) y la navegación en `on_tap` o en
-      // el PlayButton del overlay. Adaptamos manualmente.
-      const card = topResultCard(section)
-      if (card) out.topResult = card
-      continue
-    }
-    const title = String(section?.header?.title ?? section?.title ?? '').toLowerCase()
-    for (const item of contents) {
-      const itemType = item?.item_type
-      if (itemType === 'song' || (title.includes('canciones') && itemType !== 'video')) {
-        const t = mapListItemToTrack(item)
-        if (t) out.songs.push(t)
-      } else if (itemType === 'video') {
-        const t = mapListItemToTrack(item)
-        if (t) out.videos.push(t)
-      } else {
-        const card = mapToCard(item)
-        if (!card) continue
-        if (card.kind === 'album') out.albums.push(card)
-        else if (card.kind === 'artist') out.artists.push(card)
-        else if (card.kind === 'playlist') out.playlists.push(card)
-        else if (card.kind === 'song') {
-          const t = mapListItemToTrack(item)
-          if (t) out.songs.push(t)
+    // F43 · Cada sección se procesa aislada: si una revienta (por ejemplo por
+    // un item con thumbnails=undefined) sigue el resto y no se pierde toda la
+    // búsqueda.
+    try {
+      const typeName = String(section?.type ?? '')
+      const contents: any[] = section?.contents ?? []
+      if (typeName.includes('MusicCardShelf')) {
+        // "Mejor resultado" — MusicCardShelf tiene su propia estructura: los
+        // `contents` son solo badges/textos; los datos útiles están en la propia
+        // sección (title, subtitle, thumbnail) y la navegación en `on_tap` o en
+        // el PlayButton del overlay. Adaptamos manualmente.
+        try {
+          const card = topResultCard(section)
+          if (card) out.topResult = card
+        } catch (err) {
+          console.warn('[search] topResultCard falló:', err)
+        }
+        continue
+      }
+      const title = String(section?.header?.title ?? section?.title ?? '').toLowerCase()
+      for (const item of contents) {
+        // F43 · Cada item también en su propio try: si mapListItemToTrack o
+        // mapToCard revientan (item.thumbnails vacío, item.artists undefined…),
+        // se descarta silenciosamente y el resto de la sección sobrevive.
+        try {
+          const itemType = item?.item_type
+          if (itemType === 'song' || (title.includes('canciones') && itemType !== 'video')) {
+            const t = mapListItemToTrack(item)
+            if (t) out.songs.push(t)
+          } else if (itemType === 'video') {
+            const t = mapListItemToTrack(item)
+            if (t) out.videos.push(t)
+          } else {
+            const card = mapToCard(item)
+            if (!card) continue
+            if (card.kind === 'album') out.albums.push(card)
+            else if (card.kind === 'artist') out.artists.push(card)
+            else if (card.kind === 'playlist') out.playlists.push(card)
+            else if (card.kind === 'song') {
+              const t = mapListItemToTrack(item)
+              if (t) out.songs.push(t)
+            }
+          }
+        } catch (err) {
+          console.warn('[search] item descartado por parseo:', err)
         }
       }
+    } catch (err) {
+      console.warn('[search] sección descartada por parseo:', err)
     }
   }
+  // Filtro "Todo": InnerTube promociona el artista conocido SOLO al topResult
+  // (MusicCardShelf) y lo excluye de la sección genérica "Artista", que queda
+  // llena de canales homónimos irrelevantes. Si el topResult es un artista,
+  // lo reinsertamos al principio de out.artists (sin duplicar por id).
+  if (out.topResult?.kind === 'artist') {
+    const topArtist = out.topResult
+    out.artists = out.artists.filter((a) => a.id !== topArtist.id)
+    out.artists.unshift(topArtist)
+  }
   // F28 · aplica filtros de contenido a todo el bloque
-  out.songs = applyTrackContentFilters(out.songs)
-  out.videos = applyTrackContentFilters(out.videos)
-  out.albums = applyCardContentFilters(out.albums)
-  out.artists = applyCardContentFilters(out.artists)
-  out.playlists = applyCardContentFilters(out.playlists)
-  if (out.topResult) {
-    const stillOk = applyCardContentFilters([out.topResult]).length > 0
-    if (!stillOk) out.topResult = undefined
+  // F43 · los filtros también van blindados: cualquier fallo aquí devolvería la
+  // banda roja, y preferimos entregar la lista sin filtrar antes que caer.
+  try {
+    out.songs = applyTrackContentFilters(out.songs)
+    out.videos = applyTrackContentFilters(out.videos)
+    out.albums = applyCardContentFilters(out.albums)
+    out.artists = applyCardContentFilters(out.artists)
+    out.playlists = applyCardContentFilters(out.playlists)
+    if (out.topResult) {
+      const stillOk = applyCardContentFilters([out.topResult]).length > 0
+      if (!stillOk) out.topResult = undefined
+    }
+  } catch (err) {
+    console.warn('[search] filtros de contenido fallaron, devolviendo sin filtrar:', err)
   }
   return out
 }
@@ -351,6 +403,42 @@ export interface UpNextResult {
   playlistId?: string
 }
 
+/**
+ * F60 · Artistas de un PlaylistPanelVideo CON id de canal cuando exista.
+ * El mapeo antiguo aplastaba todo a un string sin id, y por eso los artistas
+ * de la cola (radio/autoplay) no eran clicables en la barra inferior.
+ * La estructura varía según el nodo, así que se prueban varias rutas:
+ *   1) arrays `artists`/`authors` con `channel_id` (como en las listas)
+ *   2) `author` objeto con `channel_id`
+ *   3) runs del by-line con endpoint de canal (browseId "UC…")
+ *   4) degradación: el texto plano de siempre (sin id)
+ */
+function mapPanelArtists(item: any): ArtistRef[] {
+  const arr = item?.artists ?? item?.authors
+  if (Array.isArray(arr) && arr.length) {
+    const mapped = arr
+      .map((a: any) => ({ name: a?.name ?? '', id: a?.channel_id ?? undefined }))
+      .filter((a: ArtistRef) => a.name)
+    if (mapped.length) return mapped
+  }
+  const author = item?.author
+  if (author && typeof author === 'object' && typeof author.name === 'string' && author.name) {
+    return [{ name: author.name, id: author.channel_id ?? undefined }]
+  }
+  const runs = item?.long_by_line?.runs ?? item?.by_line?.runs ?? []
+  const fromRuns: ArtistRef[] = []
+  for (const r of runs) {
+    const id = r?.endpoint?.payload?.browseId ?? r?.endpoint?.payload?.browse_id
+    if (r?.text && typeof id === 'string' && id.startsWith('UC')) {
+      fromRuns.push({ name: r.text, id })
+    }
+  }
+  if (fromRuns.length) return fromRuns
+  const raw = typeof author === 'string' ? author : (author?.toString?.() ?? '')
+  const name = raw === '[object Object]' ? '' : raw
+  return name ? [{ name }] : []
+}
+
 export async function getUpNext(videoId: string): Promise<UpNextResult> {
   const yt = await sessionManager.get()
   const panel: any = await yt.music.getUpNext(videoId, true)
@@ -363,7 +451,7 @@ export async function getUpNext(videoId: string): Promise<UpNextResult> {
       kind: 'song',
       videoId: vid,
       title,
-      artists: [{ name: item?.author?.toString?.() ?? item?.artists?.toString?.() ?? '' }],
+      artists: mapPanelArtists(item),
       durationText: item?.duration?.text ?? item?.duration?.toString?.(),
       durationSec: item?.duration?.seconds,
       thumbnailUrl: upscaleThumb(bestThumbnail(item), 256)

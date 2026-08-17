@@ -7,10 +7,13 @@ import { TrackTable } from '../components/TrackTable'
 import { ListSearchInput } from '../components/ListSearchInput'
 import { matchesCard, matchesTrack, useDebouncedValue } from '../app/listFilter'
 import { usePlayer } from '../player/store'
+import { useT } from '../app/i18n'
+import { ImportPlaylistModal } from '../components/ImportPlaylistModal'
 
 type Tab = 'playlists' | 'albums' | 'artists' | 'songs' | 'history' | 'downloads'
 
 export function LibraryPage(): React.JSX.Element {
+  const t = useT()
   const library = useLibrary((s) => s.library)
   const refresh = useLibrary((s) => s.refresh)
   const playTracks = usePlayer((s) => s.playTracks)
@@ -21,6 +24,7 @@ export function LibraryPage(): React.JSX.Element {
   // para que "playlists / daft" no se acarree a "canciones".
   const [filter, setFilter] = useState('')
   const debounced = useDebouncedValue(filter, 150)
+  const [importOpen, setImportOpen] = useState(false)
 
   useEffect(() => {
     if (tab === 'history') {
@@ -33,12 +37,12 @@ export function LibraryPage(): React.JSX.Element {
   }, [tab])
 
   const tabs: [Tab, string][] = [
-    ['playlists', 'Playlists'],
-    ['albums', 'Álbumes'],
-    ['artists', 'Artistas'],
-    ['songs', 'Canciones'],
-    ['history', 'Historial'],
-    ['downloads', 'Descargas']
+    ['playlists', t('library.tab.playlists')],
+    ['albums', t('library.tab.albums')],
+    ['artists', t('library.tab.artists')],
+    ['songs', t('library.tab.songs')],
+    ['history', t('library.tab.history')],
+    ['downloads', t('library.tab.downloads')]
   ]
 
   // Listas filtradas por pestaña — memorizadas para no rehacerlo en cada
@@ -104,7 +108,7 @@ export function LibraryPage(): React.JSX.Element {
 
   return (
     <div className="page">
-      <h1>Tu biblioteca</h1>
+      <h1>{t('sidebar.library')}</h1>
       {/* F21: chips a la izquierda + buscador a la derecha en la misma fila. */}
       <div className="library-toolbar">
         <div className="sidebar-filters">
@@ -117,20 +121,27 @@ export function LibraryPage(): React.JSX.Element {
               {label}
             </button>
           ))}
-          <button className="chip" onClick={() => void refresh()} title="Recargar de la cuenta">
+          <button className="chip" onClick={() => void refresh()} title={t('library.refreshTitle')}>
             ⟳
+          </button>
+          <button
+            className="chip"
+            onClick={() => setImportOpen(true)}
+            title={t('library.importPlaylist')}
+          >
+            + {t('library.importPlaylist')}
           </button>
         </div>
         {activeHasContent && (
           <ListSearchInput
             value={filter}
             onChange={setFilter}
-            ariaLabel="Buscar en la biblioteca"
+            ariaLabel={t('library.searchAria')}
           />
         )}
       </div>
 
-      {!library && <div className="empty-state">Inicia sesión para ver tu biblioteca</div>}
+      {!library && <div className="empty-state">{t('sidebar.signInPrompt')}</div>}
 
       {library && tab === 'playlists' && (
         <div className="card-grid">
@@ -175,14 +186,14 @@ export function LibraryPage(): React.JSX.Element {
             tracks={filteredDownloads}
             showAlbum
             onPlayIndex={(i) => void playTracks(filteredDownloads, i)}
-            onContextMenu={(e, t) =>
+            onContextMenu={(e, track) =>
               openContextMenu(e, [
-                ...trackMenu(t),
+                ...trackMenu(track),
                 { separator: true, label: '' },
                 {
-                  label: 'Quitar descarga',
+                  label: t('library.removeDownload'),
                   action: () =>
-                    void window.api.downloads.remove(t.videoId).then(() =>
+                    void window.api.downloads.remove(track.videoId).then(() =>
                       window.api.downloads.list().then((d) => setDownloadsList(d.map((x) => x.track)))
                     )
                 }
@@ -191,17 +202,18 @@ export function LibraryPage(): React.JSX.Element {
           />
           {!downloadsList.length && (
             <div className="empty-state">
-              Sin descargas. Clic derecho en cualquier canción → «Descargar».
+              {t('library.noDownloads')}
             </div>
           )}
         </>
       )}
       {library &&
         (tab === 'playlists' || tab === 'albums' || tab === 'artists' || tab === 'songs') &&
-        !library[tab].length && <div className="empty-state">Nada por aquí todavía</div>}
+        !library[tab].length && <div className="empty-state">{t('library.empty')}</div>}
       {activeHasContent && debounced && filteredCount === 0 && (
-        <div className="empty-state">Sin resultados para «{filter}»</div>
+        <div className="empty-state">{t('search.empty', { q: filter })}</div>
       )}
+      {importOpen && <ImportPlaylistModal onClose={() => setImportOpen(false)} />}
     </div>
   )
 }

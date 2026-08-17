@@ -1,8 +1,8 @@
 {
-  "name": "metrolist-pc",
-  "productName": "Metrolist PC",
-  "version": "0.1.0",
-  "description": "Cliente de escritorio de YouTube Music con interfaz estilo Spotify, inspirado en Metrolist",
+  "name": "eros-music",
+  "productName": "ERO'S Music",
+  "version": "1.4.6",
+  "description": "ERO'S Music — cliente de escritorio de YouTube Music con interfaz estilo Spotify",
   "main": "./out/main/index.js",
   "author": "Zero",
   "license": "GPL-3.0",
@@ -12,13 +12,15 @@
     "build": "electron-vite build",
     "start": "electron-vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
-    "dist": "electron-vite build && electron-builder --win"
+    "dist": "electron-vite build && electron-builder --win",
+    "release": "electron-vite build && electron-builder --win --publish always"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
     "@xhayper/discord-rpc": "^1.3.4",
     "bgutils-js": "^4.0.3",
+    "electron-updater": "^6.8.9",
     "jsdom": "^27.0.0",
     "youtubei.js": "^18.0.0",
     "zustand": "^5.0.15"

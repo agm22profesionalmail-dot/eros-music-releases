@@ -20,7 +20,7 @@ Cada bloque = un subagente. Se ejecutan uno a uno; el siguiente arranca cuando e
 ## F22 · Botones de playlist (añadir · compartir · editar)
 - En cabecera de `PlaylistPage.tsx`, junto al big-play: **tres** botones circulares — `+` (Añadir canciones), `↗` (Compartir), `✎` (Editar).
 - **Añadir canciones**: abre `TrackPickerModal` (nuevo componente): buscador integrado, resultados con checkbox, chip persistente con selección acumulada aunque cambies la búsqueda. Botón "Añadir N canciones" al final. Llama `window.api.library.playlistAdd(id, videoIds)`.
-- **Compartir**: copia al portapapeles `https://music.youtube.com/playlist?list={id}` y muestra toast "Enlace copiado". Registro de protocolo `metrolist://` para deep-link en futuras versiones (documentar, dejarlo listo si electron-builder lo permite fácil).
+- **Compartir**: copia al portapapeles `https://music.youtube.com/playlist?list={id}` y muestra toast "Enlace copiado". Registro de protocolo `erosmusic://` para deep-link en futuras versiones (documentar, dejarlo listo si electron-builder lo permite fácil).
 - **Editar** (nuevo): abre modal para cambiar **título** y **carátula**:
   - Título: input de texto con validación (≤ 100 chars).
   - Carátula: selector de fichero + preview cuadrado (mantener 1:1). Redimensiona a 512×512 (JPEG 0.85) antes de guardar. Recorte centrado si la imagen no es 1:1.
@@ -57,7 +57,7 @@ Dos fixes derivados del uso real:
 - Si no hay perfil: comportamiento actual ("YouTube Music"). Toggle en Ajustes ya existente.
 - Test: cambiar el nombre del perfil se refleja en RPC.
 
-## F27 · Paridad de reproducción con Metrolist Android
+## F27 · Paridad de reproducción con la app Android original
 
 Ajustes con impacto real en la reproducción, tomados de la app original:
 

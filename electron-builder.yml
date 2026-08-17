@@ -1,12 +1,19 @@
-appId: com.zero.metrolistpc
-productName: Metrolist PC
-# F22: deep-link `metrolist://` para abrir playlists/álbumes desde el navegador
-# u otras apps. Registro declarado aquí; el handler `open-url` se implementará
-# más adelante (TODO: F22-follow-up).
+# F63 · Rebranding interno v1.2.0: appId nuevo. Cambiarlo rompe la
+# sustitución in-place automática del NSIS (GUID distinto), pero
+# build/installer.nsh (customInit) desinstala por DisplayName cualquier
+# versión previa "Metrolist*"/"ERO'*" — cubre el appId viejo
+# `com.zero.metrolistpc` y este nuevo, venga del GUID que venga. La
+# migración de %APPDATA% la hace la propia app al primer arranque
+# (src/main/index.ts).
+appId: com.zero.erosmusic
+productName: ERO'S Music
+# F22: deep-link `erosmusic://` (antes `metrolist://`) para abrir
+# playlists/álbumes desde el navegador u otras apps. Registro declarado aquí;
+# el handler `open-url` se implementará más adelante (TODO: F22-follow-up).
 protocols:
-  - name: Metrolist
+  - name: ERO'S Music
     schemes:
-      - metrolist
+      - erosmusic
 directories:
   output: release
   buildResources: build
@@ -24,7 +31,8 @@ extraResources:
 asarUnpack:
   - node_modules/jsdom/**
 win:
-  icon: build/icon.ico
+  # F59 · PNG 512: electron-builder genera el .ico multitamaño él solo
+  icon: build/icon.png
   target:
     - target: nsis
       arch:
@@ -34,10 +42,22 @@ nsis:
   perMachine: false
   createDesktopShortcut: true
   createStartMenuShortcut: true
-  shortcutName: Metrolist
-  artifactName: MetrolistPC-Setup-${version}.exe
+  shortcutName: ERO'S Music
+  # Sin apóstrofo en el nombre del fichero (más cómodo de compartir)
+  artifactName: EROSMusic-Setup-${version}.exe
   deleteAppDataOnUninstall: false
+  # F61 · build/installer.nsh (auto-incluido por vivir en buildResources):
+  # desinstala en silencio versiones previas (Metrolist/ERO'S, cualquier GUID)
+  # y borra setups antiguos de $EXEDIR y Descargas al terminar de instalar.
 electronLanguages:
   - es
   - en-US
 npmRebuild: false
+# F67 · Auto-actualización: los instaladores (+ latest.yml + blockmap) se
+# publican como GitHub Releases en un repo aparte SIN código fuente. La app
+# empaquetada lee este mismo bloque (app-update.yml generado por
+# electron-builder) para saber dónde buscar versiones nuevas.
+publish:
+  provider: github
+  owner: agm22profesionalmail-dot
+  repo: eros-music-releases

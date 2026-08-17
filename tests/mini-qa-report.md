@@ -1,7 +1,7 @@
 # QA del mini-player tras el rediseño visual
 
 **Fecha**: 2026-08-14
-**App**: Metrolist PC (build en `out/`) — versión con paleta 60-30-10, acento dinámico por carátula, animaciones y fondo teñido.
+**App**: ERO'S Music (build en `out/`) — versión con paleta 60-30-10, acento dinámico por carátula, animaciones y fondo teñido.
 **Metodología**: Playwright + `_electron.launch`. Dos probes ejecutados sobre la misma cuenta ya iniciada:
 - `tests/mini-probes/qa-mini.mjs` (recorrido completo, 94 s)
 - `tests/mini-probes/qa-mini-followup.mjs` (retest de T2b / T4 / T11a — los tres fallos originales resultaron ser errores de instrumentación, no del mini)
@@ -87,7 +87,7 @@ El mini-player está **al nivel del rediseño en 9 de 10 dimensiones**. Lo que s
 ## Notas de metodología
 
 - No se hicieron builds nuevos — `out/` es la versión probada.
-- Antes de arrancar cada probe: `Get-Process 'Metrolist PC' | Stop-Process -Force; Get-Process electron | Stop-Process -Force`.
+- Antes de arrancar cada probe: `Get-Process 'ERO''S Music' | Stop-Process -Force; Get-Process electron | Stop-Process -Force`.
 - Los tres bugs de la primera pasada (T2b, T4, T11a) resultaron ser errores de instrumentación de Playwright:
   - **T2b**: contaba `<rect>` para distinguir `PauseIcon` de `PlayIcon`, pero ambos iconos usan `<path>` — el retest los distingue por el `d` (Pause empieza por `M5.7`, Play por `m7.05`).
   - **T4**: `mini.locator('div').filter({ has: ... })` no localizaba el `div` raíz del seek (`onPointerDown`). El retest resuelve el `boundingClientRect` en-page con `evaluate` filtrando por `flex:1 + height:12 + cursor:pointer`, y los tres seeks pegan con Δ = 1.4 s sobre 369 s.

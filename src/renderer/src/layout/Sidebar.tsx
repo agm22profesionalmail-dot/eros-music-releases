@@ -6,6 +6,7 @@ import { useLibrary, cardMenu } from '../app/libraryStore'
 import { openContextMenu } from '../components/ContextMenu'
 import { useT } from '../app/i18n'
 import {
+  ChartIcon,
   HomeIcon,
   LibraryIcon,
   MusicNoteIcon,
@@ -71,8 +72,9 @@ export function Sidebar(): React.JSX.Element {
           className={`sidebar-nav-item ${route.name === 'recap' ? 'active' : ''}`}
           onClick={() => navigate({ name: 'recap' })}
         >
-          <span aria-hidden="true" style={{ fontSize: 20, width: 24, textAlign: 'center' }}>
-            📊
+          {/* F57 · ChartIcon en vez del emoji 📊 (la UI base no lleva emojis) */}
+          <span aria-hidden="true" style={{ width: 24, display: 'grid', placeItems: 'center' }}>
+            <ChartIcon size={20} />
           </span>
           {t('sidebar.recap')}
         </button>

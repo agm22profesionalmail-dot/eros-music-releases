@@ -1,4 +1,4 @@
-import { readHistoryWithMeta } from '../db'
+import { readHistoryWithMeta, getArtistThumb, setArtistThumb } from '../db'
 import { getAllSettings } from '../settings'
 import type {
   ArtistStats,
@@ -98,11 +98,60 @@ export function computeTopTracks(period: StatsPeriod, topN?: number): TrackStats
   return out.slice(0, cap)
 }
 
+/** TTL de la caché de fotos de artista (F31): 21 días, igual orden de magnitud que géneros. */
+const ARTIST_THUMB_MAX_AGE_MS = 21 * 24 * 60 * 60 * 1000
+/** Concurrencia máxima al resolver fotos de artista contra la API de Innertube. */
+const ARTIST_THUMB_MAX_CONCURRENCY = 4
+
+/**
+ * Resuelve (y cachea en SQLite) la foto de cada artista de `stats` que tenga
+ * `id` disponible, reutilizando `getArtist()` (innertube/api.ts), la misma
+ * función que ya usa la página de detalle de artista. No lanza si la API
+ * falla: el artista simplemente se queda sin `thumbnailUrl` (fallback al
+ * placeholder en la UI).
+ */
+async function resolveArtistThumbs(
+  stats: ArtistStats[],
+  idByKey: Map<string, string>
+): Promise<void> {
+  const targets = stats
+    .map((s) => ({ stats: s, id: idByKey.get(s.name.toLowerCase()) }))
+    .filter((t): t is { stats: ArtistStats; id: string } => !!t.id)
+  if (!targets.length) return
+
+  const { getArtist } = await import('../innertube/api')
+
+  let cursor = 0
+  const runners = new Array(Math.min(ARTIST_THUMB_MAX_CONCURRENCY, targets.length))
+    .fill(0)
+    .map(async () => {
+      while (cursor < targets.length) {
+        const t = targets[cursor++]
+        const cached = getArtistThumb(t.id, ARTIST_THUMB_MAX_AGE_MS)
+        if (cached) {
+          if (cached.thumbnailUrl) t.stats.thumbnailUrl = cached.thumbnailUrl
+          continue
+        }
+        try {
+          const detail = await getArtist(t.id)
+          const thumb = detail.thumbnailUrl ?? null
+          setArtistThumb(t.id, thumb)
+          if (thumb) t.stats.thumbnailUrl = thumb
+        } catch {
+          // Sin red, artista eliminado, etc.: se queda sin foto (placeholder).
+        }
+      }
+    })
+  await Promise.all(runners)
+}
+
 /** Top N artistas más escuchados en el período (colaboraciones cuentan a cada uno). */
-export function computeTopArtists(period: StatsPeriod, topN?: number): ArtistStats[] {
+export async function computeTopArtists(period: StatsPeriod, topN?: number): Promise<ArtistStats[]> {
   const rows = readInPeriod(period)
   const cap = Math.max(1, Math.floor(topN ?? getAllSettings().wrappedTopN ?? 50))
   const acc = new Map<string, ArtistStats>()
+  // id de artista visto por clave de nombre — usamos el primero que aparezca.
+  const idByKey = new Map<string, string>()
   for (const r of rows) {
     const durSec = r.track.durationSec ?? 0
     for (const a of r.track.artists ?? []) {
@@ -115,18 +164,21 @@ export function computeTopArtists(period: StatsPeriod, topN?: number): ArtistSta
       // Preferimos la primera forma vista del nombre (case original).
       if (!acc.has(key)) prev.name = name
       acc.set(key, prev)
+      if (a?.id && !idByKey.has(key)) idByKey.set(key, a.id)
     }
   }
   const out = Array.from(acc.values())
   out.sort((a, b) => b.playCount - a.playCount || b.totalSec - a.totalSec)
-  return out.slice(0, cap)
+  const top = out.slice(0, cap)
+  await resolveArtistThumbs(top, idByKey)
+  return top
 }
 
 /**
  * Resumen tipo Wrapped de los últimos 30 días: horas totales, pistas
  * y artistas únicos, top 10 de canciones y top 5 de artistas.
  */
-export function computeRecap(days = 30): RecapData {
+export async function computeRecap(days = 30): Promise<RecapData> {
   const period = periodOfLastNDays(days)
   const rows = readInPeriod(period)
   let totalSec = 0
@@ -147,6 +199,6 @@ export function computeRecap(days = 30): RecapData {
     uniqueTracks: uniqueVideoIds.size,
     uniqueArtists: uniqueArtistKeys.size,
     topTracks: computeTopTracks(period, 10),
-    topArtists: computeTopArtists(period, 5)
+    topArtists: await computeTopArtists(period, 5)
   }
 }

@@ -61,7 +61,7 @@ async function main() {
       reportRow(rows, '2a', 'Abrir mini estando pausado', 'BUG', 'no abrió la ventana')
     } else {
       const s = await mini.evaluate(() => {
-        const t = document.querySelector('div[title="Abrir Metrolist"]')?.textContent ?? ''
+        const t = document.querySelector('div[title="Abrir ERO\'S Music"]')?.textContent ?? ''
         // busca el botón .np-play y comprueba su SVG (PlayIcon vs PauseIcon)
         const play = document.querySelector('.np-play')
         const svg = play?.querySelector('svg')
@@ -135,7 +135,7 @@ async function main() {
         const paths = svg ? [...svg.querySelectorAll('*')].length : 0
         // PauseIcon tiene 2 <rect>, PlayIcon tiene 1 <path>
         const rects = svg?.querySelectorAll('rect').length ?? 0
-        const t = document.querySelector('div[title="Abrir Metrolist"]')?.textContent ?? ''
+        const t = document.querySelector('div[title="Abrir ERO\'S Music"]')?.textContent ?? ''
         return { title: t, rectCount: rects, allEls: paths }
       })
       const shot = '02-open-playing.png'
@@ -201,7 +201,7 @@ async function main() {
       const w = BrowserWindow.getAllWindows().find((x) => !x.webContents.getURL().includes('#/mini'))
       return w?.isMinimized() ?? false
     })
-    await mini.locator('div[title="Abrir Metrolist"]').first().click()
+    await mini.locator('div[title="Abrir ERO\'S Music"]').first().click()
     await win.waitForTimeout(800)
     const shown = await app.evaluate(({ BrowserWindow }) => {
       const w = BrowserWindow.getAllWindows().find((x) => !x.webContents.getURL().includes('#/mini'))
@@ -217,14 +217,14 @@ async function main() {
   // ========================================================================
   {
     const mini = app.windows().find((w) => w.url().includes('#/mini') && !w.url().includes('mini-settings'))
-    const before = await mini.locator('div[title="Abrir Metrolist"]').first().textContent()
+    const before = await mini.locator('div[title="Abrir ERO\'S Music"]').first().textContent()
     // Cambia a otra búsqueda y toca la primera pista
     const newTitle = await playFirstSearchResult(win, 'coldplay yellow')
     // Espera hasta 1.5s
     const t0 = Date.now()
     let after = before
     while (Date.now() - t0 < 1600) {
-      after = await mini.locator('div[title="Abrir Metrolist"]').first().textContent()
+      after = await mini.locator('div[title="Abrir ERO\'S Music"]').first().textContent()
       if (after && after !== before) break
       await mini.waitForTimeout(120)
     }

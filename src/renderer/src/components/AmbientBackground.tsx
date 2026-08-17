@@ -35,14 +35,19 @@ export function AmbientBackground(): React.JSX.Element | null {
     let t = 0
     const render = (): void => {
       t += 0.006
-      // Energía de graves para el "respiro"
+      // Energía de graves para el "respiro" — amplificada para que sea
+      // claramente visible incluso a volúmenes bajos/medios.
       let bass = 0
       if (bgMode === 'reactive') {
         engine.getFrequencyData(freq.current)
-        for (let i = 0; i < 16; i++) bass += freq.current[i]
-        bass = bass / (16 * 255) // 0..1
+        // Ponderamos más los sub-graves (bins 0-7) que los graves altos (8-15)
+        for (let i = 0; i < 16; i++) bass += freq.current[i] * (i < 8 ? 1.5 : 0.7)
+        bass = bass / (16 * 255)
+        // Curva de amplificación: eleva valores bajos para hacerlos visibles
+        bass = Math.pow(bass, 0.6) // raíz ~0.6 → sube valores pequeños
+        bass = Math.min(bass * 1.4, 1) // boost + clamp
       }
-      const pulse = bgMode === 'reactive' ? 1 + bass * 0.35 : 1
+      const pulse = bgMode === 'reactive' ? 1 + bass * 0.7 : 1
 
       const c60 = readVar('--amb-60-soft', '#1a1a1a')
       const c30 = readVar('--amb-30', '#242424')
@@ -63,10 +68,14 @@ export function AmbientBackground(): React.JSX.Element | null {
         ctx.arc(cx, cy, r, 0, Math.PI * 2)
         ctx.fill()
       }
+      // Opacidad reactiva: sube con los graves para que el efecto sea más
+      // evidente. Los blobs "brillan" con la música.
+      const aBoost = bgMode === 'reactive' ? bass * 0.3 : 0
+
       ctx.globalCompositeOperation = 'lighter'
-      blob(W * (0.3 + 0.15 * Math.sin(t)), H * (0.35 + 0.2 * Math.cos(t * 0.8)), 34 * pulse, c60, 0.9)
-      blob(W * (0.7 + 0.12 * Math.cos(t * 0.9)), H * (0.6 + 0.18 * Math.sin(t * 1.1)), 30 * pulse, c30, 0.85)
-      blob(W * (0.5 + 0.2 * Math.sin(t * 0.7)), H * (0.3 + 0.15 * Math.cos(t)), 24 * pulse, glow, 0.5)
+      blob(W * (0.3 + 0.15 * Math.sin(t)), H * (0.35 + 0.2 * Math.cos(t * 0.8)), 34 * pulse, c60, 0.9 + aBoost)
+      blob(W * (0.7 + 0.12 * Math.cos(t * 0.9)), H * (0.6 + 0.18 * Math.sin(t * 1.1)), 30 * pulse, c30, 0.85 + aBoost)
+      blob(W * (0.5 + 0.2 * Math.sin(t * 0.7)), H * (0.3 + 0.15 * Math.cos(t)), 24 * pulse, glow, 0.5 + aBoost * 0.6)
       ctx.globalAlpha = 1
       ctx.globalCompositeOperation = 'source-over'
 

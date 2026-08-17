@@ -1,22 +1,46 @@
 import { Client } from '@xhayper/discord-rpc'
 import { getProfile } from '../settings'
+import { sessionManager } from '../innertube/session'
+import { getOrUploadProfilePhotoUrl } from './imageHost'
 
 /**
- * Discord Rich Presence: muestra la canción en curso en el perfil de Discord.
- * Usa el application id público "YouTube Music" (el mismo que el proyecto
- * th-ch/youtube-music); configurable por si el usuario quiere el suyo.
+ * ============================================================================
+ * Discord Rich Presence — LEER `docs/discord-rpc.md` ANTES DE TOCAR ESTE ARCHIVO
+ * ============================================================================
  *
- * Conexión perezosa con reintentos suaves: si Discord no está abierto no
- * pasa nada, se reintenta al cambiar de canción.
+ * Qué hace: muestra "Listening to ERO'S Music" en Discord con título,
+ * artista, carátula y barra de progreso viva. Con perfil personalizado (F25),
+ * la foto/nombre del usuario ocupan la imagen grande y la carátula cae a la
+ * insignia pequeña.
  *
- * F25 · Si el perfil personalizado está activo (`profile.enabled === true`),
- * usamos la foto y el nombre del perfil como imagen y texto grande, y la
- * carátula/artistas quedan como imagen y texto pequeños. Si Discord rechaza
- * el data URL de la foto (algunos backends solo aceptan URLs HTTPS), se cae
- * al comportamiento anterior sin la foto de perfil.
+ * PUNTO ROJO — La cabecera "Listening to X" NO se pone desde aquí. Discord
+ * la deriva del nombre registrado en el Developer Portal para el
+ * Application ID de abajo. Cambiar `DEFAULT_CLIENT_ID` por otro (por
+ * ejemplo, el genérico `1177081335727267940` de th-ch/youtube-music) hace
+ * que Discord vuelva a decir "Listening to YouTube Music". El ID actual
+ * apunta a la aplicación "ERO'S Music" registrada en la cuenta de Discord
+ * Developer Portal del usuario, con los assets ya subidos (asset `icon` como
+ * fallback del largeImageKey). No sustituir "por otro que salga en un
+ * tutorial" ni revertir sin registrar antes una app equivalente en el
+ * portal.
+ *
+ * Conexión perezosa con reintentos: si Discord no está abierto se reintenta
+ * como mucho una vez cada 30 s. Toggle desde Ajustes (`discordRpc`) llama a
+ * `setDiscordEnabled(bool)`. Cambio de perfil dispara
+ * `refreshDiscordPresence()` desde el IPC `PROFILE_SET` para reflejar la
+ * nueva foto/nombre sin esperar al siguiente track.
+ *
+ * Ver `docs/discord-rpc.md` para: flujo de datos completo, qué NO tocar y
+ * por qué, cómo verificar tras un build, y el historial de la integración.
+ * ============================================================================
  */
 
-const DEFAULT_CLIENT_ID = '1177081335727267940'
+// PUNTO ROJO — leer JSDoc de arriba antes de cambiar este valor.
+// App "ERO'S Music" registrada en el Discord Developer Portal de Zero
+// (2026-08-16). El anterior era `1177081335727267940` (público de
+// th-ch/youtube-music), lo que hacía que Discord dijese
+// "Listening to YouTube Music".
+const DEFAULT_CLIENT_ID = '1538529552513507418'
 
 export interface NowPlayingInfo {
   title: string
@@ -112,30 +136,76 @@ export async function updateDiscordPresence(info: NowPlayingInfo | null): Promis
 
   // Deduplicación: los timestamps hacen avanzar la barra solos en Discord;
   // solo reenviamos si cambia la pista/estado, si hubo un seek (>3 s de
-  // desvío) o si cambiaron los campos del perfil que se muestran.
-  const profileKeyPart = useProfile ? `${profileName}|${profilePhoto.slice(0, 24)}` : ''
+  // desvío) o si cambiaron los campos del perfil que se muestran (nombre,
+  // foto personalizada, o foto de Google — cualquiera de las tres puede
+  // acabar en el largeImageKey según la lógica de F60 más abajo).
+  const googlePhotoKeyPart = (sessionManager.authState.accountPhotoUrl ?? '').slice(0, 32)
+  const profileKeyPart = useProfile
+    ? `${profileName}|${profilePhoto.slice(0, 24)}|${googlePhotoKeyPart}`
+    : googlePhotoKeyPart
   const key = `${info.title}|${info.artists}|${info.isPlaying}|${profileKeyPart}`
   const expectedPos = (Date.now() - lastStartMs) / 1000
   const seeked = info.isPlaying && Math.abs(expectedPos - info.positionSec) > 3
   if (key === lastKey && !seeked) return
   lastKey = key
 
-  // Construye los campos visuales según haya perfil personalizado o no.
-  // Con perfil: la foto/nombre del usuario ocupan la imagen grande; la
-  // carátula del track cae a la imagen pequeña como "insignia".
+  // Construye los campos visuales.
+  //
+  // F60/F61 · Disposición tipo Spotify: la carátula del track SIEMPRE
+  // manda como imagen grande (es lo que la gente quiere ver de un lado a
+  // otro del feed), y la foto del usuario va como insignia pequeña
+  // superpuesta abajo-derecha — así se lee "X está escuchando esto".
+  //
+  // Discord solo acepta URLs http/https en estos keys (rechaza data URLs),
+  // así que la foto de perfil personalizada (`photoDataUrl`, base64) rara
+  // vez pasa. Preferimos la foto HTTPS de la cuenta de Google
+  // (`accountPhotoUrl` del sessionManager, extraída de InnerTube
+  // getAccountInfo) cuando esté disponible. Cae a `photoDataUrl` como
+  // último recurso; si Discord lo rechaza, el catch de abajo reintenta sin
+  // insignia pequeña.
   const trackThumb = info.thumbnailUrl ?? 'icon'
-  const largeImageKey = useProfile && profilePhoto ? profilePhoto : trackThumb
+  const googlePhoto = sessionManager.authState.accountPhotoUrl
+  const isHttpUrl = (s: string): boolean => /^https?:\/\//i.test(s)
+  // Insignia del usuario para Discord. Prioridad (F62):
+  //   1) photoDataUrl si ya es http(s) → uso directo
+  //   2) photoDataUrl como data URL → subir a catbox y usar esa URL
+  //      (asíncrono: la primera vez devuelve `null`/URL previa y refresca
+  //      cuando el upload termina — no bloquea el update)
+  //   3) accountPhotoUrl de Google → fallback si no hay personalizada o
+  //      mientras la primera subida está en vuelo
+  //   4) undefined → sin insignia
+  let userBadge: string | undefined
+  if (useProfile && profilePhoto) {
+    if (isHttpUrl(profilePhoto)) {
+      userBadge = profilePhoto
+    } else if (profilePhoto.startsWith('data:')) {
+      const uploaded = getOrUploadProfilePhotoUrl(profilePhoto, () => {
+        // Cuando la subida termina, reenvía la presencia con la URL nueva.
+        void refreshDiscordPresence()
+      })
+      userBadge = uploaded ?? googlePhoto ?? undefined
+    } else {
+      userBadge = googlePhoto ?? undefined
+    }
+  } else {
+    userBadge = googlePhoto ?? undefined
+  }
+  // Orden de líneas fijado por el usuario (F61): Canción / Artista /
+  // Usuario. `details` y `state` son las dos primeras (siempre visibles);
+  // `largeImageText` es la tercera (tooltip de la carátula, se ve como
+  // tercera línea en la tarjeta "Current activity" del perfil). Con
+  // perfil personalizado, la tercera es el nombre del perfil; sin perfil,
+  // el álbum si lo hay.
+  const largeImageKey = trackThumb
   const largeImageText = useProfile
-    ? profileName || info.album || 'Metrolist PC'
-    : info.album ?? 'Metrolist PC'
-  const smallImageKey = useProfile
-    ? trackThumb
-    : 'https://music.youtube.com/img/favicon_144.png'
+    ? profileName || info.album || "ERO'S Music"
+    : info.album ?? "ERO'S Music"
+  const smallImageKey = userBadge
   const smallImageText = useProfile
-    ? info.artists || 'Metrolist PC'
-    : 'Metrolist PC'
-  const details = useProfile ? `por ${info.artists || 'Metrolist PC'}` : info.title
-  const state = useProfile ? info.title : info.artists || 'Metrolist PC'
+    ? profileName || info.artists || "ERO'S Music"
+    : info.artists || "ERO'S Music"
+  const details = info.title
+  const state = info.artists || "ERO'S Music"
 
   try {
     if (info.isPlaying) {
@@ -163,8 +233,11 @@ export async function updateDiscordPresence(info: NowPlayingInfo | null): Promis
       await client!.user?.clearActivity()
     }
   } catch (err) {
-    // Fallback: si Discord rechaza el data URL de la foto de perfil,
-    // reintenta con la carátula del track como imagen grande.
+    // Fallback si Discord rechaza el smallImageKey (típicamente data URL
+    // de la foto personalizada guardada como base64). Reintenta con la
+    // carátula sola, sin insignia pequeña — la marca del app (cabecera
+    // "Listening to ERO'S Music") ya se ve arriba, y volver a colar el
+    // favicon de YT Music aquí sería contraproducente (F60).
     if (useProfile && profilePhoto && info.isPlaying) {
       try {
         await client!.user?.setActivity({
@@ -172,9 +245,9 @@ export async function updateDiscordPresence(info: NowPlayingInfo | null): Promis
           details,
           state,
           largeImageKey: trackThumb,
-          largeImageText: profileName || info.album || 'Metrolist PC',
-          smallImageKey: 'https://music.youtube.com/img/favicon_144.png',
-          smallImageText: 'Metrolist PC',
+          largeImageText: info.album ?? "ERO'S Music",
+          smallImageKey: undefined,
+          smallImageText: undefined,
           startTimestamp: Date.now() - info.positionSec * 1000,
           endTimestamp:
             info.durationSec > 0

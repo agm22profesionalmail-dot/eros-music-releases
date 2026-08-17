@@ -3,6 +3,7 @@ import { spawn } from 'child_process'
 import { existsSync, promises as fs } from 'fs'
 import { join } from 'path'
 import { recordDownload, removeDownload, readDownloads, getDownloadPath, getSetting } from '../db'
+import { defaultDownloadsDir } from '../settings'
 import { ytDlpProxyArgs } from '../net/proxy'
 import type { TrackSummary } from '@shared/types'
 
@@ -43,7 +44,10 @@ function emit(p: DownloadProgress): void {
 }
 
 function downloadsDir(): string {
-  return getSetting('downloads.dir', join('F:\\', 'MetrolistPC', 'Music'))
+  // F65 · Default = carpeta Música del usuario (~\Music\ERO'S Music). La ruta
+  // guardada en BD (`downloads.dir`) prevalece; la carpeta del proyecto
+  // F:\MetrolistPC ya no aparece en rutas visibles al usuario (es interna).
+  return getSetting('downloads.dir', defaultDownloadsDir())
 }
 
 function sanitize(name: string): string {
@@ -75,7 +79,7 @@ async function downloadOne(track: TrackSummary): Promise<void> {
 
   // 1. Descarga con yt-dlp (evita el goteo a velocidad de reproducción que
   // googlevideo aplica a nuestro spool; yt-dlp trae su propio descifrador)
-  const tmpBase = join(app.getPath('temp'), `metrolist-dl-${track.videoId}`)
+  const tmpBase = join(app.getPath('temp'), `eros-dl-${track.videoId}`)
   const rawPath = await ytDlpDownload(track.videoId, tmpBase, (progress) => {
     emit({ videoId: track.videoId, state: 'downloading', progress })
   })
@@ -90,7 +94,7 @@ async function downloadOne(track: TrackSummary): Promise<void> {
     try {
       const res = await net.fetch(track.thumbnailUrl.replace(/=w\d+-h\d+/, '=w544-h544'))
       if (res.ok) {
-        coverPath = join(app.getPath('temp'), `metrolist-cover-${track.videoId}.jpg`)
+        coverPath = join(app.getPath('temp'), `eros-cover-${track.videoId}.jpg`)
         await fs.writeFile(coverPath, Buffer.from(await res.arrayBuffer()))
       }
     } catch {

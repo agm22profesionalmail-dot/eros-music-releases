@@ -4,13 +4,29 @@ import { TrackTable } from '../components/TrackTable'
 import { ListSearchInput } from '../components/ListSearchInput'
 import { usePlayer } from '../player/store'
 import { openContextMenu } from '../components/ContextMenu'
-import { trackMenu, useLibrary } from '../app/libraryStore'
+import { cardMenu, trackMenu, useLibrary } from '../app/libraryStore'
 import { useArtworkColor } from '../app/artworkColor'
 import { matchesTrack, useDebouncedValue } from '../app/listFilter'
-import { MusicNoteIcon, PauseIcon, PlayIcon } from '../components/Icons'
+import {
+  EditIcon,
+  HeartIcon,
+  MoreVerticalIcon,
+  MusicNoteIcon,
+  PauseIcon,
+  PlayIcon,
+  PlusIcon,
+  ShareIcon,
+  ShuffleIcon
+} from '../components/Icons'
 import { TrackPickerModal } from '../components/TrackPickerModal'
 import { PlaylistEditModal } from '../components/PlaylistEditModal'
 import { pushToast } from '../components/Toast'
+import { useT } from '../app/i18n'
+
+/* F43 · agente E — normaliza el id (strip VL) para comparar con library.playlists. */
+function normalizePlaylistId(id: string): string {
+  return id.startsWith('VL') ? id.slice(2) : id
+}
 
 /** Timeout global del resolvedor de géneros — devuelve lo que haya llegado. */
 const GENRE_RESOLVE_TIMEOUT_MS = 8_000
@@ -52,6 +68,7 @@ function readPersistedGenres(id: string): Set<string> {
 }
 
 export function PlaylistPage({ id }: { id: string }): React.JSX.Element {
+  const t = useT()
   const [pl, setPl] = useState<PlaylistDetail | null>(null)
   const [error, setError] = useState<string | null>(null)
   // F21: filtro local (no persistente) con debounce de 150 ms.
@@ -72,6 +89,9 @@ export function PlaylistPage({ id }: { id: string }): React.JSX.Element {
   const togglePlay = usePlayer((s) => s.togglePlay)
   const current = usePlayer((s) => s.current())
   const refreshLibrary = useLibrary((s) => s.refresh)
+  // F43 · agente E — snapshot de biblioteca para saber si la playlist está
+  // guardada. Nos suscribimos al store para que el heart reaccione en vivo.
+  const library = useLibrary((s) => s.library)
 
   const isLiked = isLikedMusic(id)
 
@@ -106,6 +126,17 @@ export function PlaylistPage({ id }: { id: string }): React.JSX.Element {
     return () => {
       cancelled = true
     }
+  }, [id])
+
+  // F36 · Reactividad: si la biblioteca cambia por una escritura de playlist
+  // (añadir/quitar canción, renombrar…) hecha desde cualquier punto de la app,
+  // esta vista se recarga sola sin salir de ella.
+  useEffect(() => {
+    const off = window.api.library.onChanged(({ reason }) => {
+      if (reason.startsWith('playlist')) void reload()
+    })
+    return off
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
   // F23: al cargar las pistas de "Canciones que me gustan", resuelve géneros.
@@ -191,7 +222,7 @@ export function PlaylistPage({ id }: { id: string }): React.JSX.Element {
   if (error) {
     return (
       <div className="page">
-        <div className="error-banner">No se pudo cargar la playlist: {error}</div>
+        <div className="error-banner">{t('playlist.loadError', { msg: error })}</div>
       </div>
     )
   }
@@ -224,10 +255,53 @@ export function PlaylistPage({ id }: { id: string }): React.JSX.Element {
   const share = async (): Promise<void> => {
     try {
       await navigator.clipboard.writeText(shareUrl)
-      pushToast('Enlace copiado')
+      pushToast(t('toast.linkCopied'))
     } catch {
-      pushToast('No se pudo copiar el enlace')
+      pushToast(t('toast.linkCopyFailed'))
     }
+  }
+
+  // F43 · agente E — ¿está esta playlist (ajena) guardada ya en la biblioteca?
+  // Sólo la mostramos cuando NO es propia y sí figura en `library.playlists`;
+  // el borrado usa `playlistDelete` que en ajenas equivale a "quitar de la
+  // biblioteca" (outcome === 'removedFromLibrary'). No hay API para guardar
+  // desde el renderer, así que evitamos el estado "vacío → guardar".
+  const nid = normalizePlaylistId(id)
+  const isSavedFromLibrary = !!library?.playlists.some(
+    (p) => normalizePlaylistId(p.id) === nid
+  )
+  const showRemoveFromLibrary = !isEditable && isSavedFromLibrary
+
+  const removeFromLibrary = async (): Promise<void> => {
+    try {
+      await window.api.library.playlistDelete(id)
+      pushToast(t('playlist.removedFromLibrary'))
+      void refreshLibrary()
+    } catch {
+      pushToast(t('playlist.removeFromLibraryFailed'))
+    }
+  }
+
+  // F43 · agente E — arranca shuffle. `playTracks` resetea `shuffle=false`,
+  // por eso primero cargamos la cola y luego alternamos si aún no está activo.
+  const playShuffled = async (): Promise<void> => {
+    if (!pl.tracks.length) return
+    await playTracks(pl.tracks, 0)
+    if (!usePlayer.getState().shuffle) usePlayer.getState().toggleShuffle()
+  }
+
+  // F43 · agente E — abre el menú ⋯ reutilizando `cardMenu('playlist')`, que
+  // ya filtra editar/renombrar/eliminar en función de si la playlist es propia.
+  const openMoreMenu = (e: React.MouseEvent): void => {
+    openContextMenu(
+      e,
+      cardMenu({
+        kind: 'playlist',
+        id,
+        title: pl.title,
+        thumbnailUrl: pl.thumbnailUrl
+      })
+    )
   }
 
   // F22b · Crea una playlist con el subconjunto filtrado por los géneros
@@ -239,11 +313,11 @@ export function PlaylistPage({ id }: { id: string }): React.JSX.Element {
     if (!videoIds.length) return
     const label = Array.from(effectiveGenres).join(' + ')
     try {
-      await window.api.library.playlistCreate(`Me gusta · ${label}`, videoIds)
-      pushToast('Playlist creada')
+      await window.api.library.playlistCreate(t('playlist.genreName', { genres: label }), videoIds)
+      pushToast(t('toast.playlistCreated'))
       void refreshLibrary()
     } catch {
-      pushToast('No se pudo crear la playlist')
+      pushToast(t('toast.playlistCreateFailed'))
     }
   }
 
@@ -276,7 +350,7 @@ export function PlaylistPage({ id }: { id: string }): React.JSX.Element {
           </div>
         )}
         <div className="info">
-          <div className="kind">Playlist</div>
+          <div className="kind">{t('media.playlist')}</div>
           <h1 className="name">{pl.title}</h1>
           <div className="meta">
             {/* El backend ya suele meter «X canciones» dentro de author/durationText;
@@ -292,7 +366,7 @@ export function PlaylistPage({ id }: { id: string }): React.JSX.Element {
                   {showCount && (
                     <>
                       <span>·</span>
-                      <span>{pl.trackCount} canciones</span>
+                      <span>{t('media.songCount', { n: pl.trackCount! })}</span>
                     </>
                   )}
                   {pl.durationText && !hasCountInAuthor && (
@@ -310,12 +384,14 @@ export function PlaylistPage({ id }: { id: string }): React.JSX.Element {
       <div className="detail-body">
         {/* F21: la fila de acciones incluye ahora el buscador anclado a la
             derecha con `margin-left: auto`. F22 mete sus tres botones
-            circulares (+ / ↗ / ✎) justo tras el big-play y el buscador
-            se queda a la derecha por el margin-left auto. */}
+            circulares (+ / compartir / ✎) justo tras el big-play.
+            F43 · agente E — añade shuffle (44px), quitar-de-biblioteca (32px,
+            sólo en ajenas guardadas) y el menú ⋯ (32px). El botón compartir
+            estrena icono SVG en vez del carácter «↗». */}
         <div className="detail-actions">
           <button
             className={`big-play ${isThisPlaying ? 'is-playing' : ''}`}
-            aria-label="Reproducir playlist"
+            aria-label={t('playlist.playAria')}
             onClick={() => {
               if (isThisPlaying) togglePlay()
               else if (pl.tracks.length) void playTracks(pl.tracks)
@@ -323,41 +399,76 @@ export function PlaylistPage({ id }: { id: string }): React.JSX.Element {
           >
             {isThisPlaying ? <PauseIcon size={22} /> : <PlayIcon size={22} />}
           </button>
+          {/* F43 · agente E — Shuffle: reproduce la playlist en orden aleatorio */}
+          {pl.tracks.length > 0 && (
+            <button
+              className="action-shuffle"
+              aria-label={t('common.shufflePlay')}
+              title={t('common.shufflePlay')}
+              onClick={() => void playShuffled()}
+            >
+              <ShuffleIcon size={20} />
+            </button>
+          )}
           {/* F22 · Añadir canciones (solo playlists propias) */}
+          {isEditable && (
+            <button
+              className="action-mini"
+              aria-label={t('playlist.addSongsAria')}
+              title={t('playlist.addSongs')}
+              disabled={!canAdd}
+              onClick={() => setShowPicker(true)}
+            >
+              {/* F44 · SVG en vez de "+" de texto para uniformidad con los demás iconos */}
+              <PlusIcon size={20} />
+            </button>
+          )}
+          {/* F43 · agente E — Quitar de biblioteca (solo playlists ajenas ya guardadas). */}
+          {showRemoveFromLibrary && (
+            <button
+              className="action-mini"
+              aria-label={t('playlist.removeFromLibrary')}
+              title={t('playlist.removeFromLibrary')}
+              onClick={() => void removeFromLibrary()}
+            >
+              <HeartIcon size={20} filled />
+            </button>
+          )}
+          {/* F22 · Compartir enlace de la playlist (F43 con icono SVG). */}
           <button
-            className="action-circle"
-            aria-label="Añadir canciones a la playlist"
-            title="Añadir canciones"
-            disabled={!canAdd}
-            onClick={() => setShowPicker(true)}
-          >
-            +
-          </button>
-          {/* F22 · Compartir enlace de la playlist */}
-          <button
-            className="action-circle"
-            aria-label="Compartir enlace de la playlist"
-            title="Compartir"
+            className="action-mini"
+            aria-label={t('playlist.shareAria')}
+            title={t('common.share')}
             onClick={() => void share()}
           >
-            ↗
+            <ShareIcon size={18} />
           </button>
           {/* F22 · Editar título y carátula (solo playlists propias) */}
           {isEditable && (
             <button
-              className="action-circle"
-              aria-label="Editar título y carátula"
-              title="Editar"
+              className="action-mini"
+              aria-label={t('playlist.editAria')}
+              title={t('common.edit')}
               onClick={() => setShowEdit(true)}
             >
-              ✎
+              {/* F44 · SVG en vez de "✎" de texto para uniformidad con los demás iconos */}
+              <EditIcon size={18} />
             </button>
           )}
+          {/* F43 · agente E — Menú ⋯ con las acciones estándar de playlist. */}
+          <button
+            className="action-mini"
+            aria-label={t('common.moreActions')}
+            title={t('common.moreActions')}
+            onClick={openMoreMenu}
+          >
+            <MoreVerticalIcon size={20} />
+          </button>
           {pl.tracks.length > 0 && (
             <ListSearchInput
               value={filter}
               onChange={setFilter}
-              ariaLabel="Buscar en la playlist"
+              ariaLabel={t('playlist.searchAria')}
             />
           )}
         </div>
@@ -366,10 +477,10 @@ export function PlaylistPage({ id }: { id: string }): React.JSX.Element {
             lógico). Solo se pinta en "Canciones que me gustan" y solo
             cuando ya hay resolución (o un skeleton mientras se carga). */}
         {isLiked && pl.tracks.length > 0 && (
-          <div className="genre-bar" aria-label="Filtro por género">
+          <div className="genre-bar" aria-label={t('playlist.genreFilterAria')}>
             {genresLoading && !genres ? (
               <span className="chip is-loading" aria-busy="true">
-                Cargando géneros…
+                {t('playlist.loadingGenres')}
               </span>
             ) : (
               <>
@@ -378,7 +489,7 @@ export function PlaylistPage({ id }: { id: string }): React.JSX.Element {
                   onClick={() => toggleGenreChip(null)}
                   aria-pressed={effectiveGenres.size === 0}
                 >
-                  Todos
+                  {t('playlist.allGenres')}
                 </button>
                 {availableGenres.map((g) => (
                   <button
@@ -394,9 +505,9 @@ export function PlaylistPage({ id }: { id: string }): React.JSX.Element {
                   <button
                     className="btn btn-secondary genre-create-btn"
                     onClick={() => void createGenrePlaylist()}
-                    title={`Crear una playlist nueva con las ${filteredTracks.length} canciones seleccionadas`}
+                    title={t('playlist.createGenreTitle', { n: filteredTracks.length })}
                   >
-                    Crear playlist con {Array.from(effectiveGenres).join(' + ')}
+                    {t('playlist.createGenreBtn', { genres: Array.from(effectiveGenres).join(' + ') })}
                   </button>
                 )}
               </>
@@ -409,9 +520,9 @@ export function PlaylistPage({ id }: { id: string }): React.JSX.Element {
           onPlayIndex={(i) => void playTracks(filteredTracks, i)}
           onContextMenu={(e, t) => openContextMenu(e, trackMenu(t, { playlistId: id }))}
         />
-        {!pl.tracks.length && <div className="empty-state">Esta playlist está vacía</div>}
+        {!pl.tracks.length && <div className="empty-state">{t('playlist.empty')}</div>}
         {debounced && pl.tracks.length > 0 && filteredTracks.length === 0 && (
-          <div className="empty-state">Sin resultados para «{filter}»</div>
+          <div className="empty-state">{t('search.empty', { q: filter })}</div>
         )}
         {isLiked &&
           !debounced &&
@@ -419,7 +530,7 @@ export function PlaylistPage({ id }: { id: string }): React.JSX.Element {
           pl.tracks.length > 0 &&
           filteredTracks.length === 0 && (
             <div className="empty-state">
-              Ninguna canción encaja en «{Array.from(effectiveGenres).join(' + ')}»
+              {t('playlist.noGenreMatch', { genres: Array.from(effectiveGenres).join(' + ') })}
             </div>
           )}
       </div>
@@ -431,7 +542,7 @@ export function PlaylistPage({ id }: { id: string }): React.JSX.Element {
           onClose={(added) => {
             setShowPicker(false)
             if (added > 0) {
-              pushToast(added === 1 ? '1 canción añadida' : `${added} canciones añadidas`)
+              pushToast(added === 1 ? t('playlist.addedOne') : t('playlist.addedMany', { n: added }))
               void reload()
               void refreshLibrary()
             }
@@ -447,7 +558,7 @@ export function PlaylistPage({ id }: { id: string }): React.JSX.Element {
           onClose={(saved) => {
             setShowEdit(false)
             if (saved) {
-              pushToast('Playlist actualizada')
+              pushToast(t('toast.playlistUpdated'))
               void reload()
               void refreshLibrary()
             }

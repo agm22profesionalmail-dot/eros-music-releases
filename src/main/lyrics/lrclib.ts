@@ -1,12 +1,12 @@
 // Cliente de LRCLIB (https://lrclib.net/api) — la misma fuente principal de
-// letras que usa Metrolist en Android. Dos endpoints:
+// letras que usa la app Android original. Dos endpoints:
 //   GET /api/get     → coincidencia exacta (LRCLIB aplica ±2 s si se pasa duration)
 //   GET /api/search  → búsqueda como respaldo; elegimos el resultado con la
 //                      duración más próxima (tolerancia ±3 s si se conoce)
 // Un 404 significa "no encontrada" y se traduce a null.
 
 const BASE = 'https://lrclib.net/api'
-const USER_AGENT = 'MetrolistPC/0.1 (https://github.com/metrolistgroup/metrolist)'
+const USER_AGENT = 'EROSMusic/1.2.0 (cliente de escritorio personal)'
 const TIMEOUT_MS = 10_000
 /** Tolerancia al comparar duraciones en los resultados de búsqueda */
 const DURATION_TOLERANCE_SEC = 3

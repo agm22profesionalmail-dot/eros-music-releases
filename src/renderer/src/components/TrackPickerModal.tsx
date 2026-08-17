@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { TrackSummary } from '@shared/types'
 import { ListSearchInput } from './ListSearchInput'
 import { CloseIcon, MusicNoteIcon } from './Icons'
+import { useT } from '../app/i18n'
 
 /**
  * F22 · Modal para elegir canciones y añadirlas a una playlist. La selección
@@ -21,6 +22,7 @@ interface Props {
 }
 
 export function TrackPickerModal({ playlistId, playlistTitle, onClose }: Props): React.JSX.Element {
+  const t = useT()
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<TrackSummary[]>([])
   const [loading, setLoading] = useState(false)
@@ -101,15 +103,15 @@ export function TrackPickerModal({ playlistId, playlistTitle, onClose }: Props):
       <div
         className="picker-card"
         role="dialog"
-        aria-label={`Añadir canciones a ${playlistTitle}`}
+        aria-label={t('picker.aria', { title: playlistTitle })}
         onClick={(e) => e.stopPropagation()}
       >
         <header className="picker-head">
           <div className="picker-title">
-            <div className="eyebrow">Añadir a</div>
+            <div className="eyebrow">{t('picker.addTo')}</div>
             <div className="name">{playlistTitle}</div>
           </div>
-          <button className="picker-x" onClick={() => onClose(0)} aria-label="Cerrar">
+          <button className="picker-x" onClick={() => onClose(0)} aria-label={t('btn.close')}>
             <CloseIcon size={16} />
           </button>
         </header>
@@ -118,8 +120,8 @@ export function TrackPickerModal({ playlistId, playlistTitle, onClose }: Props):
           <ListSearchInput
             value={query}
             onChange={setQuery}
-            placeholder="Buscar canciones…"
-            ariaLabel="Buscar canciones a añadir"
+            placeholder={t('picker.searchPlaceholder')}
+            ariaLabel={t('picker.searchAria')}
           />
         </div>
 
@@ -127,15 +129,15 @@ export function TrackPickerModal({ playlistId, playlistTitle, onClose }: Props):
           <div className="picker-chip" role="status">
             <span>
               {selected.size === 1
-                ? '1 canción seleccionada'
-                : `${selected.size} canciones seleccionadas`}
+                ? t('picker.selectedOne')
+                : t('picker.selectedMany', { n: selected.size })}
             </span>
             <button
               type="button"
               className="picker-chip-x"
               onClick={clearSelection}
-              aria-label="Vaciar selección"
-              title="Vaciar selección"
+              aria-label={t('picker.clearSelection')}
+              title={t('picker.clearSelection')}
             >
               <CloseIcon size={12} />
             </button>
@@ -149,11 +151,11 @@ export function TrackPickerModal({ playlistId, playlistTitle, onClose }: Props):
             </div>
           )}
           {!loading && !query.trim() && selectedList.length === 0 && (
-            <div className="picker-empty">Escribe algo para buscar canciones</div>
+            <div className="picker-empty">{t('picker.typeToSearch')}</div>
           )}
           {!loading && !query.trim() && selectedList.length > 0 && (
             <>
-              <div className="picker-section">Ya seleccionadas</div>
+              <div className="picker-section">{t('picker.alreadySelected')}</div>
               {selectedList.map((t) => (
                 <PickerRow key={t.videoId} track={t} selected onToggle={() => toggle(t)} />
               ))}
@@ -163,9 +165,9 @@ export function TrackPickerModal({ playlistId, playlistTitle, onClose }: Props):
             query.trim() &&
             results.length === 0 &&
             !error && (
-              <div className="picker-empty">Sin resultados para «{query.trim()}»</div>
+              <div className="picker-empty">{t('search.empty', { q: query.trim() })}</div>
             )}
-          {!loading && error && <div className="picker-empty">Fallo al buscar: {error}</div>}
+          {!loading && error && <div className="picker-empty">{t('picker.searchError', { msg: error })}</div>}
           {!loading &&
             query.trim() &&
             results.map((t) => (
@@ -180,7 +182,7 @@ export function TrackPickerModal({ playlistId, playlistTitle, onClose }: Props):
 
         <footer className="picker-foot">
           <button className="btn btn-secondary" onClick={() => onClose(0)}>
-            Cancelar
+            {t('btn.cancel')}
           </button>
           <button
             className="btn btn-primary"
@@ -188,12 +190,12 @@ export function TrackPickerModal({ playlistId, playlistTitle, onClose }: Props):
             onClick={() => void confirm()}
           >
             {saving
-              ? 'Añadiendo…'
+              ? t('picker.adding')
               : selected.size === 0
-                ? 'Añadir canciones'
+                ? t('picker.addSongs')
                 : selected.size === 1
-                  ? 'Añadir 1 canción'
-                  : `Añadir ${selected.size} canciones`}
+                  ? t('picker.addOne')
+                  : t('picker.addMany', { n: selected.size })}
           </button>
         </footer>
 

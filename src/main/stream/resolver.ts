@@ -34,8 +34,9 @@ export interface ResolvedStream {
 }
 
 // F29 · La cadena real se lee de `AppSettings.streamingSources` en cada
-// resolución (respetando orden y `enabled`). Los alias del ecosistema
-// Metrolist Android se normalizan al cliente que sí conoce youtubei.js.
+// resolución (respetando orden y `enabled`). Los alias heredados del
+// ecosistema Android original se normalizan al cliente que sí conoce
+// youtubei.js.
 const CLIENT_ALIAS: Record<string, string> = {
   WEB_REMIX: 'YTMUSIC',
   ANDROID_MUSIC: 'ANDROID',
@@ -59,6 +60,31 @@ const CLIENT_UA: Record<string, string | undefined> = {
   TV_EMBEDDED: 'Mozilla/5.0 (ChromiumStylePlatform) Cobalt/Version'
 }
 
+/**
+ * F42 · Ninguna operación de red/proceso de esta cadena tenía timeout — si
+ * `yt.getInfo()` o `yt-dlp` se quedaban colgados (red rara, proxy, DNS que
+ * no responde), la promesa nunca se resolvía NI RECHAZABA y la canción se
+ * quedaba cargando para siempre (isBuffering=true sin salida). `Promise.race`
+ * no cancela la operación original (puede seguir viva de fondo, inofensivo),
+ * pero SÍ deja que el código de arriba se rinda y pruebe el siguiente
+ * cliente de la cadena en vez de quedarse esperando indefinidamente.
+ */
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error(`timeout de ${ms}ms en ${label}`)), ms)
+    promise.then(
+      (v) => {
+        clearTimeout(t)
+        resolve(v)
+      },
+      (e) => {
+        clearTimeout(t)
+        reject(e)
+      }
+    )
+  })
+}
+
 const cache = new Map<string, ResolvedStream>()
 
 export function invalidateStream(videoId: string): void {
@@ -73,7 +99,11 @@ export async function resolveStream(videoId: string): Promise<ResolvedStream> {
   const hit = cache.get(videoId)
   if (hit && hit.expiresAt > Date.now() + 60_000) return hit
 
-  const yt = await sessionManager.ensureStreamingReady()
+  const yt = await withTimeout(
+    sessionManager.ensureStreamingReady(),
+    20000,
+    'ensureStreamingReady'
+  )
 
   // F29 · leer la cadena configurada; si por algún motivo queda vacía tras
   // filtrar (todo deshabilitado), volvemos al comportamiento histórico
@@ -90,7 +120,11 @@ export async function resolveStream(videoId: string): Promise<ResolvedStream> {
       // youtubei.js tipa `client` como InnerTubeClient; aceptamos strings
       // libres para poder probar aliases o clientes experimentales que el
       // usuario haya añadido. Si el motor los rechaza, capturamos y seguimos.
-      const info = await yt.getInfo(videoId, { client: client as never })
+      const info = await withTimeout(
+        yt.getInfo(videoId, { client: client as never }),
+        9000,
+        `getInfo ${source}`
+      )
       const status = info.playability_status?.status
       if (status && status !== 'OK') {
         lastError = new Error(`playability ${status} (${client})`)
@@ -124,7 +158,7 @@ export async function resolveStream(videoId: string): Promise<ResolvedStream> {
         continue
       }
       // decipher aplica sig/nsig con el player y añade pot si la sesión lo tiene
-      const url = await format.decipher(yt.session.player)
+      const url = await withTimeout(format.decipher(yt.session.player), 6000, `decipher ${source}`)
       if (!url) {
         lastError = new Error(`decipher vacío (${source})`)
         continue
@@ -186,6 +220,11 @@ function ytDlpBin(): string {
   return existsSync(packaged) ? packaged : 'yt-dlp'
 }
 
+/** F42 · Si yt-dlp se cuelga (red, proxy) sin este límite no había nada que
+ *  lo interrumpiera: ni error ni salida, la canción se quedaba cargando para
+ *  siempre. A los 25 s lo matamos y rechazamos con un error claro. */
+const YTDLP_TIMEOUT_MS = 25_000
+
 function resolveWithYtDlp(videoId: string): Promise<ResolvedStream> {
   return new Promise((resolve, reject) => {
     const proc = spawn(
@@ -199,12 +238,27 @@ function resolveWithYtDlp(videoId: string): Promise<ResolvedStream> {
       ],
       { windowsHide: true }
     )
+    let settled = false
+    const killTimer = setTimeout(() => {
+      if (settled) return
+      settled = true
+      proc.kill()
+      reject(new Error(`yt-dlp no respondió en ${YTDLP_TIMEOUT_MS / 1000}s (colgado o red caída)`))
+    }, YTDLP_TIMEOUT_MS)
     let out = ''
     let err = ''
     proc.stdout.on('data', (d) => (out += d))
     proc.stderr.on('data', (d) => (err += d))
-    proc.on('error', reject)
+    proc.on('error', (e) => {
+      if (settled) return
+      settled = true
+      clearTimeout(killTimer)
+      reject(e)
+    })
     proc.on('close', (code) => {
+      if (settled) return
+      settled = true
+      clearTimeout(killTimer)
       if (code !== 0) return reject(new Error(`yt-dlp salió con ${code}: ${err.slice(0, 400)}`))
       try {
         const j = JSON.parse(out)

@@ -83,12 +83,20 @@ async function download(entry: SpoolEntry, resolved: ResolvedStream): Promise<vo
     while (!entry.totalBytes || entry.downloadedBytes < entry.totalBytes) {
       const headers: Record<string, string> = {}
       if (resolved.userAgent) headers['User-Agent'] = resolved.userAgent
-      // Ventana adaptativa: primera petición pequeña (1 MiB) y a partir de ahí
-      // el doble de lo ya servido — imita la rampa de un reproductor real.
+      // F48 · Descarga COMPLETA desde la primera petición: la ventana
+      // adaptativa antigua (1 MB → 3 → 7 → …) hacía que el final de la
+      // canción no estuviese listo cuando el crossfade lo necesitaba, y el
+      // `<audio>` se atascaba en `waiting` durante los últimos segundos →
+      // resultado audible: salto seco en vez de fundido. Pidiendo el rango
+      // total desde el primer fetch, googlevideo entrega la canción entera
+      // en una sola conexión (más eficiente y siempre disponible al final).
+      // Primera iteración: pide el máximo posible (googlevideo cortará a la
+      // duración real y el proxy usará ese content-length como total).
+      // Iteraciones siguientes (solo si la red cortó): retoma desde 0 con la
+      // misma técnica — nunca hay offset > 0 (PoToken no lo acepta).
       const MB = 1024 * 1024
-      const target = Math.max(MB, entry.downloadedBytes * 2 + MB)
       const cap = entry.totalBytes > 0 ? entry.totalBytes + 999_999 : 256 * MB
-      const end = Math.min(target, cap)
+      const end = cap
       headers.Range = `bytes=0-${end}`
 
       const res = await net.fetch(resolved.url, { headers })

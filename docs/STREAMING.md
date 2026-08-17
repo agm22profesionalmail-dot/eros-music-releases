@@ -18,7 +18,7 @@ spool.getSpool(videoId)                 ← Una única petición secuencial
   │                                       Range: bytes=0-<ventana>. La ventana crece
   │                                       proporcional a lo ya servido para simular
   │                                       un reproductor real.
-  ▼   Fichero en %APPDATA%\Metrolist PC\spool\<videoId>.audio
+  ▼   Fichero en %APPDATA%\ERO'S Music\spool\<videoId>.audio
 stream/server.ts                        ← Proxy HTTP en 127.0.0.1:<puerto> con token
   │                                       de sesión. Sirve Range al <audio> del renderer
   │                                       leyendo el spool según crece.
@@ -92,8 +92,8 @@ Google rota tokens de cookie cada pocas horas. Si guardas el header `Cookie` y l
 
 Diagnóstico por orden:
 
-1. **Consola del main**: ¿aparece `[resolver] YTMUSIC ok: c=WEB_REMIX pot=true n=true sig=true`? Si no, la resolución falla — mira el error y prueba con `METROLIST_TEST_STREAM=<videoId>`.
-2. **PoToken**: `METROLIST_TEST_POTOKEN=1`. Si falla, BgUtils probablemente necesita actualización (`npm i bgutils-js@latest`).
+1. **Consola del main**: ¿aparece `[resolver] YTMUSIC ok: c=WEB_REMIX pot=true n=true sig=true`? Si no, la resolución falla — mira el error y prueba con `EROS_TEST_STREAM=<videoId>`.
+2. **PoToken**: `EROS_TEST_POTOKEN=1`. Si falla, BgUtils probablemente necesita actualización (`npm i bgutils-js@latest`).
 3. **Descifrado**: si `[resolver]` dice `Type mismatch, got ItemSection expected...` — es un aviso benigno del parser. Si dice «To decipher URLs...», el evaluador se ha desconectado.
 4. **Ventana de bytes**: si el spool descarga los primeros N bytes y muere en 403 a los ~2 MB, `visitor_data` está desincronizado con el PoToken.
 5. **Fallback yt-dlp**: si todo lo demás muere, `resolver.ts` cae a `yt-dlp -f bestaudio -j`. Si eso también rompe: `yt-dlp -U`.

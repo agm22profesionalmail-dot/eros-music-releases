@@ -4,6 +4,9 @@ import { usePlayer } from '../player/store'
 import { engine } from '../player/engine'
 import { computeLineFill } from '../app/karaoke'
 import { useSettings } from '../app/settingsStore'
+import { useT } from '../app/i18n'
+import { MicIcon } from '../components/Icons'
+import { CrossfadeBlurBg, useCrossfadeFrom } from '../components/CrossfadeVisual'
 
 // ---------- F30 · Romanización CJK (Hepburn simplificado + Revised Romanization) ----------
 // Se replica aquí en el renderer para no depender de IPC en cada línea. La versión
@@ -108,6 +111,7 @@ function romanizeRenderer(text: string): string {
  */
 
 export function LyricsPage(): React.JSX.Element {
+  const t = useT()
   const current = usePlayer((s) => s.current())
   const currentTime = usePlayer((s) => s.currentTime)
   const seek = usePlayer((s) => s.seek)
@@ -115,7 +119,13 @@ export function LyricsPage(): React.JSX.Element {
   const updateSettings = useSettings((s) => s.update)
   const romanizeOn = settings.romanizeLyrics
   const [lyrics, setLyrics] = useState<LyricsData | null | 'loading'>('loading')
-  const [offsetMs, setOffsetMs] = useState(0)
+  // F71 · Offset local por canción + offset global persistido en settings
+  const globalOffset = settings.lyricsOffsetMs ?? 0
+  const [localOffset, setLocalOffset] = useState(0)
+  const offsetMs = globalOffset + localOffset
+  const setOffsetMs = (fn: (v: number) => number) => setLocalOffset(fn)
+  // F51 · Crossfade visual del fondo (misma duración que el fade de audio)
+  const { from: xfFrom, durMs: xfDurMs } = useCrossfadeFrom(current)
   const activeRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
@@ -125,7 +135,7 @@ export function LyricsPage(): React.JSX.Element {
     }
     let cancelled = false
     setLyrics('loading')
-    setOffsetMs(0)
+    setLocalOffset(0)
     void window.api.music
       .lyrics({
         videoId: current.videoId,
@@ -204,30 +214,20 @@ export function LyricsPage(): React.JSX.Element {
   }, [])
 
   if (!current) {
-    return <div className="empty-state">Reproduce algo para ver su letra</div>
+    return <div className="empty-state">{t('lyrics.playSomething')}</div>
   }
 
   return (
     <div style={{ position: 'relative', minHeight: '100%' }}>
-      {/* Carátula gigante difuminada como fondo (Apple Music "concert mode") */}
-      {current.thumbnailUrl && (
-        <div
-          key={current.videoId}
-          className="lyrics-bg"
-          style={{
-            position: 'absolute',
-            inset: 0,
-            backgroundImage: `url(${current.thumbnailUrl.replace(/=w\d+-h\d+/, '=w1080-h1080')})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            filter: 'blur(72px) saturate(1.35) brightness(0.55)',
-            transform: 'scale(1.25)',
-            opacity: 0,
-            animation: 'lyrics-bg-in 1.2s var(--ease-out) forwards',
-            zIndex: 0
-          }}
-        />
-      )}
+      {/* Carátula gigante difuminada como fondo (Apple Music "concert mode").
+          F51 · Doble capa durante el crossfade, con la duración del audio. */}
+      <CrossfadeBlurBg
+        current={current}
+        from={xfFrom}
+        durMs={xfDurMs}
+        filter="blur(72px) saturate(1.35) brightness(0.55)"
+        scale={1.25}
+      />
       <div
         className="page"
         style={{
@@ -252,7 +252,35 @@ export function LyricsPage(): React.JSX.Element {
       )}
 
       {lyrics !== 'loading' && !lyrics && (
-        <div className="empty-state">No se encontró letra para esta canción</div>
+        /* F43 · agente E — placeholder tipo hero (no centrado exacto): icono
+           grande, título y sub, más un botón "Buscar de nuevo" que fuerza
+           re-consultar los proveedores para el videoId actual. */
+        <div className="lyrics-empty" role="status">
+          <MicIcon size={80} className="lyrics-empty-icon" />
+          <div className="lyrics-empty-title">{t('lyrics.none')}</div>
+          <div className="lyrics-empty-sub">
+            {t('lyrics.noneSub')}
+          </div>
+          <button
+            className="btn btn-secondary"
+            onClick={() => {
+              if (!current) return
+              setLyrics('loading')
+              void window.api.music
+                .lyrics({
+                  videoId: current.videoId,
+                  title: current.title,
+                  artists: current.artists.map((a) => a.name),
+                  album: current.album?.name,
+                  durationSec: current.durationSec
+                })
+                .then((data) => setLyrics(data))
+                .catch(() => setLyrics(null))
+            }}
+          >
+            {t('lyrics.searchAgain')}
+          </button>
+        </div>
       )}
 
       {synced && (
@@ -267,28 +295,34 @@ export function LyricsPage(): React.JSX.Element {
               padding: '4px 0 16px'
             }}
           >
-            <span>Fuente: {lyrics !== 'loading' && lyrics ? lyrics.source : ''}</span>
-            <span style={{ marginLeft: 'auto' }}>Desfase: {(offsetMs / 1000).toFixed(1)} s</span>
+            <span>{t('lyrics.source', { src: lyrics !== 'loading' && lyrics ? lyrics.source : '' })}</span>
+            <span style={{ marginLeft: 'auto' }}>{t('lyrics.offset', { s: (offsetMs / 1000).toFixed(1) })}</span>
             <button
               className={`chip ${romanizeOn ? 'active' : ''}`}
-              title="Muestra romanización (ローマ字) bajo las letras japonesas/coreanas"
+              title={t('lyrics.romanizeTitle')}
               onClick={() => void updateSettings({ romanizeLyrics: !romanizeOn })}
             >
               ローマ字
             </button>
-            <button className="chip" onClick={() => setOffsetMs((v) => v - 500)}>
-              −0,5 s
+            <button className="chip" onClick={() => setOffsetMs((v) => v - 500)} title="-500 ms">
+              {t('lyrics.minusHalf')}
             </button>
-            <button className="chip" onClick={() => setOffsetMs((v) => v + 500)}>
-              +0,5 s
+            <button className="chip" onClick={() => setOffsetMs((v) => v - 100)} title="-100 ms">
+              −0.1
             </button>
-            {offsetMs !== 0 && (
-              <button className="chip" onClick={() => setOffsetMs(0)}>
-                Reset
+            <button className="chip" onClick={() => setOffsetMs((v) => v + 100)} title="+100 ms">
+              +0.1
+            </button>
+            <button className="chip" onClick={() => setOffsetMs((v) => v + 500)} title="+500 ms">
+              {t('lyrics.plusHalf')}
+            </button>
+            {localOffset !== 0 && (
+              <button className="chip" onClick={() => setLocalOffset(0)}>
+                {t('lyrics.offsetReset')}
               </button>
             )}
           </div>
-          <div style={{ padding: '2vh 0 40vh' }}>
+          <div className="lyrics-synced" style={{ padding: '2vh 0 40vh' }}>
             {synced.map((line, i) => (
               <button
                 key={i}
@@ -334,6 +368,7 @@ export function LyricsPage(): React.JSX.Element {
 
       {lyrics !== 'loading' && lyrics && !synced && lyrics.plain && (
         <div
+          className="lyrics-plain-text"
           style={{
             whiteSpace: 'pre-wrap',
             fontSize: 18,
@@ -368,7 +403,7 @@ export function LyricsPage(): React.JSX.Element {
             </div>
           )}
           <p style={{ fontSize: 12, color: 'var(--text-subdued)', paddingTop: 24 }}>
-            Fuente: {lyrics.source} (sin sincronizar)
+            {t('lyrics.sourceUnsynced', { src: lyrics.source })}
           </p>
         </div>
       )}

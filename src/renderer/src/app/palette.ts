@@ -19,6 +19,9 @@ export interface ArtPalette {
   /** Acento listo para usar (hex) */
   accent: string
   accentHue: number
+  /** F50 · Componentes del acento para poder interpolarlo en crossfades */
+  accentSat: number
+  accentLum: number
 }
 
 const cache = new Map<string, ArtPalette>()
@@ -118,7 +121,9 @@ export async function extractPalette(url: string): Promise<ArtPalette | null> {
       midHue: binHue(midBin),
       midSat: binSat(midBin),
       accent: hslCss(accentHue, accentSat, accentLum),
-      accentHue
+      accentHue,
+      accentSat,
+      accentLum
     }
     cache.set(url, palette)
     return palette

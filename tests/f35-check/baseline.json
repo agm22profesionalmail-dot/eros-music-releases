@@ -1,0 +1,116 @@
+{
+  "settings": {
+    "downloadsDir": "F:\\MetrolistPC\\Music",
+    "theme": "dark",
+    "accent": "#ff8800",
+    "accentMode": "fixed",
+    "bgMode": "ambient",
+    "ambientTint": 60,
+    "crossfadeSec": 0,
+    "autoplay": true,
+    "eqGains": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "preampDb": 0,
+    "playbackRate": 1,
+    "preservePitch": true,
+    "closeToTray": false,
+    "discordRpc": false,
+    "miniCorner": "br",
+    "miniKaraoke": false,
+    "miniScale": 1,
+    "audioQuality": "auto",
+    "disableCrossfadeOnGapless": true,
+    "normalize": false,
+    "normalizeLevel": "normal",
+    "progressiveSeek": false,
+    "avoidDuplicatesInQueue": true,
+    "skipOnError": true,
+    "rememberShuffleRepeat": true,
+    "persistentShuffle": false,
+    "shuffleFirstBeforeSimilar": true,
+    "disableAutoloadOnRepeatAll": true,
+    "autoDownloadOnLike": false,
+    "enableSimilarContent": true,
+    "preloadMoreAt80Percent": false,
+    "historyMaxEntries": 500,
+    "hideExplicit": false,
+    "hideVideos": false,
+    "hideShorts": true,
+    "contentLanguage": "auto",
+    "contentCountry": "auto",
+    "showArtistDescription": true,
+    "showArtistSubscribers": true,
+    "showArtistMonthlyListeners": true,
+    "pauseOnAudioDeviceChange": false,
+    "streamingSources": [
+      {
+        "id": "YTMUSIC",
+        "enabled": true
+      },
+      {
+        "id": "IOS",
+        "enabled": true
+      },
+      {
+        "id": "ANDROID",
+        "enabled": true
+      },
+      {
+        "id": "TV_EMBEDDED",
+        "enabled": true
+      }
+    ],
+    "useYtDlpFallback": true,
+    "lyricsProviders": [
+      {
+        "id": "LRCLIB",
+        "enabled": true
+      },
+      {
+        "id": "KUGOU",
+        "enabled": true
+      },
+      {
+        "id": "YTMUSIC",
+        "enabled": true
+      }
+    ],
+    "romanizeLyrics": false,
+    "wrappedTopN": 50,
+    "showWrappedRecapCard": true,
+    "showTopMonthly": true,
+    "showTopWeekly": true,
+    "homeShuffleShelves": false,
+    "homeShelvesOrder": [],
+    "homeHiddenShelves": [],
+    "homeQuickPicks": [
+      "recientes",
+      "novedades",
+      "mixes",
+      "radios"
+    ],
+    "proxyMode": "off",
+    "proxyUrl": "",
+    "uiLanguage": "auto",
+    "miniX": 750,
+    "miniY": 4
+  },
+  "profile": {
+    "displayName": "Zero",
+    "photoDataUrl": "",
+    "bio": "",
+    "favoriteArtists": [],
+    "publicPlaylistIds": [],
+    "enabled": false
+  }
+}

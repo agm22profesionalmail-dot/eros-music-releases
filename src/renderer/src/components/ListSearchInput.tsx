@@ -1,4 +1,5 @@
 import { SearchIcon } from './Icons'
+import { useT } from '../app/i18n'
 
 interface ListSearchInputProps {
   /** Valor del input controlado por el padre. */
@@ -24,10 +25,13 @@ interface ListSearchInputProps {
 export function ListSearchInput({
   value,
   onChange,
-  placeholder = 'Buscar en la lista…',
-  ariaLabel = 'Buscar en la lista',
+  placeholder,
+  ariaLabel,
   className
 }: ListSearchInputProps): React.JSX.Element {
+  const t = useT()
+  const ph = placeholder ?? t('common.searchList')
+  const aria = ariaLabel ?? t('common.searchListAria')
   return (
     <div className={`list-search${className ? ' ' + className : ''}`}>
       <span className="icon" aria-hidden="true">
@@ -37,8 +41,8 @@ export function ListSearchInput({
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        aria-label={ariaLabel}
+        placeholder={ph}
+        aria-label={aria}
         spellCheck={false}
         autoComplete="off"
       />

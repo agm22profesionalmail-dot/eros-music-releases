@@ -46,6 +46,10 @@ export function initMediaIntegration(): () => void {
     else if (cmd.startsWith('seek:')) {
       const t = Number(cmd.slice(5))
       if (Number.isFinite(t)) p.seek(t)
+    } else if (cmd.startsWith('volume:')) {
+      // F56 · Volumen desde el mini-player (slider o mute rápido)
+      const v = Number(cmd.slice(7))
+      if (Number.isFinite(v)) p.setVolume(Math.max(0, Math.min(1, v)))
     }
   })
 
@@ -55,11 +59,26 @@ export function initMediaIntegration(): () => void {
   const publish = (): void => {
     const state = usePlayer.getState()
     const current = state.current()
-    const key = `${current?.videoId ?? ''}|${state.isPlaying}`
+    // F56 · La key incluye volumen y el token del crossfade: esos cambios
+    // deben llegar al mini AL INSTANTE (no valen hasta 1 s de retraso).
+    const key = `${current?.videoId ?? ''}|${state.isPlaying}|${state.volume.toFixed(2)}|${state.crossfading?.token ?? 0}`
     const now = Date.now()
     if (key === lastKey && now - lastPublish < 1000) return
     lastKey = key
     lastPublish = now
+    // F56 · Info de crossfade para que el mini funda carátula/texto en
+    // sincronía con el audio (mismos datos que usa la ventana principal).
+    const cx = state.crossfading
+    const crossfading =
+      cx && current && cx.fromTrack.videoId !== current.videoId
+        ? {
+            fromTitle: cx.fromTrack.title,
+            fromArtists: cx.fromTrack.artists.map((a) => a.name).join(', '),
+            fromThumbnailUrl: cx.fromTrack.thumbnailUrl,
+            durationMs: cx.durationMs,
+            token: cx.token
+          }
+        : null
     window.api.mini.publishState(
       current
         ? {
@@ -70,7 +89,9 @@ export function initMediaIntegration(): () => void {
             thumbnailUrl: current.thumbnailUrl,
             isPlaying: state.isPlaying,
             positionSec: state.currentTime,
-            durationSec: state.duration || current.durationSec || 0
+            durationSec: state.duration || current.durationSec || 0,
+            volume: state.volume,
+            crossfading
           }
         : null
     )

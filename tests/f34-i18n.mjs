@@ -28,7 +28,7 @@ console.log(`[F34] arrancando · ${new Date().toISOString()}`)
 const app = await _electron.launch({
   args: ['.'],
   cwd: root,
-  env: { ...process.env, METROLIST_E2E: '1' }
+  env: { ...process.env, EROS_E2E: '1' }
 })
 
 const win = await app.firstWindow()

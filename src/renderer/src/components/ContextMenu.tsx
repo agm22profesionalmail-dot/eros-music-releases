@@ -9,6 +9,8 @@ export interface MenuItem {
   submenu?: MenuItem[]
   separator?: boolean
   disabled?: boolean
+  /* F43 · Acción destructiva: se pinta en rojo para diferenciarla del resto. */
+  danger?: boolean
 }
 
 interface MenuState {
@@ -41,7 +43,8 @@ function MenuList({ items, onDone }: { items: MenuItem[]; onDone: () => void }):
     <>
       {items.map((item, i) =>
         item.separator ? (
-          <div key={i} className="sep" />
+          /* F43 · `<hr>` semántico + clase única (no compartida) para el estilo. */
+          <hr key={i} className="context-menu-sep" />
         ) : (
           <div
             key={i}
@@ -49,6 +52,9 @@ function MenuList({ items, onDone }: { items: MenuItem[]; onDone: () => void }):
             onMouseEnter={() => setSubOpen(item.submenu ? i : null)}
           >
             <button
+              /* F43 · `context-menu-item` para poder colgar variantes (danger) sin
+                 depender del descendiente `button` genérico. */
+              className={`context-menu-item${item.danger ? ' danger' : ''}`}
               disabled={item.disabled}
               onClick={() => {
                 if (item.submenu) return

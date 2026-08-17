@@ -7,11 +7,16 @@
  *   MediaElementSource -> gain (xfade) ─┐
  *   MediaElementSource -> gain (xfade) ─┴-> preamp -> EQ x10 -> volumen -> destino
  *
- * El EQ son 10 BiquadFilter peaking (31 Hz … 16 kHz, como Metrolist).
+ * El EQ son 10 BiquadFilter peaking (31 Hz … 16 kHz, como en la app Android original).
  * Tempo/pitch: playbackRate + preservesPitch del propio elemento.
  */
 
-export const EQ_BANDS = [31, 62, 125, 250, 500, 1000, 2000, 4000, 8000, 16000] as const
+// F70 · Frecuencias centrales del ecualizador por modo
+export const EQ_BANDS_10 = [31, 62, 125, 250, 500, 1000, 2000, 4000, 8000, 16000] as const
+export const EQ_BANDS_15 = [25, 40, 63, 100, 160, 250, 400, 630, 1000, 1600, 2500, 4000, 6300, 10000, 16000] as const
+export const EQ_BANDS_31 = [20, 25, 31, 40, 50, 63, 80, 100, 125, 160, 200, 250, 315, 400, 500, 630, 800, 1000, 1250, 1600, 2000, 2500, 3150, 4000, 5000, 6300, 8000, 10000, 12500, 16000, 20000] as const
+/** Alias retrocompatible (10 bandas originales). */
+export const EQ_BANDS = EQ_BANDS_10
 
 export interface EngineEvents {
   timeupdate: (currentTime: number, duration: number) => void
@@ -151,11 +156,30 @@ export class PlayerEngine {
     return () => this.#listeners.get(key)?.delete(fn)
   }
 
-  /** Carga y reproduce una URL (del proxy local). */
-  async load(url: string, opts?: { crossfadeFrom?: boolean }): Promise<void> {
+  /**
+   * Carga y reproduce una URL (del proxy local).
+   *
+   * F45 · Crossfade robusto:
+   * - Si el deck destino ya tiene precargada esta URL (`preloadNext`), se
+   *   arranca inmediatamente. Si no, esperamos hasta `canplay` con timeout
+   *   corto (1.5 s) antes de disparar el ramp de fade — así evitamos el
+   *   caso "fade a silencio" cuando el `play()` del destino tarda y la
+   *   canción origen ya está bajando su volumen.
+   * - Si `play()` del destino falla o se agota el timeout, NO ejecutamos el
+   *   fade y dejamos la canción actual intacta (el store la limpiará en
+   *   'error' o simplemente seguirá sonando hasta 'ended').
+   * - `from.fade.gain` se resetea a 1 antes del ramp: si un fade anterior
+   *   había dejado el gain en 0.4 (interrupción), el nuevo ramp partiría de
+   *   ahí y sería inaudible.
+   */
+  async load(url: string, opts?: { crossfadeFrom?: boolean; durationSec?: number }): Promise<void> {
     await this.#ctx.resume().catch(() => undefined)
 
-    const doCrossfade = Boolean(opts?.crossfadeFrom) && this.#crossfadeSec > 0
+    // F53 · `durationSec` permite un fundido corto en saltos MANUALES sin
+    // tocar el ajuste global: si no viene, se usa crossfadeSec y el flujo
+    // natural queda EXACTAMENTE igual que antes (blindado por la suite E2E).
+    const xfadeSec = opts?.durationSec ?? this.#crossfadeSec
+    const doCrossfade = Boolean(opts?.crossfadeFrom) && xfadeSec > 0
     if (doCrossfade) {
       const from = this.#activeDeck()
       const to = this.#inactiveDeck()
@@ -169,17 +193,51 @@ export class PlayerEngine {
         this.#fadeCleanup.delete(to)
       }
 
-      to.el.src = url
+      // Si el deck destino ya tenía la URL precargada (via `preloadNext`)
+      // NO reasignes src — así conservamos el buffer ya descargado y el
+      // play() arranca al instante. Si es otra URL, asignamos ahora.
+      // F47b · currentTime=0 SOLO si el src ya venía asignado (deck
+      // precargado que ya sonó antes). Justo tras un `src = url` nuevo no
+      // hay metadata todavía y setear currentTime deja el elemento en
+      // estado indefinido y el play() nunca resuelve → "no carga".
+      if (to.el.src !== url) {
+        to.el.src = url
+        to.el.load()
+      } else {
+        to.el.currentTime = 0
+      }
       to.el.playbackRate = this.#rate
       ;(to.el as HTMLAudioElement & { preservesPitch: boolean }).preservesPitch =
         this.#preserves
-      await to.el.play().catch((e) => this.#emit('error', String(e)))
+
+      // F47b · Play inmediato. El deck destino viene precargado via
+      // `preloadNext` (readyState suele estar en 3-4). Esperar demasiado a
+      // `canplaythrough` o al evento `playing` bloquea el ramp — y para
+      // entonces la pista actual ya llegó a `ended`, matando el solape.
+      // El pequeño silencio inicial de <100 ms es inaudible durante el
+      // fade-in que arranca en gain 0.
+      try {
+        await to.el.play()
+      } catch (e) {
+        this.#active = 1 - this.#active
+        this.#emit('error', `crossfade abortado: ${String(e)}`)
+        return
+      }
 
       const now = this.#ctx.currentTime
-      const dur = this.#crossfadeSec
+      // F50 · La duración real del fade se acota al audio que le queda a la
+      // pista saliente: si solo quedan 2.5 s (usuario arrastró la barra casi
+      // al final), un ramp de 6 s dejaría media transición en silencio — la
+      // saliente acaba antes de que el ramp termine. Con el clamp, el fundido
+      // siempre se percibe completo aunque sea más corto.
+      const fromRemaining =
+        isFinite(from.el.duration) && from.el.duration > 0
+          ? Math.max(0, from.el.duration - from.el.currentTime)
+          : xfadeSec
+      const dur = Math.max(0.4, Math.min(xfadeSec, fromRemaining))
       from.fade.gain.cancelScheduledValues(now)
       to.fade.gain.cancelScheduledValues(now)
-      from.fade.gain.setValueAtTime(from.fade.gain.value, now)
+      from.fade.gain.setValueAtTime(1, now)
       to.fade.gain.setValueAtTime(0, now)
       from.fade.gain.linearRampToValueAtTime(0, now + dur)
       to.fade.gain.linearRampToValueAtTime(1, now + dur)
@@ -197,9 +255,25 @@ export class PlayerEngine {
       const deck = this.#activeDeck()
       const other = this.#inactiveDeck()
       other.el.pause()
-      deck.fade.gain.value = 1
-      other.fade.gain.value = 0
-      deck.el.src = url
+      // F50 · Si hay un crossfade a medias (salto manual durante el fade),
+      // los gains tienen ramps programados que PISAN una asignación directa
+      // a .value — la nueva pista sonaría con el volumen subiendo desde
+      // donde quedó el ramp. Cancelar la automatización antes de fijar.
+      const nowCtx = this.#ctx.currentTime
+      deck.fade.gain.cancelScheduledValues(nowCtx)
+      other.fade.gain.cancelScheduledValues(nowCtx)
+      deck.fade.gain.setValueAtTime(1, nowCtx)
+      other.fade.gain.setValueAtTime(0, nowCtx)
+      // F47b · Solo reasigna src si es distinto. Cuando reasignamos, hay que
+      // llamar `load()` para forzar el buffering; y sólo si ya venía cargado
+      // (precarga) reseteamos currentTime — hacerlo justo tras `src = ...`
+      // sin metadata puede dejar el <audio> en estado indefinido.
+      if (deck.el.src !== url) {
+        deck.el.src = url
+        deck.el.load()
+      } else {
+        deck.el.currentTime = 0
+      }
       deck.el.playbackRate = this.#rate
       ;(deck.el as HTMLAudioElement & { preservesPitch: boolean }).preservesPitch =
         this.#preserves
@@ -207,14 +281,34 @@ export class PlayerEngine {
     }
   }
 
-  /** Precarga la siguiente pista en el deck inactivo (gapless). */
+  /**
+   * Precarga la siguiente pista en el deck inactivo (gapless + crossfade).
+   *
+   * F45 · Fuerza `load()` incluso si ya estaba asignado el mismo src — así
+   * si el buffer se descartó (canción muy larga, el navegador libera datos
+   * antiguos) volvemos a rellenar. También llamada a `preload = 'auto'`
+   * para que Chromium priorice la descarga.
+   *
+   * F49 · CRÍTICO: si el deck inactivo tiene un `fadeCleanup` pendiente,
+   * significa que aún está reproduciendo el fade-OUT del crossfade en
+   * curso. Reasignar `.src` + `.load()` ahora lo pausaría a currentTime=0
+   * a mitad del ramp del gain → resultado audible: SALTO SECO en vez de
+   * fundido. Devolvemos sin tocar el deck; el store lo reintentará cuando
+   * el fade termine (via preloadUpcoming diferido).
+   */
   preloadNext(videoId: string, url: string): void {
-    this.#preparedNext = { videoId, url }
     const deck = this.#inactiveDeck()
+    if (this.#fadeCleanup.has(deck)) {
+      // No marcar #preparedNext: hasPreloaded seguirá siendo false y
+      // loadAndPlay usará la URL del mapa (preloadUrls) sin tocar decks.
+      return
+    }
+    this.#preparedNext = { videoId, url }
+    deck.el.preload = 'auto'
     if (deck.el.src !== url) {
       deck.el.src = url
-      deck.el.load()
     }
+    deck.el.load()
   }
 
   hasPreloaded(videoId: string): boolean {
@@ -264,6 +358,49 @@ export class PlayerEngine {
 
   setEq(dbs: number[]): void {
     dbs.forEach((db, i) => this.setEqBand(i, db))
+  }
+
+  /**
+   * F70 · Cambia el modo del ecualizador (10/15/31 bandas).
+   * Recrea los BiquadFilterNodes y reconecta la cadena de audio.
+   */
+  setEqMode(mode: '10' | '15' | '31', gains?: number[]): void {
+    const freqs = mode === '31' ? EQ_BANDS_31 : mode === '15' ? EQ_BANDS_15 : EQ_BANDS_10
+
+    // Desconectar los filtros actuales de la cadena
+    this.#preamp.disconnect()
+    for (const f of this.#eq) f.disconnect()
+
+    // Crear nuevos filtros
+    this.#eq = freqs.map((freq, i) => {
+      const f = this.#ctx.createBiquadFilter()
+      if (i === 0) f.type = 'lowshelf'
+      else if (i === freqs.length - 1) f.type = 'highshelf'
+      else f.type = 'peaking'
+      f.frequency.value = freq
+      // Q más estrecho para más bandas (más resolución espectral)
+      f.Q.value = mode === '31' ? 2.0 : mode === '15' ? 1.5 : 1.0
+      f.gain.value = gains?.[i] ?? 0
+      return f
+    })
+
+    // Reconectar: preamp -> eq[0] -> ... -> eq[N] -> compresor
+    let node: AudioNode = this.#preamp
+    for (const f of this.#eq) {
+      node.connect(f)
+      node = f
+    }
+    node.connect(this.#compressor)
+  }
+
+  /** F70 · Frecuencias activas del EQ actual. */
+  get eqFrequencies(): readonly number[] {
+    return this.#eq.map((f) => f.frequency.value)
+  }
+
+  /** F70 · Número de bandas activas. */
+  get eqBandCount(): number {
+    return this.#eq.length
   }
 
   #rate = 1
@@ -373,12 +510,12 @@ function installAudioDeviceChangeGuard(): void {
       lastDefault = now
       if (!changed) return
       // Lee el ajuste sin importar el store (rompería el ciclo). El bundle
-      // expone la referencia bajo `__metrolistSettingsStore` para F27.
+      // expone la referencia bajo `__erosMusicSettingsStore` para F27.
       const w = window as unknown as {
-        __metrolistSettingsStore?: { useSettings: { getState: () => { settings: { pauseOnAudioDeviceChange?: boolean } } } }
+        __erosMusicSettingsStore?: { useSettings: { getState: () => { settings: { pauseOnAudioDeviceChange?: boolean } } } }
       }
       const paused = engine.paused
-      const shouldPause = Boolean(w.__metrolistSettingsStore?.useSettings.getState().settings.pauseOnAudioDeviceChange)
+      const shouldPause = Boolean(w.__erosMusicSettingsStore?.useSettings.getState().settings.pauseOnAudioDeviceChange)
       if (shouldPause && !paused) engine.pause()
     })()
   })

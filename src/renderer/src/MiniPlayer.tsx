@@ -8,12 +8,14 @@ import {
   PlayIcon,
   SettingsIcon,
   SkipNextIcon,
-  SkipPrevIcon
+  SkipPrevIcon,
+  VolumeIcon
 } from './components/Icons'
 import { formatTime } from './app/authStore'
 import { extractAccent } from './app/artworkColor'
 import { applyThemeDom } from './app/themeDom'
 import { computeLineFill } from './app/karaoke'
+import { resolveLocale, useI18n, useT } from './app/i18n'
 
 /**
  * Mini-player flotante.
@@ -31,9 +33,59 @@ interface MiniState {
   isPlaying: boolean
   positionSec: number
   durationSec: number
+  /** F56 · Volumen actual del reproductor (0-1) */
+  volume?: number
+  /** F56 · Crossfade en curso: el mini funde carátula/texto en sincronía */
+  crossfading?: {
+    fromTitle: string
+    fromArtists: string
+    fromThumbnailUrl?: string
+    durationMs: number
+    token: number
+  } | null
+}
+
+/**
+ * F56/F52 · Congela el valor del primer render: la animación de una capa se
+ * decide al MONTAR y los cambios de props posteriores no la reinician (si
+ * cambiara, el navegador re-animaría desde opacity 0 → "reaparición").
+ * Copia local del helper de CrossfadeVisual — importar aquel módulo desde
+ * esta ventana instanciaría el engine de audio del reproductor principal.
+ */
+function useMountConst<T>(v: T): T {
+  return useState(v)[0]
+}
+
+/** Carátula del mini con animación congelada al montar. */
+function MiniCover({
+  src,
+  enterMs
+}: {
+  src: string
+  enterMs: number | null
+}): React.JSX.Element {
+  const animation = useMountConst(
+    enterMs != null ? `np-cover-fade-in ${enterMs}ms linear both` : 'none'
+  )
+  return (
+    <img
+      src={src}
+      alt=""
+      style={{
+        position: 'absolute',
+        inset: 0,
+        width: '100%',
+        height: '100%',
+        objectFit: 'cover',
+        animation,
+        zIndex: 2
+      }}
+    />
+  )
 }
 
 export default function MiniPlayer(): React.JSX.Element {
+  const t = useT()
   const [state, setState] = useState<MiniState | null>(null)
   const [corner, setCorner] = useState<MiniCorner>('br')
   const [karaoke, setKaraoke] = useState(false)
@@ -56,6 +108,8 @@ export default function MiniPlayer(): React.JSX.Element {
     setScale(s.miniScale || 1)
     setAccentMode(s.accentMode)
     applyThemeDom(s)
+    // F58 · Esta ventana no pasa por settingsStore: aplica el idioma aquí.
+    useI18n.getState().setLocale(resolveLocale(s.uiLanguage))
   }
 
   useEffect(() => {
@@ -163,6 +217,36 @@ export default function MiniPlayer(): React.JSX.Element {
 
   const karaokeActive = karaoke && Boolean(synced?.length)
 
+  // F56 · Crossfade en curso (llega del reproductor principal por IPC)
+  const cx = state?.crossfading ?? null
+
+  // F56 · Control de volumen: icono (clic = mute/restaurar) + slider
+  // desplegable hacia la izquierda que persiste 800 ms tras salir (mismo
+  // patrón que el popover de la barra cuando no cabe el slider inline).
+  const [volOpen, setVolOpen] = useState(false)
+  const [dragVol, setDragVol] = useState<number | null>(null)
+  const volCloseTimer = useRef(0)
+  const lastNonZeroVol = useRef(0.8)
+  const vol = dragVol ?? state?.volume ?? 0.8
+  useEffect(() => {
+    if ((state?.volume ?? 0) > 0.001) lastNonZeroVol.current = state!.volume!
+  }, [state?.volume])
+  const openVol = (): void => {
+    window.clearTimeout(volCloseTimer.current)
+    setVolOpen(true)
+  }
+  const scheduleCloseVol = (): void => {
+    window.clearTimeout(volCloseTimer.current)
+    volCloseTimer.current = window.setTimeout(() => setVolOpen(false), 800)
+  }
+  const sendVolume = (v: number): void => {
+    void window.api.mini.command(`volume:${Math.max(0, Math.min(1, v)).toFixed(2)}`)
+  }
+  const toggleMute = (): void => {
+    if (vol > 0.001) sendVolume(0)
+    else sendVolume(lastNonZeroVol.current || 0.8)
+  }
+
   return (
     <div
       onMouseEnter={() => setHover(true)}
@@ -176,18 +260,30 @@ export default function MiniPlayer(): React.JSX.Element {
         alignItems: 'center',
         gap: 12,
         padding: '0 10px 0 0',
-        background: tint
-          ? `linear-gradient(90deg, ${tint}40, var(--bg-base) 55%)`
-          : 'var(--bg-base)',
+        background: 'var(--bg-base)',
         overflow: 'hidden',
-        position: 'relative',
-        transition: 'background 0.4s'
+        position: 'relative'
       }}
     >
+      {/* F56 · Tinte de la carátula con fundido REAL: el gradiente usa
+          `currentcolor`, y `color` sí interpola con transition (un gradiente
+          en `background` cambia de golpe). Duración = crossfade si hay. */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'absolute',
+          inset: 0,
+          zIndex: 0,
+          pointerEvents: 'none',
+          color: tint ? `${tint}40` : 'transparent',
+          background: 'linear-gradient(90deg, currentcolor, transparent 55%)',
+          transition: `color ${cx ? cx.durationMs : 400}ms linear`
+        }}
+      />
       {/* Agarre de puntitos (solo en posición libre) */}
       {corner === 'free' && (
         <div
-          title="Arrastra para mover"
+          title={t('mini.dragToMove')}
           style={{
             position: 'absolute',
             top: 2,
@@ -228,7 +324,7 @@ export default function MiniPlayer(): React.JSX.Element {
       >
         <button
           className="icon-btn"
-          title={karaoke ? 'Salir del karaoke' : 'Modo karaoke'}
+          title={karaoke ? t('mini.exitKaraoke') : t('mini.karaokeMode')}
           style={{ width: 20, height: 20, color: karaoke ? 'var(--accent)' : undefined }}
           onClick={() => void window.api.settings.set({ miniKaraoke: !karaoke })}
         >
@@ -236,7 +332,7 @@ export default function MiniPlayer(): React.JSX.Element {
         </button>
         <button
           className="icon-btn"
-          title="Ajustes del mini-player"
+          title={t('mini.settings')}
           style={{ width: 20, height: 20 }}
           onClick={() => void window.api.mini.openSettings()}
         >
@@ -244,7 +340,7 @@ export default function MiniPlayer(): React.JSX.Element {
         </button>
         <button
           className="icon-btn"
-          title="Cerrar mini-player"
+          title={t('mini.close')}
           style={{ width: 20, height: 20 }}
           onClick={() => void window.api.mini.toggle()}
         >
@@ -252,9 +348,33 @@ export default function MiniPlayer(): React.JSX.Element {
         </button>
       </div>
 
-      {/* Carátula */}
+      {/* Carátula — F56: doble capa durante el crossfade, en sincronía con
+          el fade de audio del reproductor principal */}
       {state?.thumbnailUrl ? (
-        <img src={state.thumbnailUrl} alt="" style={{ width: 84, height: 84, objectFit: 'cover' }} />
+        <div style={{ position: 'relative', width: 84, height: 84 }}>
+          {cx?.fromThumbnailUrl && (
+            <img
+              key={`from-${cx.token}`}
+              src={cx.fromThumbnailUrl}
+              alt=""
+              aria-hidden="true"
+              style={{
+                position: 'absolute',
+                inset: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                animation: `np-cover-fade-out ${cx.durationMs}ms linear both`,
+                zIndex: 1
+              }}
+            />
+          )}
+          <MiniCover
+            key={state.videoId}
+            src={state.thumbnailUrl}
+            enterMs={cx ? cx.durationMs : null}
+          />
+        </div>
       ) : (
         <div
           style={{
@@ -279,9 +399,11 @@ export default function MiniPlayer(): React.JSX.Element {
             flexDirection: 'column',
             justifyContent: 'center',
             gap: 3,
-            cursor: 'pointer'
+            cursor: 'pointer',
+            position: 'relative',
+            zIndex: 1
           }}
-          title="Abrir Metrolist"
+          title={t('mini.openApp')}
           onClick={() => void window.api.mini.showMain()}
         >
           <div
@@ -315,25 +437,62 @@ export default function MiniPlayer(): React.JSX.Element {
           )}
         </div>
       ) : (
-        <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 7 }}>
+        <div
+          style={{
+            minWidth: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 7,
+            position: 'relative',
+            zIndex: 1
+          }}
+        >
+          {/* F56 · Título con fade secuencial (out → in) durante el crossfade */}
           <div
             style={{
-              fontSize: 13,
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              cursor: 'pointer'
+              position: 'relative',
+              minWidth: 0,
+              cursor: 'pointer',
+              ['--xfade-visual-ms' as string]: cx ? `${cx.durationMs}ms` : undefined
             }}
-            title="Abrir Metrolist"
+            title={t('mini.openApp')}
             onClick={() => void window.api.mini.showMain()}
           >
-            <b>{state?.title ?? 'Metrolist'}</b>
-            <span style={{ color: 'var(--text-secondary)' }}>
-              {state?.artists ? ` · ${state.artists}` : ''}
-            </span>
-            {karaoke && !synced?.length && (
-              <span style={{ color: 'var(--text-subdued)', fontSize: 11 }}> · sin letra ♪</span>
+            {cx && (
+              <div
+                className="np-text-out"
+                aria-hidden="true"
+                style={{
+                  fontSize: 13,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
+                }}
+              >
+                <b>{cx.fromTitle}</b>
+                <span style={{ color: 'var(--text-secondary)' }}>
+                  {cx.fromArtists ? ` · ${cx.fromArtists}` : ''}
+                </span>
+              </div>
             )}
+            <div
+              key={state?.videoId ?? 'none'}
+              className={cx ? 'np-text-in' : undefined}
+              style={{
+                fontSize: 13,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis'
+              }}
+            >
+              <b>{state?.title ?? "ERO'S Music"}</b>
+              <span style={{ color: 'var(--text-secondary)' }}>
+                {state?.artists ? ` · ${state.artists}` : ''}
+              </span>
+              {karaoke && !synced?.length && (
+                <span style={{ color: 'var(--text-subdued)', fontSize: 11 }}>{` · ${t('mini.noLyrics')} ♪`}</span>
+              )}
+            </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <span
@@ -375,8 +534,72 @@ export default function MiniPlayer(): React.JSX.Element {
         </div>
       )}
 
-      {/* Derecha: los 3 botones */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingRight: 2 }}>
+      {/* Derecha: volumen + los 3 botones */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          paddingRight: 2,
+          position: 'relative',
+          zIndex: 1
+        }}
+      >
+        {/* F56 · Volumen: clic = mute/restaurar; hover = slider desplegable
+            a la izquierda; rueda del ratón = ajuste fino */}
+        <div
+          style={{ position: 'relative', display: 'grid', placeItems: 'center' }}
+          onMouseEnter={openVol}
+          onMouseLeave={scheduleCloseVol}
+        >
+          <button
+            className="np-ctrl"
+            data-testid="mini-volume"
+            title={vol > 0.001 ? t('np.mute') : t('mini.unmute')}
+            onClick={toggleMute}
+            onWheel={(e) => sendVolume(vol + (e.deltaY < 0 ? 0.05 : -0.05))}
+            style={{ color: vol > 0.001 ? undefined : 'var(--accent)' }}
+          >
+            <VolumeIcon size={15} muted={vol < 0.001} />
+          </button>
+          {volOpen && (
+            <div
+              data-testid="mini-volume-popover"
+              style={{
+                position: 'absolute',
+                right: '100%',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                marginRight: 8,
+                background: 'var(--bg-elevated)',
+                border: '1px solid var(--divider)',
+                borderRadius: 8,
+                padding: '8px 12px',
+                display: 'flex',
+                alignItems: 'center',
+                boxShadow: 'var(--shadow-card)',
+                zIndex: 7
+              }}
+            >
+              <input
+                type="range"
+                min={0}
+                max={100}
+                value={Math.round(vol * 100)}
+                aria-label={t('mini.volume')}
+                onChange={(e) => {
+                  const nv = Number(e.target.value) / 100
+                  setDragVol(nv)
+                  sendVolume(nv)
+                }}
+                onPointerUp={() => {
+                  window.setTimeout(() => setDragVol(null), 300)
+                }}
+                style={{ width: 90 }}
+              />
+            </div>
+          )}
+        </div>
         <button className="np-ctrl" onClick={() => void window.api.mini.command('previous')}>
           <SkipPrevIcon size={16} />
         </button>

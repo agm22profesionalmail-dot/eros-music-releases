@@ -1,0 +1,274 @@
+{
+  "capturedAt": "2026-08-16T19:49:30.258Z",
+  "playlist": {
+    "id": "VLPLRui6_mEbk28",
+    "title": "Summer Feels",
+    "trackCount": 3,
+    "coverFile": "playlist-summer-feels.jpg"
+  },
+  "summerTracks": [],
+  "likedTracks": [
+    {
+      "kind": "song",
+      "videoId": "cWABhT-RzXQ",
+      "title": "Pull You Closer",
+      "artists": [
+        {
+          "name": "GRAHAM",
+          "id": "UC_wmkbciLqlciEl4GoIV9UQ"
+        }
+      ],
+      "album": {
+        "name": "Pull You Closer",
+        "id": "MPREb_TueAn4kwP7B"
+      },
+      "durationSec": 143,
+      "durationText": "2:23",
+      "coverFile": "t-cWABhT-RzXQ.jpg"
+    },
+    {
+      "kind": "song",
+      "videoId": "UTnA1wFSETI",
+      "title": "Wrong",
+      "artists": [
+        {
+          "name": "GRAHAM",
+          "id": "UC_wmkbciLqlciEl4GoIV9UQ"
+        }
+      ],
+      "album": {
+        "name": "Wrong",
+        "id": "MPREb_g2bjuR7Dyej"
+      },
+      "durationSec": 135,
+      "durationText": "2:15",
+      "coverFile": "t-UTnA1wFSETI.jpg"
+    },
+    {
+      "kind": "song",
+      "videoId": "4D7u5KF7SP8",
+      "title": "Get Lucky (feat. Pharrell Williams and Nile Rodgers)",
+      "artists": [
+        {
+          "name": "Daft Punk",
+          "id": "UCRr1xG_2WIDs18a6cIiCxeA"
+        },
+        {
+          "name": "Pharrell Williams",
+          "id": "UCJw8VyO6e3v6S0327AsgwcQ"
+        },
+        {
+          "name": "Nile Rodgers",
+          "id": "UCThde8ccpEr6sP8dIHZ-ceQ"
+        }
+      ],
+      "album": {
+        "name": "Random Access Memories",
+        "id": "MPREb_K8qWMWVqXGi"
+      },
+      "durationSec": 370,
+      "durationText": "6:10",
+      "coverFile": "t-4D7u5KF7SP8.jpg"
+    },
+    {
+      "kind": "song",
+      "videoId": "fa5IWHDbftI",
+      "title": "One More Time",
+      "artists": [
+        {
+          "name": "Daft Punk",
+          "id": "UCRr1xG_2WIDs18a6cIiCxeA"
+        }
+      ],
+      "album": {
+        "name": "Discovery",
+        "id": "MPREb_7ltM34kr0mH"
+      },
+      "durationSec": 321,
+      "durationText": "5:21",
+      "coverFile": "t-fa5IWHDbftI.jpg"
+    },
+    {
+      "kind": "song",
+      "videoId": "OrzeB4hsSmQ",
+      "title": "dopamine (English Version)",
+      "artists": [
+        {
+          "name": "madelline",
+          "id": "UClsPUn1iMXsRvLFSO2tMauQ"
+        }
+      ],
+      "album": {
+        "name": "dopamine",
+        "id": "MPREb_GvGzaSDvmut"
+      },
+      "durationSec": 166,
+      "durationText": "2:46",
+      "coverFile": "t-OrzeB4hsSmQ.jpg"
+    },
+    {
+      "kind": "song",
+      "videoId": "cf_l4uVwT34",
+      "title": "you broke my heart",
+      "artists": [
+        {
+          "name": "kobzx2z",
+          "id": "UCUyQ7nkj2U9f2jYzprtGhRg"
+        },
+        {
+          "name": "Myla",
+          "id": "UCwvC5KsB4brDGYNMuMaxGBg"
+        }
+      ],
+      "album": {
+        "name": "you broke my heart",
+        "id": "MPREb_zX3oYAzHH6a"
+      },
+      "durationSec": 134,
+      "durationText": "2:14",
+      "coverFile": "t-cf_l4uVwT34.jpg"
+    },
+    {
+      "kind": "song",
+      "videoId": "elRjusCwyPg",
+      "title": "All In",
+      "artists": [
+        {
+          "name": "Marino",
+          "id": "UCyiBThiUINekOuhsQz7JQPA"
+        }
+      ],
+      "album": {
+        "name": "All In",
+        "id": "MPREb_mKrhLVg4p67"
+      },
+      "durationSec": 124,
+      "durationText": "2:04",
+      "coverFile": "t-elRjusCwyPg.jpg"
+    }
+  ],
+  "artists": [
+    {
+      "id": "UCubY8F0qByZdyWUlk3b29-Q",
+      "name": "Ironmouse",
+      "coverFile": "a-UCubY8F0qByZdyWUlk3b29-Q.jpg"
+    },
+    {
+      "id": "UCN0xP41cti_sdtsPseVx_nw",
+      "name": "Netta",
+      "coverFile": "a-UCN0xP41cti_sdtsPseVx_nw.jpg"
+    },
+    {
+      "id": "UCRXguf9Xp4h3x3Dr76Z8eXA",
+      "name": "Odetari",
+      "coverFile": "a-UCRXguf9Xp4h3x3Dr76Z8eXA.jpg"
+    },
+    {
+      "id": "UCL84XVYlcvaIUo4At-8sLLA",
+      "name": "Little Big",
+      "coverFile": "a-UCL84XVYlcvaIUo4At-8sLLA.jpg"
+    },
+    {
+      "id": "UCjLcZ_R6pWxCYwmZz6lQsLQ",
+      "name": "Wuthering Waves",
+      "coverFile": "a-UCjLcZ_R6pWxCYwmZz6lQsLQ.jpg"
+    },
+    {
+      "id": "UCM1rew0hxgW7e-TRfmrMung",
+      "name": "JVKE",
+      "coverFile": "a-UCM1rew0hxgW7e-TRfmrMung.jpg"
+    },
+    {
+      "id": "UCeGl2z50eXaj-2S1mKpbSpw",
+      "name": "H33RA",
+      "coverFile": "a-UCeGl2z50eXaj-2S1mKpbSpw.jpg"
+    },
+    {
+      "id": "UC_wmkbciLqlciEl4GoIV9UQ",
+      "name": "GRAHAM",
+      "coverFile": "a-UC_wmkbciLqlciEl4GoIV9UQ.jpg"
+    },
+    {
+      "id": "UCqmI6Kl2lS99N9-e2hkuE9A",
+      "name": "​bbno$",
+      "coverFile": "a-UCqmI6Kl2lS99N9-e2hkuE9A.jpg"
+    },
+    {
+      "id": "UC4G-AJa7kn8oumI6TT2WXYw",
+      "name": "AURORA",
+      "coverFile": "a-UC4G-AJa7kn8oumI6TT2WXYw.jpg"
+    }
+  ],
+  "palettes": {
+    "t-cWABhT-RzXQ.jpg": {
+      "baseHue": 15,
+      "baseSat": 0.32018086748095753,
+      "midHue": 75,
+      "midSat": 0.06555319478892181,
+      "accent": "hsl(11 70% 58%)",
+      "accentHue": 11.333333333333334,
+      "accentSat": 0.7,
+      "accentLum": 0.58
+    },
+    "t-UTnA1wFSETI.jpg": {
+      "baseHue": 315,
+      "baseSat": 0.2607765210637619,
+      "midHue": 15,
+      "midSat": 0.06431072377377883,
+      "accent": "hsl(343 70% 58%)",
+      "accentHue": 343.3846153846154,
+      "accentSat": 0.7,
+      "accentLum": 0.58
+    },
+    "t-4D7u5KF7SP8.jpg": {
+      "baseHue": 225,
+      "baseSat": 0.20960991710227195,
+      "midHue": 45,
+      "midSat": 0.5109758497210525,
+      "accent": "hsl(52 93% 58%)",
+      "accentHue": 51.79856115107914,
+      "accentSat": 0.9328859060402684,
+      "accentLum": 0.58
+    },
+    "t-fa5IWHDbftI.jpg": {
+      "baseHue": 225,
+      "baseSat": 0.13896658719319904,
+      "midHue": 135,
+      "midSat": 0.14877446607049868,
+      "accent": "hsl(19 70% 58%)",
+      "accentHue": 19.090909090909097,
+      "accentSat": 0.7,
+      "accentLum": 0.58
+    },
+    "t-OrzeB4hsSmQ.jpg": {
+      "baseHue": 255,
+      "baseSat": 0.33388276249278653,
+      "midHue": 345,
+      "midSat": 0.33641188247520665,
+      "accent": "hsl(308 70% 58%)",
+      "accentHue": 308.1203007518797,
+      "accentSat": 0.7,
+      "accentLum": 0.58
+    },
+    "t-cf_l4uVwT34.jpg": {
+      "baseHue": 225,
+      "baseSat": 0.8527917538402301,
+      "midHue": 285,
+      "midSat": 0.3,
+      "accent": "hsl(210 99% 58%)",
+      "accentHue": 210.41095890410958,
+      "accentSat": 0.9909502262443439,
+      "accentLum": 0.58
+    },
+    "t-elRjusCwyPg.jpg": {
+      "baseHue": 45,
+      "baseSat": 0.11600860605435098,
+      "midHue": 105,
+      "midSat": 0.3,
+      "accent": "hsl(18 70% 58%)",
+      "accentHue": 17.500000000000004,
+      "accentSat": 0.7,
+      "accentLum": 0.58
+    }
+  }
+}

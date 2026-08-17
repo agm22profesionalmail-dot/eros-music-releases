@@ -1,0 +1,42 @@
+{
+  "settings": {
+    "downloadsDir": "F:\\MetrolistPC\\Music",
+    "theme": "dark",
+    "accent": "#ff8800",
+    "accentMode": "fixed",
+    "bgMode": "ambient",
+    "ambientTint": 60,
+    "crossfadeSec": 0,
+    "autoplay": true,
+    "eqGains": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "preampDb": 0,
+    "playbackRate": 1,
+    "preservePitch": true,
+    "closeToTray": false,
+    "discordRpc": false,
+    "miniCorner": "br",
+    "miniKaraoke": false,
+    "miniScale": 1,
+    "miniX": 750,
+    "miniY": 4
+  },
+  "profile": {
+    "displayName": "Zero",
+    "photoDataUrl": "",
+    "bio": "",
+    "favoriteArtists": [],
+    "publicPlaylistIds": [],
+    "enabled": false
+  }
+}

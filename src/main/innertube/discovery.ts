@@ -2,6 +2,7 @@ import { getArtist, getUpNext } from './api'
 import type {
   DiscoverySurpriseResult,
   ProfileArtistRef,
+  SpiralTrack,
   TrackSummary
 } from '@shared/types'
 
@@ -28,6 +29,18 @@ export type SurpriseResult = DiscoverySurpriseResult
 function pick<T>(arr: T[]): T | null {
   if (!arr?.length) return null
   return arr[Math.floor(Math.random() * arr.length)]
+}
+
+/** Parsea strings de suscriptores de InnerTube: "1.2M", "100K", "1,234 subscribers" → número. */
+function parseSubscriberCount(raw?: string | null): number | null {
+  if (!raw) return null
+  const cleaned = raw.replace(/[,\s]/g, '').replace(/subscribers?/i, '').trim()
+  const match = cleaned.match(/^([\d.]+)\s*([KkMmBb])?$/)
+  if (!match) return null
+  const num = parseFloat(match[1])
+  if (isNaN(num)) return null
+  const multiplier = { k: 1_000, m: 1_000_000, b: 1_000_000_000 }[match[2]?.toLowerCase() ?? ''] ?? 1
+  return Math.round(num * multiplier)
 }
 
 /**
@@ -228,4 +241,195 @@ export async function getPersonalMixTracks(
 
   // Mezcla final para que no queden todas las favoritas al principio
   return shuffle(combined).slice(0, targetSize)
+}
+
+/**
+ * F80 · Espiral Musical — ~60 pistas únicas para el scroll infinito de la Home.
+ *
+ * SOLO música nueva: nada de lo que el usuario ya conoce (liked, playlists
+ * propias, historial) ni de artistas que ya escucha. Los liked y los artistas
+ * favoritos se usan únicamente como SEMILLAS para `getUpNext` — nunca entran
+ * en el resultado.
+ *
+ * Dos niveles de descubrimiento:
+ *   · Nivel 1: `getUpNext` sobre semillas del gusto del usuario → `isMatch`
+ *     ("Para ti": se alinea con su gusto pero NO lo conoce).
+ *   · Nivel 2: `getUpNext` sobre pistas descubiertas en el nivel 1 →
+ *     candidatos a `isSmallArtist`; solo se marca tras verificar con
+ *     `getArtist` que el artista tiene < 100k suscriptores.
+ *
+ * Deduplicado por videoId Y por artista principal (cada artista aparece como
+ * mucho 1 vez). Mínimo 10 semillas distintas, presupuesto global de 18 s.
+ */
+export async function getSpiralTracks(
+  favoriteArtists: ProfileArtistRef[],
+  likedTracks: TrackSummary[],
+  userPlaylistTracks: TrackSummary[],
+  historyTracks: TrackSummary[],
+  homeVideoIds: string[],
+  targetSize = 60
+): Promise<SpiralTrack[]> {
+  const startedAt = Date.now()
+  const budgetMs = 18_000
+  const remaining = (): number => Math.max(500, budgetMs - (Date.now() - startedAt))
+  const outOfBudget = (): boolean => Date.now() - startedAt > budgetMs
+
+  const normArtist = (name?: string | null): string => name?.toLowerCase().trim() ?? ''
+
+  // ---- Blacklist: TODO lo que el usuario ya conoce ----
+  const knownTracks: TrackSummary[] = [
+    ...(likedTracks ?? []),
+    ...(userPlaylistTracks ?? []),
+    ...(historyTracks ?? [])
+  ]
+
+  const knownVideoIds = new Set<string>()
+  for (const t of knownTracks) {
+    if (t?.videoId) knownVideoIds.add(t.videoId)
+  }
+  for (const id of homeVideoIds ?? []) {
+    if (id) knownVideoIds.add(id)
+  }
+
+  const knownArtistNames = new Set<string>()
+  for (const a of favoriteArtists ?? []) {
+    const n = normArtist(a?.name)
+    if (n) knownArtistNames.add(n)
+  }
+  for (const t of knownTracks) {
+    for (const a of t?.artists ?? []) {
+      const n = normArtist(a?.name)
+      if (n) knownArtistNames.add(n)
+    }
+  }
+
+  /** `true` si la pista es conocida: videoId en blacklist o algún artista conocido. */
+  const isKnown = (t: TrackSummary): boolean => {
+    if (!t?.videoId || knownVideoIds.has(t.videoId)) return true
+    for (const a of t.artists ?? []) {
+      const n = normArtist(a?.name)
+      if (n && knownArtistNames.has(n)) return true
+    }
+    return false
+  }
+
+  // ---- Resultado con dedupe por videoId y por artista principal ----
+  const seenVideoIds = new Set<string>()
+  const seenArtistNames = new Set<string>()
+  const result: SpiralTrack[] = []
+
+  /** Añade la pista si es nueva de verdad y no repite videoId/artista. */
+  const tryAdd = (t: TrackSummary, secondLevel: boolean): boolean => {
+    if (result.length >= targetSize) return false
+    if (isKnown(t)) return false
+    if (seenVideoIds.has(t.videoId)) return false
+    const primary = normArtist(t.artists?.[0]?.name)
+    if (primary && seenArtistNames.has(primary)) return false
+    seenVideoIds.add(t.videoId)
+    if (primary) seenArtistNames.add(primary)
+    result.push({
+      ...t,
+      isMatch: !secondLevel,
+      isSmallArtist: false // se verifica después con getArtist
+    })
+    return true
+  }
+
+  // ---- Semillas de primer nivel: liked + tops de artistas favoritos ----
+  // Nunca entran en el resultado (están en la blacklist); solo alimentan getUpNext.
+  const seedIds: string[] = shuffle(
+    (likedTracks ?? [])
+      .map((t) => t?.videoId)
+      .filter((id): id is string => Boolean(id))
+  )
+  for (const artist of shuffle([...(favoriteArtists ?? [])]).slice(0, 3)) {
+    if (outOfBudget()) break
+    if (!artist?.id) continue
+    const res = await withTimeout(getArtist(artist.id), Math.min(4_000, remaining()))
+    if (!res) continue
+    const artistSeedIds = extractTracksFromArtist(res.shelves)
+      .map((t) => t.videoId)
+      .filter((id): id is string => Boolean(id))
+    seedIds.push(...shuffle(artistSeedIds).slice(0, 3))
+  }
+
+  // Reservamos parte del target para el segundo nivel; si luego no llega,
+  // el propio nivel 1 rellena el hueco.
+  const firstLevelCap = Math.ceil(targetSize * 0.6)
+  const minSeeds = 10
+  const usedSeeds = new Set<string>()
+  /** Pistas de nivel 1 que pasan el filtro — pool de semillas para el nivel 2 y de relleno. */
+  const firstLevelPool: TrackSummary[] = []
+
+  for (const seed of seedIds) {
+    if (outOfBudget()) break
+    if (!seed || usedSeeds.has(seed)) continue
+    // Solo paramos antes de agotar semillas si ya usamos el mínimo Y el nivel 1 está lleno
+    if (usedSeeds.size >= minSeeds && result.length >= firstLevelCap) break
+    usedSeeds.add(seed)
+    const res = await withTimeout(getUpNext(seed), Math.min(3_500, remaining()))
+    if (!res?.tracks?.length) continue
+    for (const t of res.tracks) {
+      if (!t?.videoId || t.videoId === seed) continue
+      if (isKnown(t)) continue
+      firstLevelPool.push(t)
+      if (result.length < firstLevelCap) tryAdd(t, false)
+    }
+  }
+
+  // ---- Segundo nivel: getUpNext sobre lo descubierto (más lejos del gusto) ----
+  const secondSeedIds = shuffle(
+    dedupeByVideoId(firstLevelPool).map((t) => t.videoId)
+  )
+  for (const seed of secondSeedIds) {
+    if (outOfBudget()) break
+    if (result.length >= targetSize) break
+    if (usedSeeds.has(seed)) continue
+    usedSeeds.add(seed)
+    const res = await withTimeout(getUpNext(seed), Math.min(3_500, remaining()))
+    if (!res?.tracks?.length) continue
+    for (const t of res.tracks) {
+      if (!t?.videoId || t.videoId === seed) continue
+      tryAdd(t, true)
+    }
+  }
+
+  // ---- Verificación de "artista nuevo": solo < 100k subs ----
+  const artistsToCheck = new Map<string, SpiralTrack[]>()
+  for (const t of result) {
+    if (!t.isMatch && !t.isSmallArtist) {
+      // Candidatos de nivel 2 (aún no marcados)
+      const artistId = t.artists?.[0]?.id
+      if (artistId) {
+        const existing = artistsToCheck.get(artistId) ?? []
+        existing.push(t)
+        artistsToCheck.set(artistId, existing)
+      }
+    }
+  }
+
+  // Verificamos como máximo 8 artistas dentro del presupuesto
+  let checked = 0
+  for (const [artistId, tracks] of artistsToCheck) {
+    if (outOfBudget() || checked >= 8) break
+    checked++
+    const artistInfo = await withTimeout(getArtist(artistId), Math.min(3_000, remaining()))
+    if (!artistInfo) continue
+    const subs = parseSubscriberCount(artistInfo.subscribers)
+    if (subs !== null && subs < 100_000) {
+      for (const t of tracks) {
+        t.isSmallArtist = true
+      }
+    }
+  }
+
+  // ---- Relleno: si el nivel 2 no llegó, tiramos del pool sobrante del nivel 1 ----
+  if (result.length < targetSize) {
+    for (const t of shuffle([...firstLevelPool])) {
+      if (result.length >= targetSize) break
+      tryAdd(t, false)
+    }
+  }
+
+  return shuffle(result).slice(0, targetSize)
 }

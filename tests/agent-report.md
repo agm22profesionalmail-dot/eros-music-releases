@@ -1,4 +1,4 @@
-# Informe QA — Metrolist PC (2026-08-14, sesión iniciada como «Galaxy Chinpum», auth cookie)
+# Informe QA — ERO'S Music (2026-08-14, sesión iniciada como «Galaxy Chinpum», auth cookie)
 
 **Método**: 13 sondas Playwright+Electron (`tests/probes/probe01…13`), app real con la sesión del usuario, capturando consola del renderer y stdout/stderr del main. Capturas en `tests/probes/shots/`. Sondas 1–11 contra la build de las 19:28; el desarrollador recompiló `out/` a las 20:09 durante la sesión (sondas 12–13 contra esa build). Los ficheros fuente citados en las causas raíz no cambiaron entre ambas.
 

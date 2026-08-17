@@ -7,18 +7,24 @@ import {
   Menu,
   globalShortcut,
   nativeImage,
-  screen
+  screen,
+  session as electronSession
 } from 'electron'
 import { join, resolve as pathResolve } from 'path'
+import { cpSync, existsSync, renameSync, rmSync } from 'fs'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { registerIpc } from './ipc'
-import { sessionManager } from './innertube/session'
+import { initAutoUpdater, checkForUpdatesOnStartup, quitAndInstallUpdate } from './updater'
+import { sessionManager, AUTH_PARTITION } from './innertube/session'
 import { startStreamServer } from './stream/server'
 import { getAllSettings, updateSettings } from './settings'
 import { IPC, type MiniCorner } from '@shared/types'
 
 let tray: Tray | null = null
 let isQuitting = false
+// F66 · Se pone a true justo antes de dejar pasar el quit real, para no
+// reintentar el flush en la segunda vuelta de 'before-quit' (ver más abajo).
+let cookiesFlushed = false
 let miniWindow: BrowserWindow | null = null
 const MINI_W = 400
 const MINI_H = 84
@@ -210,6 +216,9 @@ function createWindow(): void {
     frame: false,
     titleBarStyle: 'hidden',
     backgroundColor: '#121212',
+    // F60 · icono de ventana/barra de tareas también en dev (empaquetado ya
+    // lo hereda del .exe)
+    icon: iconPath(),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
@@ -221,11 +230,11 @@ function createWindow(): void {
   mainWindow.on('ready-to-show', () => {
     mainWindow?.show()
     // Modo humo para verificación automatizada: arranca, espera y sale limpio
-    if (process.env.METROLIST_SMOKE === '1') {
+    if (process.env.EROS_SMOKE === '1') {
       setTimeout(() => app.quit(), 3000)
     }
     // Autocaptura para verificación visual: guarda un PNG de la ventana y sale
-    const shotPath = process.env.METROLIST_SHOT
+    const shotPath = process.env.EROS_SHOT
     if (shotPath) {
       setTimeout(() => {
         void (async () => {
@@ -238,10 +247,10 @@ function createWindow(): void {
             console.error('[SHOT_FAIL]', err)
             process.exitCode = 1
           } finally {
-            if (process.env.METROLIST_SHOT_STAY !== '1') app.quit()
+            if (process.env.EROS_SHOT_STAY !== '1') app.quit()
           }
         })()
-      }, Number(process.env.METROLIST_SHOT_DELAY ?? 3500))
+      }, Number(process.env.EROS_SHOT_DELAY ?? 3500))
     }
   })
 
@@ -278,11 +287,11 @@ function sendMedia(cmd: string): void {
 function createTray(): void {
   const image = nativeImage.createFromPath(iconPath()).resize({ width: 16, height: 16 })
   tray = new Tray(image)
-  tray.setToolTip('Metrolist PC')
+  tray.setToolTip("ERO'S Music")
   tray.setContextMenu(
     Menu.buildFromTemplate([
       {
-        label: 'Mostrar Metrolist',
+        label: "Mostrar ERO'S Music",
         click: () => {
           mainWindow?.show()
           mainWindow?.focus()
@@ -316,6 +325,74 @@ function registerMediaKeys(): void {
   globalShortcut.register('MediaStop', () => sendMedia('pause'))
 }
 
+// F63 · Rebranding interno v1.2.0: el userData canónico pasa de la carpeta
+// histórica "Metrolist PC" (nombre original del proyecto, usado hasta
+// v1.1.x) a "ERO'S Music". La migración ocurre AQUÍ, antes de que Chromium
+// abra un solo fichero: sesión de Google (Partitions/ytauth), metrolist.db
+// + WAL/SHM, Preferences, Local/Session Storage, Network, spool, ytcache,
+// Cache… viajan enteros de una carpeta a otra.
+//
+// Reglas:
+//  - Si "ERO'S Music" ya existe (ya migrado, o reinstalación posterior) NO
+//    se toca nada: esa carpeta manda y la vieja, si quedara, se ignora.
+//  - Si no existe ninguna (instalación limpia): Electron crea la nueva vacía.
+//  - Migración: rename atómico (mismo volumen %APPDATA%, instantáneo). Si
+//    falla (handle abierto, antivirus…), copia a un dir de staging y rename
+//    final — "ERO'S Music" solo aparece si la copia terminó ENTERA.
+//  - Si nada funciona, se sigue usando la carpeta vieja: arrancar sin los
+//    datos del usuario no es una opción.
+function resolveUserDataDir(): string {
+  const appData = app.getPath('appData')
+  const legacyDir = join(appData, 'Metrolist PC') // pre-rebranding (≤ v1.1.x)
+  const newDir = join(appData, "ERO'S Music")
+  const stagingDir = join(appData, "ERO'S Music.migrating")
+  try {
+    // Restos de una copia interrumpida en un arranque anterior: fuera.
+    if (existsSync(stagingDir)) rmSync(stagingDir, { recursive: true, force: true })
+  } catch {
+    /* best effort */
+  }
+  if (existsSync(newDir)) return newDir
+  if (!existsSync(legacyDir)) return newDir
+  try {
+    renameSync(legacyDir, newDir)
+    console.log('[userData] migrado "Metrolist PC" -> "ERO\'S Music" (rename)')
+    return newDir
+  } catch {
+    /* rename no disponible: probamos copia por etapas */
+  }
+  try {
+    cpSync(legacyDir, stagingDir, { recursive: true })
+    renameSync(stagingDir, newDir)
+    try {
+      rmSync(legacyDir, { recursive: true, force: true })
+    } catch {
+      /* la copia ya es la buena; la carpeta vieja queda huérfana pero sin uso */
+    }
+    console.log('[userData] migrado "Metrolist PC" -> "ERO\'S Music" (copia)')
+    return newDir
+  } catch (err) {
+    console.error('[userData] migración fallida; se mantiene la carpeta antigua:', err)
+    try {
+      rmSync(stagingDir, { recursive: true, force: true })
+    } catch {
+      /* best effort */
+    }
+    return legacyDir
+  }
+}
+
+// F50 · Modo E2E: con EROS_E2E_PROFILE, la app usa un userData propio.
+// El lock de instancia única es por-userData, así que las pruebas pueden
+// correr JUNTO a la app instalada del usuario sin cerrarla ni tocar su
+// perfil real (ajustes, cola, spool… quedan aislados en el dir de prueba).
+// En E2E la migración ni se evalúa: cero riesgo sobre los datos reales.
+if (process.env.EROS_E2E_PROFILE) {
+  app.setPath('userData', process.env.EROS_E2E_PROFILE)
+} else {
+  app.setPath('userData', resolveUserDataDir())
+}
+
 const gotTheLock = app.requestSingleInstanceLock()
 if (!gotTheLock) {
   app.quit()
@@ -328,18 +405,21 @@ if (!gotTheLock) {
   })
 
   app.whenReady().then(async () => {
-    electronApp.setAppUserModelId('com.zero.metrolistpc')
+    // F63 · AUMID nuevo (rebranding v1.2.0); debe coincidir con el appId de
+    // electron-builder.yml para que Windows agrupe bien la ventana y las
+    // notificaciones con los accesos directos del instalador.
+    electronApp.setAppUserModelId('com.zero.erosmusic')
 
-    // F22: registro del protocolo `metrolist://` para deep-links.
-    // Solo el registro; el handler `open-url` (Windows: segundo argv) se
-    // implementará cuando lleguen los deep-link. TODO F22-follow-up.
+    // F22: registro del protocolo `erosmusic://` (antes `metrolist://`) para
+    // deep-links. Solo el registro; el handler `open-url` (Windows: segundo
+    // argv) se implementará cuando lleguen los deep-link. TODO F22-follow-up.
     try {
       if (process.defaultApp && process.argv.length >= 2) {
-        app.setAsDefaultProtocolClient('metrolist', process.execPath, [
+        app.setAsDefaultProtocolClient('erosmusic', process.execPath, [
           pathResolve(process.argv[1])
         ])
       } else {
-        app.setAsDefaultProtocolClient('metrolist')
+        app.setAsDefaultProtocolClient('erosmusic')
       }
     } catch {
       /* algunos entornos (sandboxed, portables) no admiten el registro */
@@ -362,6 +442,21 @@ if (!gotTheLock) {
 
     createTray()
     registerMediaKeys()
+
+    // F67 · Auto-actualización (GitHub Releases). En dev no hace nada (guard
+    // `!app.isPackaged` dentro del módulo). El handler de instalación vive
+    // AQUÍ y no en updater.ts porque necesita el flag module-level
+    // `isQuitting`: debe ponerse a true ANTES de quitAndInstall() — mismo
+    // patrón que el "Salir" del tray — para que el intercept de `closeToTray`
+    // en mainWindow.on('close') no esconda la ventana en vez de dejarla
+    // cerrar. El app.quit() interno del updater pasa después por el
+    // before-quit de F66 (flush de cookies, timeout 1,5 s) sin bloquearse.
+    initAutoUpdater(() => mainWindow)
+    checkForUpdatesOnStartup()
+    ipcMain.handle(IPC.UPDATE_INSTALL_NOW, () => {
+      isQuitting = true
+      quitAndInstallUpdate()
+    })
 
     // Mini-player: toggle, relé de estado (principal -> mini) y de comandos (mini -> principal)
     ipcMain.handle(IPC.MINI_TOGGLE, () => toggleMiniPlayer())
@@ -388,10 +483,10 @@ if (!gotTheLock) {
       setDiscordEnabled(getAllSettings().discordRpc)
     })
 
-    // Gancho de pruebas de humo: METROLIST_TEST_SEARCH="consulta" imprime
+    // Gancho de pruebas de humo: EROS_TEST_SEARCH="consulta" imprime
     // los primeros resultados y sale. Solo para verificación automatizada.
     // Smoke de streaming: resuelve, descarga por spool y sirve por el proxy.
-    const testStream = process.env.METROLIST_TEST_STREAM
+    const testStream = process.env.EROS_TEST_STREAM
     if (testStream) {
       void (async () => {
         try {
@@ -423,7 +518,7 @@ if (!gotTheLock) {
       })()
     }
 
-    if (process.env.METROLIST_TEST_LIBRARY === '1') {
+    if (process.env.EROS_TEST_LIBRARY === '1') {
       void (async () => {
         try {
           const { sessionManager: sm } = await import('./innertube/session')
@@ -455,7 +550,7 @@ if (!gotTheLock) {
     }
 
     // Like reversible: pone Me gusta y lo quita, verificando el ciclo de escritura
-    const testLike = process.env.METROLIST_TEST_LIKE
+    const testLike = process.env.EROS_TEST_LIKE
     if (testLike) {
       void (async () => {
         try {
@@ -477,7 +572,7 @@ if (!gotTheLock) {
     }
 
     // KRC: letra con tiempos por palabra desde KuGou
-    const testKrc = process.env.METROLIST_TEST_KRC
+    const testKrc = process.env.EROS_TEST_KRC
     if (testKrc) {
       void (async () => {
         try {
@@ -509,7 +604,7 @@ if (!gotTheLock) {
       })()
     }
 
-    if (process.env.METROLIST_TEST_POTOKEN === '1') {
+    if (process.env.EROS_TEST_POTOKEN === '1') {
       void (async () => {
         try {
           const { sessionManager: sm } = await import('./innertube/session')
@@ -531,7 +626,7 @@ if (!gotTheLock) {
       })()
     }
 
-    const testSearch = process.env.METROLIST_TEST_SEARCH
+    const testSearch = process.env.EROS_TEST_SEARCH
     if (testSearch) {
       void (async () => {
         try {
@@ -569,8 +664,26 @@ app.on('window-all-closed', () => {
   }
 })
 
-app.on('before-quit', () => {
+// F66 · Red de seguridad: un `taskkill /F` (o cualquier salida no limpia)
+// puede matar Chromium a mitad de una escritura pendiente en su cookie
+// store — la sesión de Google (cookies de `AUTH_PARTITION`) queda corrupta
+// o sin persistir, y el usuario aparece deslogueado en el siguiente
+// arranque aunque el fichero Cookies siga en disco. Antes de dejar salir a
+// la app de verdad, forzamos un volcado explícito a disco. Timeout de 1.5s
+// (patrón F42: ninguna promesa sin límite) para no bloquear nunca un cierre
+// real si el volcado se cuelga por lo que sea.
+app.on('before-quit', (event) => {
   isQuitting = true
+  if (cookiesFlushed) return
+  event.preventDefault()
+  const flush = electronSession.fromPartition(AUTH_PARTITION).cookies.flushStore()
+  const timeout = new Promise<void>((resolve) => setTimeout(resolve, 1500))
+  Promise.race([flush, timeout])
+    .catch((err) => console.warn('[quit] flushStore de cookies falló:', err))
+    .finally(() => {
+      cookiesFlushed = true
+      app.quit()
+    })
 })
 
 app.on('will-quit', () => {

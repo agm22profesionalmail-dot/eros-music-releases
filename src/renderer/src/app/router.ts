@@ -58,3 +58,7 @@ export const useRouter = create<RouterState>((set, get) => ({
   canBack: () => get().pos > 0,
   canForward: () => get().pos < get().stack.length - 1
 }))
+
+// F51 · Referencia para pruebas E2E (navegación programática), simétrica a
+// `__erosMusicPlayerStore` y `__erosMusicSettingsStore`.
+;(window as unknown as { __erosMusicRouter?: unknown }).__erosMusicRouter = useRouter

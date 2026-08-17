@@ -18,7 +18,7 @@ const scenario = process.argv[2] ?? 'all'
 const app = await _electron.launch({
   args: ['.'],
   cwd: root,
-  env: { ...process.env, METROLIST_E2E: '1' }
+  env: { ...process.env, EROS_E2E: '1' }
 })
 
 app.process().stdout?.on('data', (d) => {

@@ -1,5 +1,6 @@
-import { dialog, shell, BrowserWindow } from 'electron'
+import { app, dialog, shell, BrowserWindow } from 'electron'
 import { promises as fs } from 'fs'
+import { homedir } from 'os'
 import { join, basename } from 'path'
 import { getSetting, setSetting, getDb } from './db'
 import {
@@ -15,11 +16,26 @@ import {
 
 /** Ajustes de la app persistidos en SQLite. */
 
+/**
+ * F65 · Carpeta de descargas por defecto: la carpeta Música del usuario
+ * (p. ej. C:\Users\X\Music\ERO'S Music). El default antiguo era
+ * F:\MetrolistPC\Music — la carpeta del PROYECTO, que solo existe en el
+ * equipo del developer y además enseñaba el nombre interno en Ajustes.
+ * La carpeta del proyecto F:\MetrolistPC sigue igual (interna al dev);
+ * cualquier ruta ya guardada en BD (`downloads.dir`) prevalece siempre.
+ * `app.getPath('music')` requiere la app lista; si aún no lo está
+ * (llamada muy temprana), caemos a ~\Music.
+ */
+export function defaultDownloadsDir(): string {
+  const music = app.isReady() ? app.getPath('music') : join(homedir(), 'Music')
+  return join(music, "ERO'S Music")
+}
+
 export function getAllSettings(): AppSettings {
   const stored = getSetting<Partial<AppSettings>>('app.settings', {})
   const merged: AppSettings = { ...DEFAULT_SETTINGS, ...stored }
   if (!merged.downloadsDir) {
-    merged.downloadsDir = getSetting('downloads.dir', join('F:\\', 'MetrolistPC', 'Music'))
+    merged.downloadsDir = getSetting('downloads.dir', defaultDownloadsDir())
   }
   // F29 · rellena defaults si el usuario venía de una versión previa (o si el
   // array quedó vacío/corrupto). No perdemos configuración: si tiene al
@@ -44,6 +60,8 @@ export function getAllSettings(): AppSettings {
       .map((p) => ({ id: p.id, enabled: p.enabled !== false }))
   }
   if (typeof merged.romanizeLyrics !== 'boolean') merged.romanizeLyrics = false
+  // F36 · tema predefinido: defensivo si viene de una versión previa sin campo
+  if (typeof merged.themePreset !== 'string') merged.themePreset = 'none'
   // F34 · idioma de la UI: defensivo si viene de una versión previa sin campo.
   if (
     merged.uiLanguage !== 'auto' &&
@@ -52,7 +70,41 @@ export function getAllSettings(): AppSettings {
   ) {
     merged.uiLanguage = 'auto'
   }
+  // F50 · Migración one-shot: el crossfade debe sonar SIEMPRE en las
+  // transiciones naturales. El default antiguo desactivaba el fundido entre
+  // pistas del mismo álbum ("gapless") y en la práctica se percibía como
+  // "el crossfade a veces no funciona". Se ejecuta una sola vez; si después
+  // el usuario reactiva el ajuste en Ajustes, se respeta su elección.
+  if (!getSetting('migrations.f50CrossfadeAlways', false)) {
+    merged.disableCrossfadeOnGapless = false
+    setSetting('app.settings', merged)
+    setSetting('migrations.f50CrossfadeAlways', true)
+  }
+  // F61 · Migración one-shot (v1.2.0): quien actualiza desde una versión
+  // anterior también debe ver el onboarding UNA vez. No toca nada de
+  // autenticación: si la sesión de Google sigue viva, el wizard salta el
+  // paso `login` por sí solo (lo decide onboardingStore con auth.status).
+  if (!getSetting('migrations.f61OnboardingIntroduced', false)) {
+    setOnboardingCompleted(false)
+    setSetting('migrations.f61OnboardingIntroduced', true)
+  }
   return merged
+}
+
+// ---------- Onboarding (F61) ----------
+
+/** ¿El usuario ya completó (o saltó) el asistente de bienvenida? */
+export function getOnboardingCompleted(): boolean {
+  // En modo E2E el asistente no debe interceptar la UI: los runners arrancan
+  // con perfiles vírgenes (o con el real recién migrado) y el overlay taparía
+  // la app entera para las suites existentes. Mismo patrón que el gancho
+  // e2e-upnext del IPC (F50).
+  if (process.env.EROS_E2E || process.env.EROS_E2E_PROFILE) return true
+  return getSetting('onboarding.completed', false)
+}
+
+export function setOnboardingCompleted(v: boolean): void {
+  setSetting('onboarding.completed', v)
 }
 
 export function updateSettings(patch: Partial<AppSettings>): AppSettings {
