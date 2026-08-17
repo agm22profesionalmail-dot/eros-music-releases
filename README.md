@@ -76,8 +76,12 @@ Letras con timing palabra a palabra obtenidas de fuentes reales (LRCLIB + KuGou 
   <img src="screenshots/lyrics_karaoke.png" alt="Modo karaoke con letras sincronizadas" width="750" />
 </p>
 
-### 🎛️ Ecualizador de 10 bandas
-6 presets (Flat, Bass, Treble, Rock, Pop, Vocal) y control manual completo con preamp.
+### 🎛️ Ecualizador de 10 bandas + visualizador
+6 presets (Flat, Bass, Treble, Rock, Pop, Vocal) y control manual completo con preamp. El visualizador muestra barras de frecuencia reactivas al audio en tiempo real.
+
+<p align="center">
+  <img src="screenshots/visualizer.png" alt="Visualizador de audio reactivo" width="750" />
+</p>
 
 ### 📥 Descargas offline
 Descargas permanentes con tags y carátula incrustados, vía yt-dlp + ffmpeg.
