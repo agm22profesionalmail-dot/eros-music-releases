@@ -6,3 +6,6 @@ release/
 .DS_Store
 .env
 .env.*
+
+# Binarios pesados (el usuario los instala aparte)
+resources/bin/
