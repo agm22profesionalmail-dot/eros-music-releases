@@ -131,7 +131,6 @@ Y lo que **no** hace:
 ERO'S Music es un proyecto vivo con la ambición de convertirse en algo más que un cliente de YouTube Music. La idea a largo plazo es:
 
 - 🔗 **Unificar plataformas** — poder acceder a tus playlists de YouTube Music y de Spotify desde una sola app, sin saltar entre servicios.
-- 📻 **Radios en vivo** — retransmisión de música en directo entre usuarios, para crear y escuchar "emisoras" en tiempo real dentro de la propia app.
 - 🧩 **Muchas más funciones** — el roadmap está abierto y crece con cada versión. Esto no es un producto terminado: es un proyecto personal con ganas de llegar lejos.
 
 ## Descarga
