@@ -15,6 +15,14 @@
 </p>
 
 <p align="center">
+  <img src="https://img.shields.io/badge/TypeScript-3178c6?logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/JavaScript-f7df1e?logo=javascript&logoColor=black" alt="JavaScript" />
+  <img src="https://img.shields.io/badge/Electron-47848f?logo=electron&logoColor=white" alt="Electron" />
+  <img src="https://img.shields.io/badge/HTML5-e34f26?logo=html5&logoColor=white" alt="HTML5" />
+  <img src="https://img.shields.io/badge/CSS3-1572b6?logo=css3&logoColor=white" alt="CSS3" />
+</p>
+
+<p align="center">
   <img src="screenshots/search_ambient.png" alt="ERO'S Music — búsqueda con fondo ambient" width="850" />
 </p>
 
