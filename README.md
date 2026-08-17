@@ -5,7 +5,7 @@
 <h1 align="center">ERO'S Music</h1>
 
 <p align="center">
-  Tu música de YouTube Music, con la interfaz que siempre quisiste.
+  Una interfaz de escritorio alternativa para disfrutar de YouTube Music.
 </p>
 
 <p align="center">
@@ -22,7 +22,7 @@
 
 ## ¿Qué es?
 
-ERO'S Music es un cliente de escritorio nativo de **YouTube Music para Windows**, creado por Zero como proyecto personal. No es un wrapper del navegador: tiene su propio motor de audio, una interfaz construida desde cero con un diseño al estilo Spotify, y se conecta a tu cuenta real de Google/YouTube Music — tu biblioteca, tus playlists, tus likes y tu historial, tal cual los tienes.
+ERO'S Music es un cliente de escritorio no oficial de **YouTube Music para Windows**, creado por Zero como proyecto personal. No es un wrapper del navegador: tiene su propio motor de audio, una interfaz construida desde cero y se conecta a tu cuenta de Google — tu biblioteca, tus playlists, tus likes y tu historial, tal cual los tienes.
 
 ## ¿Por qué ERO'S Music y no otra cosa?
 
@@ -31,28 +31,26 @@ ERO'S Music es un cliente de escritorio nativo de **YouTube Music para Windows**
 | Crossfade real entre pistas | ❌ | ⚠️ Solo con Premium | ❌ | ✅ |
 | Ecualizador de 10 bandas | ❌ | ❌ En escritorio no | ❌ | ✅ |
 | Mini-player flotante | ❌ | ❌ | ⚠️ Limitado | ✅ |
-| Descargas con tags y carátula | ❌ | ⚠️ Solo Premium, en su app | ❌ | ✅ |
 | Fondo ambient reactivo | ❌ | ❌ | ❌ | ✅ |
 | Karaoke palabra a palabra | ❌ | ⚠️ Parcial | ❌ | ✅ |
 | Estadísticas 100% locales | ❌ | ❌ | ❌ | ✅ |
 | Gratis, sin suscripción | ✅ | ❌ | ✅ | ✅ |
 
-**Frente a YouTube Music web** — la web oficial no tiene crossfade, ni EQ, ni mini-player, ni descargas con tags, ni fondo ambient, ni karaoke por palabras, ni estadísticas locales. ERO'S Music añade todo eso encima de tu misma cuenta.
+**Frente a YouTube Music web** — la web oficial no tiene crossfade, ni EQ, ni mini-player, ni fondo ambient, ni karaoke por palabras, ni estadísticas locales. ERO'S Music añade todo eso encima de tu misma cuenta.
 
-**Frente a Spotify Desktop** — Spotify te ata a una suscripción Premium para casi todo, no tiene EQ real en escritorio ni fondo reactivo, y su catálogo es distinto: hay muchísima música (remixes, directos, covers, canales pequeños) que solo existe en YouTube.
+**Frente a Spotify Desktop** — Spotify requiere una suscripción de pago para la mayoría de funciones, no tiene EQ real en escritorio ni fondo reactivo, y su catálogo es distinto: hay mucha música (remixes, directos, covers, canales pequeños) que solo existe en YouTube.
 
-**Frente a otros clientes de YT Music** (th-ch/youtube-music y similares) — son wrappers: meten la web oficial dentro de Electron y le añaden parches. ERO'S Music no incrusta la web en ningún sitio: tiene un motor de audio propio de doble deck, un pipeline de letras propio, descargas vía yt-dlp y una UI construida desde cero.
+**Frente a otros clientes de YT Music** (th-ch/youtube-music y similares) — son wrappers: incrustan la web oficial dentro de Electron y le añaden parches. ERO'S Music tiene un motor de audio propio de doble deck, un pipeline de letras propio y una UI construida desde cero.
 
 En resumen:
 
-- 🎧 **Tu música de YouTube + tu interfaz** — la cuenta es la tuya, la experiencia es nueva.
+- 🎧 **Tu cuenta, tu interfaz** — la cuenta es la tuya, la experiencia es nueva.
 - 🔊 **Motor de audio propio** — crossfade real (mezcla dos pistas a la vez), no un fade-out seguido de un fade-in.
 - 🔒 **Todo en local** — cero telemetría, tus datos no salen de tu PC.
-- ✨ **Funciones que la web oficial no tiene** — y sin pagar Premium.
 
 ## Funciones
 
-### 🎵 Streaming con tu cuenta real
+### 🎵 Streaming con tu cuenta
 Inicia sesión con Google y ahí está todo: tu biblioteca, tus playlists, tus likes y tu historial. Lo que hagas en la app se refleja en tu cuenta y viceversa.
 
 ### 🎨 Diseño Coffee Cream + 20 temas
@@ -70,7 +68,7 @@ Motor de doble deck: la siguiente canción empieza a sonar mientras la actual te
 </p>
 
 ### 🎤 Letras sincronizadas y karaoke
-Letras con timing palabra a palabra obtenidas de fuentes reales (LRCLIB + KuGou KRC), no aproximaciones generadas.
+Letras con timing palabra a palabra sincronizadas con la música.
 
 <p align="center">
   <img src="screenshots/lyrics_karaoke.png" alt="Modo karaoke con letras sincronizadas" width="750" />
@@ -83,14 +81,11 @@ Letras con timing palabra a palabra obtenidas de fuentes reales (LRCLIB + KuGou 
   <img src="screenshots/visualizer.png" alt="Visualizador de audio reactivo" width="750" />
 </p>
 
-### 📥 Descargas offline
-Descargas permanentes con tags y carátula incrustados, vía yt-dlp + ffmpeg.
-
 ### 🖥️ Mini-player flotante
 Siempre visible encima de otras ventanas, se ancla a las esquinas, escalable y con modo karaoke.
 
-### 📊 Estadísticas y Wrapped
-Recap al estilo Wrapped, tops semanales y mensuales. Todo se calcula 100% en local: nada sale de tu máquina.
+### 📊 Estadísticas y recap personal
+Tops semanales y mensuales con un resumen de tu actividad. Todo se calcula 100% en local: nada sale de tu máquina.
 
 ### 🎮 Discord Rich Presence
 Muestra en Discord lo que estás escuchando. Opcional y desactivable.
@@ -109,7 +104,7 @@ Un asistente de bienvenida te acompaña la primera vez que abres la app.
 ERO'S Music solo se conecta a lo imprescindible:
 
 - **YouTube Music** — para el streaming y tu cuenta.
-- **LRCLIB y KuGou** — para las letras sincronizadas.
+- **Servicios de letras** — para las letras sincronizadas.
 - **Discord** — solo si activas Rich Presence.
 
 Y lo que **no** hace:
@@ -128,9 +123,9 @@ Y lo que **no** hace:
 
 ## Hacia dónde va ERO'S Music
 
-ERO'S Music es un proyecto vivo con la ambición de convertirse en algo más que un cliente de YouTube Music. La idea a largo plazo es:
+ERO'S Music es un proyecto vivo con la ambición de ir más allá. La idea a largo plazo es:
 
-- 🔗 **Unificar plataformas** — poder acceder a tus playlists de YouTube Music y de Spotify desde una sola app, sin saltar entre servicios.
+- 🔗 **Integrar más plataformas** — poder acceder a tus bibliotecas y playlists de distintos servicios de streaming desde un solo sitio.
 - 🧩 **Muchas más funciones** — el roadmap está abierto y crece con cada versión. Esto no es un producto terminado: es un proyecto personal con ganas de llegar lejos.
 
 ## Descarga
@@ -148,3 +143,9 @@ Descarga el instalador desde la [última release](https://github.com/agm22profes
 <p align="center">
   Hecho con ☕ por <strong>Zero</strong> · Proyecto personal, sin ánimo de lucro.
 </p>
+
+<sub>
+
+ERO'S Music es un proyecto independiente y no oficial. No está afiliado, patrocinado ni respaldado por Google, YouTube, Spotify, Discord ni ninguna otra marca mencionada. Todos los nombres de productos y marcas son propiedad de sus respectivos titulares y se usan únicamente con fines descriptivos. El uso de esta aplicación queda bajo la responsabilidad del usuario.
+
+</sub>
