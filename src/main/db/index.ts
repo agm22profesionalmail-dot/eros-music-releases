@@ -61,6 +61,18 @@ export function getDb(): DatabaseSync {
       thumbnail_url TEXT,
       updated_at INTEGER NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS local_tracks (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      file_path TEXT UNIQUE NOT NULL,
+      title TEXT NOT NULL DEFAULT '',
+      artist TEXT NOT NULL DEFAULT '',
+      album TEXT NOT NULL DEFAULT '',
+      duration_sec REAL NOT NULL DEFAULT 0,
+      cover_path TEXT,
+      format TEXT NOT NULL DEFAULT '',
+      size_bytes INTEGER NOT NULL DEFAULT 0,
+      added_at INTEGER NOT NULL
+    );
   `)
   return db
 }
@@ -362,4 +374,121 @@ export function setArtistThumb(id: string, thumbnailUrl: string | null): void {
   getDb()
     .prepare('INSERT OR REPLACE INTO artist_thumbs (artist_id, thumbnail_url, updated_at) VALUES (?, ?, ?)')
     .run(id, thumbnailUrl, Date.now())
+}
+
+// ---------- Música local (ADR-0001) ----------
+//
+// Tabla `local_tracks`: almacena los archivos de audio que el usuario añade a
+// su carpeta de música local. Los metadatos son editables por el usuario.
+
+export interface LocalTrackRow {
+  id: number
+  filePath: string
+  title: string
+  artist: string
+  album: string
+  durationSec: number
+  coverPath: string | null
+  format: string
+  sizeBytes: number
+  addedAt: number
+}
+
+/** Inserta o actualiza un track local por ruta de archivo. */
+export function upsertLocalTrack(track: {
+  filePath: string
+  title: string
+  artist: string
+  album: string
+  durationSec: number
+  coverPath?: string | null
+  format: string
+  sizeBytes: number
+}): number {
+  const db = getDb()
+  const existing = db
+    .prepare('SELECT id FROM local_tracks WHERE file_path = ?')
+    .get(track.filePath) as { id: number } | undefined
+  if (existing) {
+    db.prepare(
+      `UPDATE local_tracks SET title = ?, artist = ?, album = ?,
+       duration_sec = ?, cover_path = ?, format = ?, size_bytes = ?
+       WHERE id = ?`
+    ).run(
+      track.title, track.artist, track.album,
+      track.durationSec, track.coverPath ?? null, track.format, track.sizeBytes,
+      existing.id
+    )
+    return existing.id
+  }
+  const result = db.prepare(
+    `INSERT INTO local_tracks (file_path, title, artist, album, duration_sec, cover_path, format, size_bytes, added_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run(
+    track.filePath, track.title, track.artist, track.album,
+    track.durationSec, track.coverPath ?? null, track.format, track.sizeBytes,
+    Date.now()
+  )
+  return Number(result.lastInsertRowid)
+}
+
+/** Devuelve todos los tracks locales, ordenados por fecha de adición desc. */
+export function readLocalTracks(): LocalTrackRow[] {
+  const rows = getDb()
+    .prepare(
+      `SELECT id, file_path, title, artist, album, duration_sec,
+              cover_path, format, size_bytes, added_at
+       FROM local_tracks ORDER BY added_at DESC`
+    )
+    .all() as {
+    id: number; file_path: string; title: string; artist: string
+    album: string; duration_sec: number; cover_path: string | null
+    format: string; size_bytes: number; added_at: number
+  }[]
+  return rows.map((r) => ({
+    id: r.id,
+    filePath: r.file_path,
+    title: r.title,
+    artist: r.artist,
+    album: r.album,
+    durationSec: r.duration_sec,
+    coverPath: r.cover_path,
+    format: r.format,
+    sizeBytes: r.size_bytes,
+    addedAt: r.added_at
+  }))
+}
+
+/** Actualiza los metadatos editables de un track local. */
+export function updateLocalTrackMeta(
+  id: number,
+  patch: { title?: string; artist?: string; album?: string; coverPath?: string | null }
+): void {
+  const sets: string[] = []
+  const vals: (string | number | null)[] = []
+  if (patch.title !== undefined) { sets.push('title = ?'); vals.push(patch.title) }
+  if (patch.artist !== undefined) { sets.push('artist = ?'); vals.push(patch.artist) }
+  if (patch.album !== undefined) { sets.push('album = ?'); vals.push(patch.album) }
+  if (patch.coverPath !== undefined) { sets.push('cover_path = ?'); vals.push(patch.coverPath) }
+  if (!sets.length) return
+  vals.push(id)
+  getDb().prepare(`UPDATE local_tracks SET ${sets.join(', ')} WHERE id = ?`).run(...vals)
+}
+
+/** Elimina un track local de la BD (no borra el archivo). */
+export function removeLocalTrack(id: number): void {
+  getDb().prepare('DELETE FROM local_tracks WHERE id = ?').run(id)
+}
+
+/** Elimina un track local por ruta de archivo (cuando el watcher detecta borrado). */
+export function removeLocalTrackByPath(filePath: string): void {
+  getDb().prepare('DELETE FROM local_tracks WHERE file_path = ?').run(filePath)
+}
+
+/** Devuelve las rutas de archivos ya indexados (para diff rápido con el escaneo). */
+export function getLocalTrackPaths(): Set<string> {
+  const rows = getDb()
+    .prepare('SELECT file_path FROM local_tracks')
+    .all() as { file_path: string }[]
+  return new Set(rows.map((r) => r.file_path))
 }

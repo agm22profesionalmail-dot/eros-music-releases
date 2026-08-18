@@ -31,11 +31,20 @@ export function defaultDownloadsDir(): string {
   return join(music, "ERO'S Music")
 }
 
+/** Carpeta de música local por defecto: ~/Music/ERO'S Music/ */
+export function defaultLocalMusicDir(): string {
+  const music = app.isReady() ? app.getPath('music') : join(homedir(), 'Music')
+  return join(music, "ERO'S Music")
+}
+
 export function getAllSettings(): AppSettings {
   const stored = getSetting<Partial<AppSettings>>('app.settings', {})
   const merged: AppSettings = { ...DEFAULT_SETTINGS, ...stored }
   if (!merged.downloadsDir) {
     merged.downloadsDir = getSetting('downloads.dir', defaultDownloadsDir())
+  }
+  if (!merged.localMusicDir) {
+    merged.localMusicDir = defaultLocalMusicDir()
   }
   // F29 · rellena defaults si el usuario venía de una versión previa (o si el
   // array quedó vacío/corrupto). No perdemos configuración: si tiene al
@@ -111,6 +120,7 @@ export function updateSettings(patch: Partial<AppSettings>): AppSettings {
   const merged = { ...getAllSettings(), ...patch }
   setSetting('app.settings', merged)
   if (patch.downloadsDir) setSetting('downloads.dir', patch.downloadsDir)
+  if (patch.localMusicDir) setSetting('local.musicDir', patch.localMusicDir)
   return merged
 }
 
@@ -188,6 +198,32 @@ export async function changeDownloadsDir(
 
   updateSettings({ downloadsDir: newDir })
   return { dir: newDir, moved }
+}
+
+/**
+ * ADR-0001 · Cambia la carpeta de música local: abre el selector de carpeta.
+ * A diferencia de `changeDownloadsDir`, NO mueve archivos — la música local
+ * pertenece al usuario y él decide dónde ponerla.
+ */
+export async function changeLocalMusicDir(
+  parent: BrowserWindow | null
+): Promise<string | null> {
+  const current = getAllSettings().localMusicDir
+  const result = await dialog.showOpenDialog(parent ?? new BrowserWindow({ show: false }), {
+    title: 'Elige la carpeta de música local',
+    defaultPath: current,
+    properties: ['openDirectory', 'createDirectory']
+  })
+  if (result.canceled || !result.filePaths.length) return null
+  const newDir = result.filePaths[0]
+  updateSettings({ localMusicDir: newDir })
+  return newDir
+}
+
+export async function openLocalMusicDir(): Promise<void> {
+  const dir = getAllSettings().localMusicDir
+  await fs.mkdir(dir, { recursive: true }).catch(() => undefined)
+  await shell.openPath(dir)
 }
 
 export async function openDownloadsDir(): Promise<void> {

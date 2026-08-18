@@ -119,7 +119,6 @@ export function trackMenu(track: TrackSummary, opts?: { playlistId?: string }): 
       label: liked ? t('menu.unlike') : t('menu.like'),
       action: () => void library.toggleLike(track)
     },
-    { label: t('menu.download'), action: () => void window.api.downloads.add(track) },
     {
       label: t('menu.addToPlaylist'),
       submenu: [
@@ -278,7 +277,6 @@ export function cardMenu(
         label: liked ? t('menu.unlike') : t('menu.like'),
         action: () => void library.toggleLike(track)
       },
-      { label: t('menu.download'), action: () => void window.api.downloads.add(track) },
       {
         label: t('menu.addToPlaylist'),
         submenu: [

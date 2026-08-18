@@ -2,7 +2,7 @@ import http from 'http'
 import { once } from 'events'
 import { createReadStream, promises as fs } from 'fs'
 import { getSpool, waitForBytes } from './spool'
-import { getDownloadPath } from '../db'
+import { getDownloadPath, readLocalTracks } from '../db'
 
 /**
  * Proxy HTTP local para el <audio> del renderer.
@@ -48,8 +48,29 @@ export async function startStreamServer(): Promise<string> {
   return baseUrl
 }
 
+/** URL local para servir un track de música local por su id en SQLite. */
+export function localTrackUrlFor(localId: number): string {
+  return `${baseUrl}/local/${localId}?t=${sessionToken}`
+}
+
 async function handle(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
   const url = new URL(req.url ?? '/', baseUrl)
+
+  // ADR-0001 · Ruta /local/{id}: sirve archivos de música local por id de SQLite
+  const localMatch = url.pathname.match(/^\/local\/(\d+)$/)
+  if (localMatch && url.searchParams.get('t') === sessionToken) {
+    const localId = Number(localMatch[1])
+    const tracks = readLocalTracks()
+    const track = tracks.find((t) => t.id === localId)
+    if (track) {
+      const served = await serveLocalFile(req, res, track.filePath)
+      if (served) return
+    }
+    res.writeHead(404)
+    res.end()
+    return
+  }
+
   const match = url.pathname.match(/^\/stream\/([A-Za-z0-9_-]{6,16})$/)
 
   if (!match || url.searchParams.get('t') !== sessionToken) {
@@ -130,6 +151,21 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse): Prom
   res.end()
 }
 
+/** Resuelve el tipo MIME de un archivo de audio por extensión. */
+function mimeForAudioFile(p: string): string {
+  const ext = p.split('.').pop()?.toLowerCase()
+  switch (ext) {
+    case 'opus': case 'ogg': return 'audio/ogg'
+    case 'mp3': return 'audio/mpeg'
+    case 'flac': return 'audio/flac'
+    case 'wav': return 'audio/wav'
+    case 'aac': return 'audio/aac'
+    case 'wma': return 'audio/x-ms-wma'
+    case 'm4a': case 'mp4': return 'audio/mp4'
+    default: return 'audio/mp4'
+  }
+}
+
 /** Sirve un fichero local completo con soporte de Range. */
 async function serveLocalFile(
   req: http.IncomingMessage,
@@ -139,7 +175,7 @@ async function serveLocalFile(
   const st = await fs.stat(path).catch(() => null)
   if (!st) return false
   const total = st.size
-  const mime = path.endsWith('.opus') ? 'audio/ogg' : 'audio/mp4'
+  const mime = mimeForAudioFile(path)
 
   let start = 0
   let end = total - 1

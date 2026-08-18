@@ -727,12 +727,24 @@ a:hover {
   font-weight: 800;
   letter-spacing: -0.3px;
   line-height: 1.1;
+  /* F82 · Evita que títulos largos se corten sin ellipsis en ventanas estrechas */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
 .hero-sub {
   font-size: 14px;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.86);
+  /* F82 · Limita a 2 líneas para ventanas estrechas */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
 /* Colapsa a una columna en anchos estrechos. */

@@ -4,15 +4,19 @@ import { sessionManager } from '../innertube/session'
 import * as music from '../innertube/api'
 import { openCookieLogin } from '../auth/cookieLogin'
 import { resolveStream } from '../stream/resolver'
-import { streamUrlFor } from '../stream/server'
+import { streamUrlFor, localTrackUrlFor } from '../stream/server'
 import * as lib from '../innertube/library'
 import * as downloads from '../downloads'
+import * as localMusic from '../local-music'
 import { getLyrics } from '../lyrics'
+import { updateLocalTrackMeta, removeLocalTrack } from '../db'
 import {
   getAllSettings,
   updateSettings,
   changeDownloadsDir,
   openDownloadsDir,
+  changeLocalMusicDir,
+  openLocalMusicDir,
   getProfile,
   setProfile,
   getOnboardingCompleted,
@@ -221,13 +225,41 @@ export function registerIpc(getMainWindow: () => BrowserWindow | null): void {
   ipcMain.handle(IPC.HISTORY_ADD, (_e, track: TrackSummary) => lib.addHistoryEntry(track))
   ipcMain.handle(IPC.HISTORY_LIST, (_e, limit?: number) => lib.getHistory(limit))
 
-  // ---- Descargas ----
+  // ---- Cache de likes (ADR-0001: descargas van a carpeta oculta) ----
   downloads.setDownloadNotifier(getMainWindow)
   ipcMain.handle(IPC.DL_ADD, (_e, track: TrackSummary) => downloads.enqueueDownload(track))
   ipcMain.handle(IPC.DL_REMOVE, (_e, videoId: string) => downloads.deleteDownload(videoId))
   ipcMain.handle(IPC.DL_LIST, () => downloads.listDownloads())
-  ipcMain.handle(IPC.DL_CHANGE_DIR, () => changeDownloadsDir(getMainWindow()))
-  ipcMain.handle(IPC.DL_OPEN_DIR, () => openDownloadsDir())
+  // DL_CHANGE_DIR y DL_OPEN_DIR se mantienen para backward compat pero
+  // redirigen a la carpeta de música local (la cache de likes es interna)
+  ipcMain.handle(IPC.DL_CHANGE_DIR, () => changeLocalMusicDir(getMainWindow()))
+  ipcMain.handle(IPC.DL_OPEN_DIR, () => openLocalMusicDir())
+
+  // ---- Música local (ADR-0001) ----
+  localMusic.setLocalMusicNotifier(getMainWindow)
+  ipcMain.handle(IPC.LOCAL_LIST, () => localMusic.listLocalTracks())
+  ipcMain.handle(IPC.LOCAL_SCAN, async () => {
+    const dir = getAllSettings().localMusicDir
+    return localMusic.scanLocalMusic(dir)
+  })
+  ipcMain.handle(IPC.LOCAL_EDIT_META, (_e, id: number, patch: {
+    title?: string; artist?: string; album?: string; coverPath?: string | null
+  }) => {
+    updateLocalTrackMeta(id, patch)
+  })
+  ipcMain.handle(IPC.LOCAL_REMOVE, (_e, id: number) => {
+    removeLocalTrack(id)
+  })
+  ipcMain.handle(IPC.LOCAL_CHANGE_DIR, () => changeLocalMusicDir(getMainWindow()))
+  ipcMain.handle(IPC.LOCAL_OPEN_DIR, () => openLocalMusicDir())
+
+  // Escaneo inicial + watcher de la carpeta de música local
+  {
+    const dir = getAllSettings().localMusicDir
+    void localMusic.scanLocalMusic(dir).then(() => {
+      localMusic.startWatching(dir)
+    })
+  }
 
   // ---- Ajustes ----
   ipcMain.handle(IPC.SETTINGS_GET, () => getAllSettings())
@@ -426,6 +458,15 @@ export function registerIpc(getMainWindow: () => BrowserWindow | null): void {
 
   // ---- Streaming ----
   ipcMain.handle(IPC.STREAM_PREPARE, async (_e, videoId: string): Promise<PreparedStream> => {
+    // ADR-0001 · Tracks locales: videoId = 'local-{id}'
+    const localMatch = videoId.match(/^local-(\d+)$/)
+    if (localMatch) {
+      return {
+        url: localTrackUrlFor(Number(localMatch[1])),
+        mimeType: 'audio/mpeg', // el proxy detecta el mime real
+        via: 'local' as const
+      }
+    }
     // Descargada -> directo del disco, sin tocar la red (modo offline real)
     const { getDownloadPath } = await import('../db')
     const local = getDownloadPath(videoId)

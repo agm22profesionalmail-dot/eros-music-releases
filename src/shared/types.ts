@@ -18,6 +18,30 @@ export interface TrackSummary {
   isExplicit?: boolean
 }
 
+/** Pista de música local del usuario (archivo que posee). */
+export interface LocalTrack {
+  /** id único auto-incrementado en SQLite */
+  id: number
+  /** Ruta absoluta del archivo de audio */
+  filePath: string
+  /** Nombre visible (editable por el usuario) */
+  title: string
+  /** Artista (editable) */
+  artist: string
+  /** Álbum (editable) */
+  album: string
+  /** Duración en segundos (0 si no se pudo leer) */
+  durationSec: number
+  /** Ruta a la carátula extraída/personalizada, o data URL */
+  coverPath?: string
+  /** Formatos soportados */
+  format: string
+  /** Tamaño del archivo en bytes */
+  sizeBytes: number
+  /** Timestamp de adición a la biblioteca */
+  addedAt: number
+}
+
 export interface MediaCard {
   kind: 'song' | 'video' | 'album' | 'playlist' | 'artist' | 'unknown'
   /** videoId para canciones/vídeos, browseId para álbumes/artistas/playlists */
@@ -294,6 +318,15 @@ export const IPC = {
   DL_PROGRESS: 'downloads:progress', // main -> renderer (evento)
   DL_CHANGE_DIR: 'downloads:changeDir',
   DL_OPEN_DIR: 'downloads:openDir',
+  // música local
+  LOCAL_LIST: 'local:list',
+  LOCAL_SCAN: 'local:scan',
+  LOCAL_EDIT_META: 'local:editMeta',
+  LOCAL_REMOVE: 'local:remove',
+  LOCAL_CHANGE_DIR: 'local:changeDir',
+  LOCAL_OPEN_DIR: 'local:openDir',
+  /** main -> renderer: la carpeta de música local cambió (añadido/eliminado/modificado) */
+  LOCAL_CHANGED: 'local:changed',
   // ajustes
   SETTINGS_GET: 'settings:get',
   SETTINGS_SET: 'settings:set',
@@ -382,6 +415,8 @@ export interface LibrarySnapshot {
 export interface AppSettings {
   /** Carpeta de descargas */
   downloadsDir: string
+  /** Carpeta de música local del usuario */
+  localMusicDir: string
   /** Tema visual */
   theme: 'dark' | 'black' | 'light'
   /**
@@ -666,6 +701,7 @@ export type MiniCorner = AppSettings['miniCorner']
 
 export const DEFAULT_SETTINGS: AppSettings = {
   downloadsDir: '',
+  localMusicDir: '',
   theme: 'dark',
   // F60 · Rediseño café: los usuarios nuevos arrancan con el tema de la casa
   // (preset "Coffee Cream", a juego con el logo) y acento caramelo. Quien ya
@@ -773,3 +809,6 @@ export interface LyricsData {
   /** Líneas sincronizadas si existen */
   synced?: LyricLine[]
 }
+
+/** Extensiones de audio aceptadas como música local. */
+export const SUPPORTED_LOCAL_FORMATS = ['.mp3', '.m4a', '.flac', '.opus', '.wav', '.ogg', '.aac', '.wma'] as const

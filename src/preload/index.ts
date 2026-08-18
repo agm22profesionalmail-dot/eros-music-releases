@@ -296,6 +296,7 @@ const api = {
   },
 
   downloads: {
+    // ADR-0001 · `add` sigue existiendo para el autoDownloadOnLike (liked-cache interna)
     add: (track: TrackSummary): Promise<void> => ipcRenderer.invoke(IPC.DL_ADD, track),
     remove: (videoId: string): Promise<void> => ipcRenderer.invoke(IPC.DL_REMOVE, videoId),
     list: (): Promise<{ track: TrackSummary; filePath: string }[]> =>
@@ -309,6 +310,23 @@ const api = {
       ): void => cb(p)
       ipcRenderer.on(IPC.DL_PROGRESS, listener)
       return () => ipcRenderer.removeListener(IPC.DL_PROGRESS, listener)
+    }
+  },
+
+  // ADR-0001 · Música local del usuario
+  localMusic: {
+    list: (): Promise<unknown[]> => ipcRenderer.invoke(IPC.LOCAL_LIST),
+    scan: (): Promise<number> => ipcRenderer.invoke(IPC.LOCAL_SCAN),
+    editMeta: (id: number, patch: {
+      title?: string; artist?: string; album?: string; coverPath?: string | null
+    }): Promise<void> => ipcRenderer.invoke(IPC.LOCAL_EDIT_META, id, patch),
+    remove: (id: number): Promise<void> => ipcRenderer.invoke(IPC.LOCAL_REMOVE, id),
+    changeDir: (): Promise<string | null> => ipcRenderer.invoke(IPC.LOCAL_CHANGE_DIR),
+    openDir: (): Promise<void> => ipcRenderer.invoke(IPC.LOCAL_OPEN_DIR),
+    onChanged: (cb: () => void): (() => void) => {
+      const listener = (): void => cb()
+      ipcRenderer.on(IPC.LOCAL_CHANGED, listener)
+      return () => ipcRenderer.removeListener(IPC.LOCAL_CHANGED, listener)
     }
   },
 

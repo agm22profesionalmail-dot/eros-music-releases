@@ -1,9 +1,9 @@
 import { app, net, BrowserWindow } from 'electron'
-import { spawn } from 'child_process'
+import { spawn, exec } from 'child_process'
+import { createHash } from 'crypto'
 import { existsSync, promises as fs } from 'fs'
 import { join } from 'path'
-import { recordDownload, removeDownload, readDownloads, getDownloadPath, getSetting } from '../db'
-import { defaultDownloadsDir } from '../settings'
+import { recordDownload, removeDownload, readDownloads, getDownloadPath } from '../db'
 import { ytDlpProxyArgs } from '../net/proxy'
 import type { TrackSummary } from '@shared/types'
 
@@ -22,8 +22,8 @@ function bundledBin(name: 'ffmpeg' | 'yt-dlp'): string {
 }
 
 /**
- * Descargas permanentes: canción del spool -> ffmpeg (remux + etiquetas +
- * carátula incrustada) -> carpeta de música del usuario + registro en SQLite.
+ * Cache de likes: canción del spool -> ffmpeg (remux + etiquetas +
+ * carátula incrustada) -> carpeta oculta de cache + registro en SQLite.
  * Cola secuencial; el progreso se emite al renderer por webContents.send.
  */
 
@@ -43,15 +43,24 @@ function emit(p: DownloadProgress): void {
   notifyTarget?.()?.webContents.send('downloads:progress', p)
 }
 
-function downloadsDir(): string {
-  // F65 · Default = carpeta Música del usuario (~\Music\ERO'S Music). La ruta
-  // guardada en BD (`downloads.dir`) prevalece; la carpeta del proyecto
-  // F:\MetrolistPC ya no aparece en rutas visibles al usuario (es interna).
-  return getSetting('downloads.dir', defaultDownloadsDir())
+/** Carpeta oculta para cache de canciones con like — NO accesible al usuario. */
+export function likedCacheDir(): string {
+  return join(app.getPath('userData'), 'liked-cache')
 }
 
-function sanitize(name: string): string {
-  return name.replace(/[<>:"/\\|?*\u0000-\u001f]/g, '_').slice(0, 140)
+/** Nombre de fichero opaco: SHA-256 del videoId (sin pistas de artista/título). */
+function cacheFileName(videoId: string): string {
+  return createHash('sha256').update(videoId).digest('hex')
+}
+
+/** Crea la carpeta de cache y la marca como oculta+sistema en Windows. */
+async function ensureCacheDir(): Promise<string> {
+  const dir = likedCacheDir()
+  await fs.mkdir(dir, { recursive: true })
+  if (process.platform === 'win32') {
+    exec(`attrib +H +S "${dir}"`, { windowsHide: true }, () => undefined)
+  }
+  return dir
 }
 
 let queue: Promise<void> = Promise.resolve()
@@ -87,8 +96,7 @@ async function downloadOne(track: TrackSummary): Promise<void> {
   emit({ videoId: track.videoId, state: 'tagging' })
 
   // 2. Carátula
-  const dir = downloadsDir()
-  await fs.mkdir(dir, { recursive: true })
+  const dir = await ensureCacheDir()
   let coverPath: string | null = null
   if (track.thumbnailUrl) {
     try {
@@ -106,7 +114,8 @@ async function downloadOne(track: TrackSummary): Promise<void> {
   const isWebm = rawPath.endsWith('.webm') || rawPath.endsWith('.opus')
   const ext = isWebm ? 'opus' : 'm4a'
   const artist = track.artists.map((a) => a.name).join(', ')
-  const fileName = sanitize(`${artist ? artist + ' - ' : ''}${track.title}.${ext}`)
+  // Nombre ofuscado: hash del videoId + extensión (ffmpeg la necesita para el remux)
+  const fileName = `${cacheFileName(track.videoId)}.${ext}`
   const outPath = join(dir, fileName)
 
   const args = ['-y', '-i', rawPath]

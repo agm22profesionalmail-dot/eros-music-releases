@@ -1,7 +1,7 @@
 {
   "name": "eros-music",
   "productName": "ERO'S Music",
-  "version": "1.4.6",
+  "version": "1.5.0",
   "description": "ERO'S Music — cliente de escritorio de YouTube Music con interfaz estilo Spotify",
   "main": "./out/main/index.js",
   "author": "Zero",

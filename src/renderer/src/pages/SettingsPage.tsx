@@ -885,20 +885,16 @@ export function SettingsPage(): React.JSX.Element {
             whiteSpace: 'nowrap'
           }}
         >
-          {settings.downloadsDir || t('settings.downloads.default')}
+          {settings.localMusicDir || settings.downloadsDir || t('settings.downloads.default')}
         </code>
         <button
           className="btn btn-secondary"
           style={{ padding: '8px 16px' }}
           onClick={() => {
-            void window.api.settings.changeDownloadsDir().then((res) => {
-              if (res) {
-                void update({ downloadsDir: res.dir })
-                setDirMsg(
-                  res.moved > 0
-                    ? ti18n('settings.downloads.changedMoved', { n: res.moved })
-                    : ti18n('settings.downloads.changed')
-                )
+            void window.api.localMusic.changeDir().then((newDir) => {
+              if (newDir) {
+                void update({ localMusicDir: newDir })
+                setDirMsg(ti18n('settings.downloads.changed'))
               }
             })
           }}
@@ -908,7 +904,7 @@ export function SettingsPage(): React.JSX.Element {
         <button
           className="btn btn-secondary"
           style={{ padding: '8px 16px' }}
-          onClick={() => void window.api.settings.openDownloadsDir()}
+          onClick={() => void window.api.localMusic.openDir()}
         >
           {t('btn.open')}
         </button>
@@ -916,6 +912,9 @@ export function SettingsPage(): React.JSX.Element {
       {dirMsg && <p style={{ color: 'var(--accent)', padding: '8px 0' }}>{dirMsg}</p>}
       <p style={{ color: 'var(--text-subdued)', fontSize: 12, padding: '4px 0 0' }}>
         {t('settings.downloads.note')}
+      </p>
+      <p style={{ color: 'var(--text-subdued)', fontSize: 11, padding: '4px 0 0', fontStyle: 'italic' }}>
+        {t('settings.localMusic.cacheInfo')}
       </p>
 
       <h2>{t('settings.section.appearance')}</h2>

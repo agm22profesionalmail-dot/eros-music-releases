@@ -7,10 +7,25 @@ import { TrackTable } from '../components/TrackTable'
 import { ListSearchInput } from '../components/ListSearchInput'
 import { matchesCard, matchesTrack, useDebouncedValue } from '../app/listFilter'
 import { usePlayer } from '../player/store'
-import { useT } from '../app/i18n'
+import { useT, t as ti } from '../app/i18n'
 import { ImportPlaylistModal } from '../components/ImportPlaylistModal'
+import appIconUrl from '../assets/icon-256.png'
+import { LocalTrackEditModal } from '../components/LocalTrackEditModal'
 
-type Tab = 'playlists' | 'albums' | 'artists' | 'songs' | 'history' | 'downloads'
+type Tab = 'playlists' | 'albums' | 'artists' | 'songs' | 'history' | 'localMusic'
+
+/** ADR-0001 · Convierte rows de `local_tracks` (SQLite) a TrackSummary para TrackTable. */
+function localToSummary(lt: any): TrackSummary {
+  return {
+    kind: 'song',
+    videoId: `local-${lt.id}`,
+    title: lt.title || lt.filePath?.split(/[\\/]/).pop() || '—',
+    artists: lt.artist ? [{ name: lt.artist }] : [{ name: lt.format?.toUpperCase() ?? 'Local' }],
+    album: lt.album ? { name: lt.album } : undefined,
+    durationSec: lt.durationSec ?? 0,
+    thumbnailUrl: lt.coverPath || appIconUrl
+  }
+}
 
 export function LibraryPage(): React.JSX.Element {
   const t = useT()
@@ -19,19 +34,20 @@ export function LibraryPage(): React.JSX.Element {
   const playTracks = usePlayer((s) => s.playTracks)
   const [tab, setTab] = useState<Tab>('playlists')
   const [history, setHistory] = useState<TrackSummary[]>([])
-  const [downloadsList, setDownloadsList] = useState<TrackSummary[]>([])
+  const [localTracks, setLocalTracks] = useState<any[]>([])
   // F21: filtro local (no persistente). Se limpia al cambiar de pestaña
   // para que "playlists / daft" no se acarree a "canciones".
   const [filter, setFilter] = useState('')
   const debounced = useDebouncedValue(filter, 150)
   const [importOpen, setImportOpen] = useState(false)
+  const [editingLocal, setEditingLocal] = useState<any | null>(null)
 
   useEffect(() => {
     if (tab === 'history') {
       void window.api.history.list(200).then(setHistory)
     }
-    if (tab === 'downloads') {
-      void window.api.downloads.list().then((d) => setDownloadsList(d.map((x) => x.track)))
+    if (tab === 'localMusic') {
+      void window.api.localMusic.list().then(setLocalTracks)
     }
     setFilter('')
   }, [tab])
@@ -42,7 +58,7 @@ export function LibraryPage(): React.JSX.Element {
     ['artists', t('library.tab.artists')],
     ['songs', t('library.tab.songs')],
     ['history', t('library.tab.history')],
-    ['downloads', t('library.tab.downloads')]
+    ['localMusic', t('library.tab.downloads')]
   ]
 
   // Listas filtradas por pestaña — memorizadas para no rehacerlo en cada
@@ -77,10 +93,22 @@ export function LibraryPage(): React.JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [history, debounced]
   )
-  const filteredDownloads = useMemo(
-    () => filterTracks(downloadsList),
+  const filteredLocalTracks = useMemo(
+    () => {
+      if (!debounced) return localTracks
+      const q = debounced.toLowerCase()
+      return localTracks.filter((t: any) =>
+        (t.title?.toLowerCase().includes(q)) ||
+        (t.artist?.toLowerCase().includes(q)) ||
+        (t.album?.toLowerCase().includes(q))
+      )
+    },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [downloadsList, debounced]
+    [localTracks, debounced]
+  )
+  const localSummaries = useMemo(
+    () => filteredLocalTracks.map(localToSummary),
+    [filteredLocalTracks]
   )
 
   // ¿Hay contenido en la pestaña activa? (para saber si mostrar el buscador)
@@ -90,7 +118,7 @@ export function LibraryPage(): React.JSX.Element {
     (tab === 'artists' && (library?.artists.length ?? 0) > 0) ||
     (tab === 'songs' && (library?.songs.length ?? 0) > 0) ||
     (tab === 'history' && history.length > 0) ||
-    (tab === 'downloads' && downloadsList.length > 0)
+    (tab === 'localMusic' && localTracks.length > 0)
 
   // Recuento tras filtrar — para el mensaje "sin resultados".
   const filteredCount =
@@ -104,7 +132,7 @@ export function LibraryPage(): React.JSX.Element {
             ? filteredSongs.length
             : tab === 'history'
               ? filteredHistory.length
-              : filteredDownloads.length
+              : filteredLocalTracks.length
 
   return (
     <div className="page">
@@ -180,27 +208,24 @@ export function LibraryPage(): React.JSX.Element {
           onContextMenu={(e, t) => openContextMenu(e, trackMenu(t))}
         />
       )}
-      {tab === 'downloads' && (
+      {tab === 'localMusic' && (
         <>
-          <TrackTable
-            tracks={filteredDownloads}
-            showAlbum
-            onPlayIndex={(i) => void playTracks(filteredDownloads, i)}
-            onContextMenu={(e, track) =>
-              openContextMenu(e, [
-                ...trackMenu(track),
-                { separator: true, label: '' },
-                {
-                  label: t('library.removeDownload'),
-                  action: () =>
-                    void window.api.downloads.remove(track.videoId).then(() =>
-                      window.api.downloads.list().then((d) => setDownloadsList(d.map((x) => x.track)))
-                    )
-                }
-              ])
-            }
-          />
-          {!downloadsList.length && (
+          {localSummaries.length > 0 && (
+            <TrackTable
+              tracks={localSummaries}
+              showAlbum
+              onPlayIndex={(i) => void playTracks(localSummaries, i)}
+              onContextMenu={(e, tr) => {
+                // Buscar el track local original para tener los datos completos.
+                const localId = Number(tr.videoId.replace('local-', ''))
+                const lt = localTracks.find((x: any) => x.id === localId)
+                openContextMenu(e, localTrackMenu(tr, lt, setEditingLocal, () => {
+                  void window.api.localMusic.list().then(setLocalTracks)
+                }))
+              }}
+            />
+          )}
+          {!localTracks.length && (
             <div className="empty-state">
               {t('library.noDownloads')}
             </div>
@@ -214,6 +239,50 @@ export function LibraryPage(): React.JSX.Element {
         <div className="empty-state">{t('search.empty', { q: filter })}</div>
       )}
       {importOpen && <ImportPlaylistModal onClose={() => setImportOpen(false)} />}
+      {editingLocal && (
+        <LocalTrackEditModal
+          trackId={editingLocal.id}
+          currentTitle={editingLocal.title || ''}
+          currentArtist={editingLocal.artist || ''}
+          currentAlbum={editingLocal.album || ''}
+          currentCoverPath={editingLocal.coverPath}
+          onClose={(saved) => {
+            setEditingLocal(null)
+            if (saved) void window.api.localMusic.list().then(setLocalTracks)
+          }}
+        />
+      )}
     </div>
   )
+}
+
+/** F82 · Menú contextual para tracks de música local. */
+function localTrackMenu(
+  track: TrackSummary,
+  lt: any,
+  openEdit: (lt: any) => void,
+  refresh: () => void
+) {
+  const player = usePlayer.getState()
+  return [
+    { label: ti('menu.playNow'), action: () => void player.playNow(track) },
+    { label: ti('menu.playNext'), action: () => player.enqueueNext(track) },
+    { label: ti('menu.addToQueue'), action: () => player.enqueueLast([track]) },
+    { separator: true, label: '' },
+    {
+      label: ti('library.localMusic.editMeta'),
+      action: () => openEdit(lt)
+    },
+    { separator: true, label: '' },
+    {
+      label: ti('localEdit.removeTrack'),
+      action: () => {
+        const name = lt?.title || track.title
+        if (confirm(ti('localEdit.removeConfirm', { title: name }))) {
+          const id = lt?.id ?? Number(track.videoId.replace('local-', ''))
+          void window.api.localMusic.remove(id).then(refresh)
+        }
+      }
+    }
+  ]
 }
