@@ -19,7 +19,12 @@ import { buildURL, getHeaders } from 'bgutils-js/utils'
  */
 
 const REQUEST_KEY = 'O43z0dpjhgX20SCx4KAo'
-const MINTER_TTL_MS = 3 * 60 * 60 * 1000 // el integrity token caduca: re-crear cada 3 h
+// El integrity token de BotGuard caduca, y en la práctica ANTES de las 3 h que
+// asumíamos (visto: art tracks "- Topic" empezaban a dar 403 en la descarga a
+// los ~45 min con la app abierta). Lo bajamos a 1 h para regenerarlo proactivo
+// mucho antes de que caduque. La red real es la regeneración REACTIVA: ante un
+// 403 de GVS el main llama a `window.__refreshPoMinter` (ver potoken.ts).
+const MINTER_TTL_MS = 60 * 60 * 1000
 
 interface MinterState {
   minter: { mintAsWebsafeString: (identifier: string) => Promise<string> }
@@ -50,7 +55,7 @@ async function buildMinter(): Promise<MinterState> {
   })
 
   const webPoSignalOutput: unknown[] = []
-  const botguardResponse = await botguard.snapshot({ webPoSignalOutput })
+  const botguardResponse = await botguard.snapshot({ webPoSignalOutput: webPoSignalOutput as never })
 
   const integrityTokenResponse = await fetch(buildURL('GenerateIT', false), {
     method: 'POST',
@@ -109,12 +114,31 @@ async function mint(identifier: string): Promise<string> {
   }
 }
 
+/**
+ * Fuerza la recreación del minter (challenge + integrity token nuevos). El main
+ * lo llama cuando googlevideo devuelve 403 al descargar: es la señal de que el
+ * integrity token caducó, y como `mintAsWebsafeString` NO lanza al firmar con un
+ * token muerto (solo devuelve un pot que YouTube rechaza), la recreación
+ * perezosa de `mint()` no bastaba — hay que forzarla desde fuera. Devuelve true
+ * si el minter nuevo quedó listo.
+ */
+async function refresh(): Promise<boolean> {
+  try {
+    await getMinter(true)
+    return true
+  } catch {
+    return false
+  }
+}
+
 declare global {
   interface Window {
     __mintPoToken: (identifier: string) => Promise<string>
+    __refreshPoMinter: () => Promise<boolean>
     __potokenReady?: boolean
   }
 }
 
 window.__mintPoToken = mint
+window.__refreshPoMinter = refresh
 window.__potokenReady = true

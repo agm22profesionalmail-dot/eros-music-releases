@@ -72,8 +72,7 @@ async function ensureWindow(): Promise<BrowserWindow> {
   }
 }
 
-/** Firma un PoToken ligado a `identifier` (visitorData o videoId) en el navegador real. */
-export async function mintPoToken(identifier: string): Promise<string> {
+async function mintOnce(identifier: string): Promise<string> {
   const win = await ensureWindow()
   const token = (await win.webContents.executeJavaScript(
     `window.__mintPoToken(${JSON.stringify(identifier)})`
@@ -82,6 +81,42 @@ export async function mintPoToken(identifier: string): Promise<string> {
     throw new Error('El generador de PoToken no devolvió token')
   }
   return token
+}
+
+/** Firma un PoToken ligado a `identifier` (visitorData o videoId) en el navegador real. */
+export async function mintPoToken(identifier: string): Promise<string> {
+  try {
+    return await mintOnce(identifier)
+  } catch (err) {
+    // La ventana oculta pudo quedar inservible (Chromium la descartó, el
+    // contexto se recargó…). La recreamos una vez y reintentamos: mejor un
+    // mint algo más lento que un 403 en la descarga.
+    console.warn('[potoken] mint falló, recreo la ventana:', String((err as Error)?.message ?? err))
+    if (genWindow && !genWindow.isDestroyed()) genWindow.destroy()
+    genWindow = null
+    loading = null
+    return mintOnce(identifier)
+  }
+}
+
+/**
+ * Fuerza a regenerar el minter de BotGuard (challenge + integrity token nuevos).
+ * Se llama ante un 403 de googlevideo al descargar: es la señal de que el
+ * integrity token caducó y los pot que firma ya no valen. Si la ventana no
+ * responde, la recreamos para que el siguiente `mintPoToken` la reconstruya.
+ */
+export async function refreshMinter(): Promise<void> {
+  try {
+    const win = await ensureWindow()
+    await win.webContents.executeJavaScript(
+      'window.__refreshPoMinter ? window.__refreshPoMinter() : false'
+    )
+  } catch (err) {
+    console.warn('[potoken] refreshMinter falló, recreo la ventana:', String((err as Error)?.message ?? err))
+    if (genWindow && !genWindow.isDestroyed()) genWindow.destroy()
+    genWindow = null
+    loading = null
+  }
 }
 
 export async function generatePoToken(visitorData: string): Promise<PoTokenResult> {

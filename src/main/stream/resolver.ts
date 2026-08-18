@@ -3,7 +3,7 @@ import { app } from 'electron'
 import { existsSync } from 'fs'
 import { join } from 'path'
 import { sessionManager } from '../innertube/session'
-import { mintPoToken } from '../innertube/potoken'
+import { mintPoToken, refreshMinter } from '../innertube/potoken'
 import { getAllSettings } from '../settings'
 import { ytDlpProxyArgs } from '../net/proxy'
 
@@ -96,9 +96,24 @@ export function clearStreamCache(): void {
   cache.clear()
 }
 
-export async function resolveStream(videoId: string): Promise<ResolvedStream> {
-  const hit = cache.get(videoId)
-  if (hit && hit.expiresAt > Date.now() + 60_000) return hit
+export async function resolveStream(
+  videoId: string,
+  opts?: { refreshPot?: boolean }
+): Promise<ResolvedStream> {
+  // Con `refreshPot` (venimos de un 403 de descarga) NO servimos de caché:
+  // la URL cacheada lleva un pot que googlevideo ya rechazó.
+  if (!opts?.refreshPot) {
+    const hit = cache.get(videoId)
+    if (hit && hit.expiresAt > Date.now() + 60_000) return hit
+  }
+
+  // Un 403 de GVS en art tracks "- Topic" significa casi siempre que el
+  // integrity token de BotGuard caducó y los pot que firma ya no valen.
+  // Regeneramos el minter ANTES de re-resolver para que `mintPoToken(videoId)`
+  // de más abajo produzca un pot fresco y válido.
+  if (opts?.refreshPot) {
+    await refreshMinter().catch(() => undefined)
+  }
 
   const yt = await withTimeout(
     sessionManager.ensureStreamingReady(),

@@ -122,7 +122,12 @@ async function download(entry: SpoolEntry, resolved: ResolvedStream): Promise<vo
         if (res.status === 403 || res.status === 410) {
           if (++reresolves > 2) throw new Error('URL rechazada tras re-resolver')
           invalidateStream(entry.videoId)
-          resolved = await resolveStream(entry.videoId)
+          // El 403 de googlevideo en art tracks "- Topic" es, casi siempre, un
+          // PoToken de streaming caducado (el integrity token de BotGuard se
+          // degrada con la app abierta). Re-resolvemos pidiendo regenerar el
+          // minter para obtener un pot fresco y válido — así el art track suena
+          // sin tener que reiniciar la app.
+          resolved = await resolveStream(entry.videoId, { refreshPot: true })
           continue
         }
         if (res.status !== 200 && res.status !== 206) {
