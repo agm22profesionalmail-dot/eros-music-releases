@@ -3,6 +3,7 @@ import { app } from 'electron'
 import { existsSync } from 'fs'
 import { join } from 'path'
 import { sessionManager } from '../innertube/session'
+import { mintPoToken } from '../innertube/potoken'
 import { getAllSettings } from '../settings'
 import { ytDlpProxyArgs } from '../net/proxy'
 
@@ -158,12 +159,30 @@ export async function resolveStream(videoId: string): Promise<ResolvedStream> {
         continue
       }
       // decipher aplica sig/nsig con el player y añade pot si la sesión lo tiene
-      const url = await withTimeout(format.decipher(yt.session.player), 6000, `decipher ${source}`)
+      let url = await withTimeout(format.decipher(yt.session.player), 6000, `decipher ${source}`)
       if (!url) {
         lastError = new Error(`decipher vacío (${source})`)
         continue
       }
       const u = new URL(url)
+      // F72 · El `pot` de la URL de streaming (GVS) debe ligarse al VIDEOID, no al
+      // visitorData de la sesión: con el de visitorData googlevideo devuelve 403 al
+      // descargar los art tracks de YouTube Music (canales "- Topic"). Regeneramos
+      // el pot ligado al videoId y lo sustituimos (solo en URLs que ya llevan pot;
+      // IOS/ANDROID dan URL directa sin pot y no lo necesitan). Es lo que hace
+      // Metrolist con su `streamingDataPoToken`.
+      if (u.searchParams.has('pot')) {
+        try {
+          const streamPot = await withTimeout(mintPoToken(videoId), 8000, `streamPot ${source}`)
+          u.searchParams.set('pot', streamPot)
+          url = u.toString()
+        } catch (e) {
+          console.warn(
+            `[resolver] streamPot(videoId) falló (${source}), uso el pot de sesión:`,
+            String((e as Error)?.message ?? e)
+          )
+        }
+      }
       const label = source === client ? source : `${source}→${client}`
       console.log(
         `[resolver] ${label} ok: c=${u.searchParams.get('c')} pot=${u.searchParams.has('pot')} sabr=${u.searchParams.get('sabr') ?? '-'} n=${u.searchParams.has('n')} sig=${u.searchParams.has('sig') || u.searchParams.has('signature')}`

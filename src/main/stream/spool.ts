@@ -28,6 +28,14 @@ interface SpoolEntry {
 const spools = new Map<string, SpoolEntry>()
 const MAX_CACHE_BYTES = 768 * 1024 * 1024 // ~768 MB de canciones recientes
 
+// Watchdog de inactividad de RED (hermano de F42, que puso timeouts en el
+// resolver —getInfo/decipher/yt-dlp— pero NO aquí). Si googlevideo acepta la
+// conexión y luego no manda un solo byte durante este tiempo (PoToken caducado,
+// cookies rancias), lo consideramos un cuelgue y abortamos el fetch. NO es el
+// "stall de ventana" (respuesta completa pero la ventana no creció), que se
+// maneja aparte con espera + reintento.
+const STALL_MS = 12_000
+
 // Una sola descarga simultánea: dos ventanas crecientes en paralelo hacen
 // que googlevideo rechace la segunda (rate-limit por visitante).
 let downloadChain: Promise<void> = Promise.resolve()
@@ -99,55 +107,83 @@ async function download(entry: SpoolEntry, resolved: ResolvedStream): Promise<vo
       const end = cap
       headers.Range = `bytes=0-${end}`
 
-      const res = await net.fetch(resolved.url, { headers })
+      // Watchdog: si no llega ningún byte nuevo en STALL_MS, aborta el fetch.
+      // Cubre tanto "headers que no llegan" como "body que se cuelga a mitad".
+      const controller = new AbortController()
+      let lastProgress = Date.now()
+      const watchdog = setInterval(() => {
+        if (Date.now() - lastProgress > STALL_MS) controller.abort()
+      }, 2_000)
 
-      if (res.status === 403 || res.status === 410) {
-        if (++reresolves > 2) throw new Error('URL rechazada tras re-resolver')
-        invalidateStream(entry.videoId)
-        resolved = await resolveStream(entry.videoId)
-        continue
-      }
-      if (res.status !== 200 && res.status !== 206) {
-        throw new Error(`HTTP ${res.status}`)
-      }
+      try {
+        const res = await net.fetch(resolved.url, { headers, signal: controller.signal })
+        lastProgress = Date.now() // headers recibidos: da margen fresco al body
 
-      if (!entry.totalBytes) {
-        const cr = res.headers.get('content-range')?.match(/\/(\d+)$/)
-        const cl = res.headers.get('content-length')
-        entry.totalBytes = cr ? Number(cr[1]) : cl ? Number(cl) : 0
-        entry.emitter.emit('update')
-      }
-
-      const reader = res.body?.getReader()
-      if (!reader) throw new Error('sin body')
-
-      let received = 0
-      const before = entry.downloadedBytes
-      for (;;) {
-        const { done, value } = await reader.read()
-        if (done) break
-        let chunk: Uint8Array = value
-        // Descarta el tramo que ya tenemos (la petición siempre empieza en 0)
-        if (received < before) {
-          const skip = Math.min(before - received, chunk.byteLength)
-          received += skip
-          if (skip === chunk.byteLength) continue
-          chunk = chunk.subarray(skip)
+        if (res.status === 403 || res.status === 410) {
+          if (++reresolves > 2) throw new Error('URL rechazada tras re-resolver')
+          invalidateStream(entry.videoId)
+          resolved = await resolveStream(entry.videoId)
+          continue
         }
-        received += chunk.byteLength
-        await new Promise<void>((resolveWrite, rejectWrite) => {
-          out.write(chunk, (err) => (err ? rejectWrite(err) : resolveWrite()))
-        })
-        entry.downloadedBytes += chunk.byteLength
-        entry.emitter.emit('update')
-      }
+        if (res.status !== 200 && res.status !== 206) {
+          throw new Error(`HTTP ${res.status}`)
+        }
 
-      if (entry.downloadedBytes === before) {
-        // La ventana no creció: espera un poco (simula consumo) y reintenta
-        if (++stalls > 6) throw new Error(`ventana estancada en ${entry.downloadedBytes}B`)
-        await new Promise((r) => setTimeout(r, 700 * stalls))
-      } else {
-        stalls = 0
+        if (!entry.totalBytes) {
+          const cr = res.headers.get('content-range')?.match(/\/(\d+)$/)
+          const cl = res.headers.get('content-length')
+          entry.totalBytes = cr ? Number(cr[1]) : cl ? Number(cl) : 0
+          entry.emitter.emit('update')
+        }
+
+        const reader = res.body?.getReader()
+        if (!reader) throw new Error('sin body')
+
+        let received = 0
+        const before = entry.downloadedBytes
+        for (;;) {
+          const { done, value } = await reader.read()
+          if (done) break
+          lastProgress = Date.now() // llegó un byte: reinicia el watchdog
+          let chunk: Uint8Array = value
+          // Descarta el tramo que ya tenemos (la petición siempre empieza en 0)
+          if (received < before) {
+            const skip = Math.min(before - received, chunk.byteLength)
+            received += skip
+            if (skip === chunk.byteLength) continue
+            chunk = chunk.subarray(skip)
+          }
+          received += chunk.byteLength
+          await new Promise<void>((resolveWrite, rejectWrite) => {
+            out.write(chunk, (err) => (err ? rejectWrite(err) : resolveWrite()))
+          })
+          entry.downloadedBytes += chunk.byteLength
+          entry.emitter.emit('update')
+        }
+
+        if (entry.downloadedBytes === before) {
+          // La ventana no creció: espera un poco (simula consumo) y reintenta
+          if (++stalls > 6) throw new Error(`ventana estancada en ${entry.downloadedBytes}B`)
+          await new Promise((r) => setTimeout(r, 700 * stalls))
+        } else {
+          stalls = 0
+        }
+      } catch (err) {
+        // Cuelgue de red cazado por el watchdog: trátalo como el 403 (re-resolver
+        // y reintentar). Sin esto, el fetch/reader colgado nunca resolvía ni
+        // rechazaba y, al ser la descarga una cadena secuencial global,
+        // envenenaba TODAS las canciones siguientes → "cargando para siempre".
+        if (controller.signal.aborted) {
+          if (++reresolves > 2) {
+            throw new Error(`stream sin datos tras re-resolver (red colgada en ${entry.downloadedBytes}B)`)
+          }
+          invalidateStream(entry.videoId)
+          resolved = await resolveStream(entry.videoId)
+          continue
+        }
+        throw err
+      } finally {
+        clearInterval(watchdog)
       }
     }
 
