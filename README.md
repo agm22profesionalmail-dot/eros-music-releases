@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/versión-v1.4.6-6f4e37" alt="Versión v1.4.6" />
+  <img src="https://img.shields.io/badge/versión-v1.5.0-6f4e37" alt="Versión v1.5.0" />
   <img src="https://img.shields.io/badge/plataforma-Windows-0078d4" alt="Plataforma Windows" />
   <img src="https://img.shields.io/badge/licencia-GPL--3.0-green" alt="Licencia GPL-3.0" />
 </p>
@@ -44,6 +44,7 @@ ERO'S Music es un cliente de escritorio no oficial de **YouTube Music para Windo
 | Estadísticas 100% locales | ❌ | ❌ | ❌ | ✅ |
 | Last.fm / ListenBrainz | ❌ | ❌ | ⚠️ Solo Last.fm | ✅ Ambos |
 | Importar playlists de Spotify | ❌ | ❌ | ❌ | ✅ |
+| Música local con edición de metadatos | ❌ | ✅ Parcial | ❌ | ✅ |
 | Gratis, sin suscripción | ✅ | ❌ | ✅ | ✅ |
 
 **Frente a YouTube Music web** — la web oficial no tiene crossfade, ni EQ, ni mini-player, ni fondo ambient, ni karaoke por palabras, ni estadísticas locales. ERO'S Music añade todo eso encima de tu misma cuenta.
@@ -120,6 +121,9 @@ Interfaz completa en ambos idiomas.
 
 ### 👋 Onboarding guiado
 Un asistente de bienvenida te acompaña la primera vez que abres la app.
+
+### 🎶 Música local
+Añade tus archivos de audio (MP3, FLAC, OGG, OPUS, WAV, M4A…) a la biblioteca y reprodúcelos junto a tu música de YouTube Music. Puedes editar título, artista, álbum y carátula directamente desde la app, y el fondo ambient se adapta a la portada igual que con cualquier otra canción.
 
 ## Privacidad
 
