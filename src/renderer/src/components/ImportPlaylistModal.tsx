@@ -158,7 +158,7 @@ export function ImportPlaylistModal({ onClose }: { onClose: () => void }): React
           display: 'flex',
           flexDirection: 'column',
           gap: 16,
-          background: 'var(--bg)',
+          background: 'var(--bg-base)',
           border: '1px solid var(--divider)',
           borderRadius: 12,
           padding: 28,

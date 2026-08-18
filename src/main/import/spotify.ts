@@ -7,6 +7,18 @@
  */
 import type { ImportTrackMatch, TrackSummary } from '@shared/types'
 
+/** Decodifica entidades HTML básicas que pueden aparecer en títulos/artistas. */
+function decodeHtmlEntities(str: string): string {
+  return str
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, hex: string) => String.fromCodePoint(parseInt(hex, 16)))
+    .replace(/&#(\d+);/g, (_, dec: string) => String.fromCodePoint(parseInt(dec, 10)))
+}
+
 export interface SpotifyTrack {
   title: string
   artist: string
@@ -78,9 +90,22 @@ export async function parseSpotifyPlaylist(
     }
   }
 
-  // Estrategia 2: buscar el JSON serializado en el resource del embed
+  // Estrategia 2: parsear los tags <h3> (título) y <h4> (artista) del embed HTML.
+  // Spotify renderiza los tracks como server-side HTML con clases CSS-module
+  // estables: TracklistRow_title__* y TracklistRow_subtitle__*.
   if (!tracks.length) {
-    // Busca el patrón de lista de tracks en el HTML
+    const rowPattern =
+      /<h3[^>]*class="[^"]*TracklistRow_title[^"]*"[^>]*>([^<]+)<\/h3>\s*<h4[^>]*class="[^"]*TracklistRow_subtitle[^"]*"[^>]*>([^<]+)<\/h4>/g
+    let m: RegExpExecArray | null
+    while ((m = rowPattern.exec(html)) !== null) {
+      const title = decodeHtmlEntities(m[1].trim())
+      const artist = decodeHtmlEntities(m[2].trim())
+      if (title && artist) tracks.push({ title, artist })
+    }
+  }
+
+  // Estrategia 3: JSON legacy — "track":{"name":"...","artists":[...]}
+  if (!tracks.length) {
     const trackPattern = /"track":\s*\{[^}]*"name":\s*"([^"]+)"[^}]*"artists":\s*\[([^\]]+)\]/g
     let match: RegExpExecArray | null
     while ((match = trackPattern.exec(html)) !== null) {
@@ -93,7 +118,7 @@ export async function parseSpotifyPlaylist(
     }
   }
 
-  // Estrategia 3: buscar por el patrón de la página de playlist directa
+  // Estrategia 5: fallback — fetch la página directa de la playlist
   if (!tracks.length) {
     const directRes = await fetch(`https://open.spotify.com/playlist/${playlistId}`, {
       headers: {
@@ -123,12 +148,45 @@ export async function parseSpotifyPlaylist(
 }
 
 /**
- * Navega recursivamente un objeto JSON buscando items con
- * track → name + artists[].name para extraer los tracks.
+ * Repara strings con doble encoding UTF-8.
+ * Spotify a veces sirve subtítulos donde los bytes UTF-8 se interpretaron
+ * como Latin-1 y se re-codificaron (ej: "MØ" → "MÃ˜").
+ */
+function fixDoubleEncodedUtf8(str: string): string {
+  // Detectar patrón de doble encoding: bytes 0xC0–0xDF seguidos de 0x80–0xBF
+  if (!/[À-ß][-¿]/.test(str)) return str
+  try {
+    const bytes: number[] = []
+    for (let i = 0; i < str.length; i++) {
+      const code = str.charCodeAt(i)
+      if (code < 256) {
+        bytes.push(code)
+      } else {
+        // Carácter fuera de Latin-1 — no es doble encoding limpio, abortar
+        return str
+      }
+    }
+    return new TextDecoder('utf-8', { fatal: true }).decode(new Uint8Array(bytes))
+  } catch {
+    return str
+  }
+}
+
+/**
+ * Navega recursivamente un objeto JSON buscando items con datos de track.
+ * Soporta múltiples formatos que Spotify ha usado a lo largo del tiempo.
  */
 function extractTracksFromNextData(data: unknown): SpotifyTrack[] {
   const tracks: SpotifyTrack[] = []
   const seen = new Set<string>()
+
+  function addTrack(title: string, artist: string, album?: string): void {
+    const key = `${title}|${artist}`.toLowerCase()
+    if (artist && !seen.has(key)) {
+      seen.add(key)
+      tracks.push({ title, artist, album })
+    }
+  }
 
   function walk(obj: unknown): void {
     if (!obj || typeof obj !== 'object') return
@@ -137,7 +195,19 @@ function extractTracksFromNextData(data: unknown): SpotifyTrack[] {
       return
     }
     const o = obj as Record<string, unknown>
-    // Patrón: { track: { name, artists: [{ name }], album: { name } } }
+
+    // Patrón 2025+: { title, subtitle, uri: "spotify:track:...", entityType: "track" }
+    // Estructura plana en props.pageProps.state.data.entity.trackList[]
+    if (
+      typeof o.title === 'string' &&
+      typeof o.subtitle === 'string' &&
+      (o.entityType === 'track' ||
+        (typeof o.uri === 'string' && (o.uri as string).includes('track')))
+    ) {
+      addTrack(o.title as string, fixDoubleEncodedUtf8(o.subtitle as string))
+    }
+
+    // Patrón legacy: { track: { name, artists: [{ name }], album: { name } } }
     if (o.track && typeof o.track === 'object') {
       const track = o.track as Record<string, unknown>
       if (typeof track.name === 'string' && Array.isArray(track.artists)) {
@@ -150,26 +220,26 @@ function extractTracksFromNextData(data: unknown): SpotifyTrack[] {
           track.album && typeof track.album === 'object'
             ? (track.album as { name?: string }).name
             : undefined
-        const key = `${title}|${artist}`.toLowerCase()
-        if (artist && !seen.has(key)) {
-          seen.add(key)
-          tracks.push({ title, artist, album })
-        }
+        addTrack(title, artist, album)
       }
     }
-    // Patrón directo: { name, artists: [...] } sin wrapper 'track'
-    if (typeof o.name === 'string' && Array.isArray(o.artists) && o.uri && typeof o.uri === 'string' && (o.uri as string).includes('track')) {
+
+    // Patrón legacy directo: { name, artists: [...], uri } sin wrapper 'track'
+    if (
+      typeof o.name === 'string' &&
+      Array.isArray(o.artists) &&
+      o.uri &&
+      typeof o.uri === 'string' &&
+      (o.uri as string).includes('track')
+    ) {
       const title = o.name as string
       const artist = (o.artists as { name?: string }[])
         .map((a) => a.name ?? '')
         .filter(Boolean)
         .join(', ')
-      const key = `${title}|${artist}`.toLowerCase()
-      if (artist && !seen.has(key)) {
-        seen.add(key)
-        tracks.push({ title, artist })
-      }
+      addTrack(title, artist)
     }
+
     for (const v of Object.values(o)) walk(v)
   }
 
