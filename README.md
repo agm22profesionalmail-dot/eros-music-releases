@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/versión-v1.5.5-6f4e37" alt="Versión v1.5.5" />
+  <img src="https://img.shields.io/badge/versión-v1.5.6-6f4e37" alt="Versión v1.5.6" />
   <img src="https://img.shields.io/badge/plataforma-Windows-0078d4" alt="Plataforma Windows" />
   <img src="https://img.shields.io/badge/licencia-GPL--3.0-green" alt="Licencia GPL-3.0" />
 </p>
@@ -65,7 +65,7 @@ En resumen:
 Inicia sesión con Google y ahí está todo: tu biblioteca, tus playlists, tus likes y tu historial. Lo que hagas en la app se refleja en tu cuenta y viceversa.
 
 ### 🎨 Diseño Coffee Cream + 20 temas
-El fondo ambient extrae una paleta 60-30-10 de la carátula del álbum y puede reaccionar al audio en tiempo real. Incluye 20 presets de tema sobre base clara, oscura o negra, con color de acento dinámico.
+El fondo ambient extrae una paleta 60-30-10 de la carátula del álbum y reacciona al audio en tiempo real, con **5 diseños a elegir**: Manchas, Ondas, Partículas, Aurora y Carátula difuminada. Incluye 20 presets de tema sobre base clara, oscura o negra, con color de acento dinámico.
 
 <p align="center">
   <img src="screenshots/settings_themes.png" alt="Ajustes de temas de ERO'S Music" width="750" />
