@@ -7,8 +7,11 @@ import { useLibrary } from '../app/libraryStore'
 import { useSleepTimer } from '../app/sleepTimer'
 import { useT } from '../app/i18n'
 import {
+  ClockIcon,
   HeartIcon,
   MicIcon,
+  MiniPlayerIcon,
+  MoreIcon,
   MusicNoteIcon,
   PauseIcon,
   PlayIcon,
@@ -18,6 +21,7 @@ import {
   ShuffleIcon,
   SkipNextIcon,
   SkipPrevIcon,
+  VisualizerIcon,
   VolumeIcon
 } from '../components/Icons'
 
@@ -194,13 +198,121 @@ function VolumeControl({
         aria-label={t('np.mute')}
         onClick={() => setVolume(volume > 0 ? 0 : 0.8)}
       >
-        <VolumeIcon size={16} muted={volume === 0} />
+        <VolumeIcon size={18} muted={volume === 0} />
       </button>
       <div className="volume">
         <Slider value={volume} max={1} onChange={setVolume} />
       </div>
       <div className="volume-popover">
         <Slider value={volume} max={1} onChange={setVolume} />
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Menú "Más opciones" (⋯): agrupa las acciones secundarias que antes vivían
+ * sueltas a la derecha de la barra (Letras, Temporizador de apagado y
+ * Mini-player) en un popover, para dejar la zona derecha limpia junto al
+ * volumen. Reutiliza el mismo patrón de apertura persistente de
+ * `VolumeControl` (hover/click con cierre diferido a `HOVER_HIDE_MS`).
+ *
+ * Lee sus propios stores (router, sleepTimer, player) igual que el resto del
+ * archivo; solo recibe `onOpenSleep` porque el estado del modal vive en el
+ * componente padre.
+ */
+function MoreMenu({ onOpenSleep }: { onOpenSleep: () => void }): React.JSX.Element {
+  const t = useT()
+  const navigate = useRouter((s) => s.navigate)
+  const route = useRouter((s) => s.route())
+  const current = usePlayer((s) => s.current())
+  const sleepActive = useSleepTimer((s) => s.active)
+  const sleepMinutesLeft = useSleepTimer((s) => s.minutesLeft)
+  const [open, setOpen] = useState(false)
+  const hideTimer = useRef<number>(0)
+
+  const cancelHide = useCallback((): void => {
+    if (hideTimer.current) {
+      window.clearTimeout(hideTimer.current)
+      hideTimer.current = 0
+    }
+  }, [])
+  const scheduleHide = useCallback((): void => {
+    cancelHide()
+    hideTimer.current = window.setTimeout(() => setOpen(false), HOVER_HIDE_MS)
+  }, [cancelHide])
+  const openNow = useCallback((): void => {
+    cancelHide()
+    setOpen(true)
+  }, [cancelHide])
+
+  useEffect(() => {
+    return () => cancelHide()
+  }, [cancelHide])
+
+  const lyricsActive = route.name === 'lyrics'
+  const anyActive = lyricsActive || sleepActive
+
+  // Ejecuta la acción y cierra el menú de inmediato.
+  const runAndClose = (fn: () => void) => (): void => {
+    fn()
+    cancelHide()
+    setOpen(false)
+  }
+
+  return (
+    <div
+      className={`np-more-group ${open ? 'is-open' : ''}`}
+      onMouseEnter={openNow}
+      onMouseLeave={scheduleHide}
+      onFocus={openNow}
+      onBlur={scheduleHide}
+    >
+      <button
+        className={`np-ctrl ${anyActive ? 'active' : ''}`}
+        aria-label={t('np.more')}
+        title={t('np.more')}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => (open ? setOpen(false) : openNow())}
+      >
+        <MoreIcon size={18} />
+        {sleepActive && (
+          <span className="sleep-badge" aria-hidden="true">
+            {sleepMinutesLeft}
+          </span>
+        )}
+      </button>
+      <div className="np-more-popover" role="menu">
+        <button
+          role="menuitem"
+          className={`np-more-item ${lyricsActive ? 'active' : ''}`}
+          disabled={!current}
+          onClick={runAndClose(() => navigate({ name: 'lyrics' }))}
+        >
+          <MicIcon size={16} />
+          <span>{t('np.lyrics')}</span>
+        </button>
+        <button
+          role="menuitem"
+          className={`np-more-item ${sleepActive ? 'active' : ''}`}
+          onClick={runAndClose(onOpenSleep)}
+          data-testid="sleep-timer-btn"
+        >
+          <ClockIcon size={16} />
+          <span>{t('sleep.title')}</span>
+          {sleepActive && (
+            <span className="np-more-badge">{t('sleep.willStopIn', { m: sleepMinutesLeft })}</span>
+          )}
+        </button>
+        <button
+          role="menuitem"
+          className="np-more-item"
+          onClick={runAndClose(() => void window.api.mini.toggle())}
+        >
+          <MiniPlayerIcon size={16} />
+          <span>{t('np.miniPlayer')}</span>
+        </button>
       </div>
     </div>
   )
@@ -233,9 +345,8 @@ export function NowPlayingBar({
   const route = useRouter((s) => s.route())
   const likedIds = useLibrary((s) => s.likedIds)
   const toggleLike = useLibrary((s) => s.toggleLike)
-  // F27 · Sleep timer: badge y modal
-  const sleepActive = useSleepTimer((s) => s.active)
-  const sleepMinutesLeft = useSleepTimer((s) => s.minutesLeft)
+  // F27 · Sleep timer: el estado (activo/minutos) lo lee ahora MoreMenu; aquí
+  // solo queda el control del modal.
   const [sleepOpen, setSleepOpen] = useState(false)
 
   const effDuration = duration || current?.durationSec || 0
@@ -290,7 +401,7 @@ export function NowPlayingBar({
               onClick={() => void toggleLike(current)}
             >
               <span key={isLiked ? 'on' : 'off'} className={isLiked ? 'heart-liked' : undefined} style={{ display: 'grid' }}>
-                <HeartIcon size={16} filled={isLiked} />
+                <HeartIcon size={18} filled={isLiked} />
               </span>
             </button>
           </>
@@ -302,33 +413,51 @@ export function NowPlayingBar({
       <div className="np-center">
         <div className="np-controls">
           <button
+            className={`np-ctrl ${route.name === 'visualizer' ? 'active' : ''}`}
+            aria-label={t('np.visualizer')}
+            title={t('np.visualizer')}
+            onClick={() =>
+              navigate(route.name === 'visualizer' ? { name: 'home' } : { name: 'visualizer' })
+            }
+            disabled={!current}
+          >
+            <VisualizerIcon size={18} />
+          </button>
+          <button
             className={`np-ctrl ${shuffle ? 'active' : ''}`}
             aria-label={t('np.shuffle')}
             onClick={toggleShuffle}
           >
-            <ShuffleIcon size={16} />
+            <ShuffleIcon size={18} />
           </button>
           <button className="np-ctrl" aria-label={t('np.previous')} onClick={() => void previous()}>
-            <SkipPrevIcon size={17} />
+            <SkipPrevIcon size={18} />
           </button>
           <button className="np-play" aria-label={t('np.playPause')} onClick={togglePlay}>
             {isBuffering ? (
               <div className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />
             ) : isPlaying ? (
-              <PauseIcon size={16} />
+              <PauseIcon size={18} />
             ) : (
-              <PlayIcon size={16} />
+              <PlayIcon size={18} />
             )}
           </button>
           <button className="np-ctrl" aria-label={t('np.next')} onClick={() => void next()}>
-            <SkipNextIcon size={17} />
+            <SkipNextIcon size={18} />
           </button>
           <button
             className={`np-ctrl ${repeat !== 'off' ? 'active' : ''}`}
             aria-label={t('np.repeat')}
             onClick={cycleRepeat}
           >
-            {repeat === 'one' ? <RepeatOneIcon size={16} /> : <RepeatIcon size={16} />}
+            {repeat === 'one' ? <RepeatOneIcon size={18} /> : <RepeatIcon size={18} />}
+          </button>
+          <button
+            className={`np-ctrl ${queueOpen ? 'active' : ''}`}
+            aria-label={t('queue.title')}
+            onClick={onToggleQueue}
+          >
+            <QueueIcon size={18} />
           </button>
         </div>
         <div className="np-progress">
@@ -339,68 +468,10 @@ export function NowPlayingBar({
       </div>
 
       <div className="np-right">
-        <button
-          className={`np-ctrl ${route.name === 'lyrics' ? 'active' : ''}`}
-          aria-label={t('np.lyrics')}
-          onClick={() => navigate({ name: 'lyrics' })}
-          disabled={!current}
-        >
-          <MicIcon size={16} />
-        </button>
-        <button
-          className={`np-ctrl ${route.name === 'visualizer' ? 'active' : ''}`}
-          aria-label={t('np.visualizer')}
-          title={t('np.visualizer')}
-          onClick={() =>
-            navigate(route.name === 'visualizer' ? { name: 'home' } : { name: 'visualizer' })
-          }
-          disabled={!current}
-        >
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-            <rect x="1" y="6" width="2.4" height="4" rx="1.2" />
-            <rect x="5" y="2" width="2.4" height="12" rx="1.2" />
-            <rect x="9" y="4" width="2.4" height="8" rx="1.2" />
-            <rect x="13" y="7" width="2.4" height="2" rx="1" />
-          </svg>
-        </button>
-        <button
-          className={`np-ctrl ${sleepActive ? 'active' : ''}`}
-          aria-label={t('sleep.title')}
-          title={
-            sleepActive
-              ? t('sleep.willStopIn', { m: sleepMinutesLeft })
-              : t('sleep.title')
-          }
-          onClick={() => setSleepOpen(true)}
-          data-testid="sleep-timer-btn"
-        >
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-            <path d="M8 1a7 7 0 1 0 7 7 7 7 0 0 0-7-7zm0 12.5A5.5 5.5 0 1 1 13.5 8 5.5 5.5 0 0 1 8 13.5zm.75-9h-1.5v4.09l3.24 1.87.75-1.3-2.49-1.43z" />
-          </svg>
-          {sleepActive && (
-            <span className="sleep-badge" aria-hidden="true">
-              {sleepMinutesLeft}
-            </span>
-          )}
-        </button>
-        <button
-          className={`np-ctrl ${queueOpen ? 'active' : ''}`}
-          aria-label={t('queue.title')}
-          onClick={onToggleQueue}
-        >
-          <QueueIcon size={16} />
-        </button>
-        <button
-          className="np-ctrl"
-          aria-label={t('np.miniPlayer')}
-          title={t('np.miniPlayerTitle')}
-          onClick={() => void window.api.mini.toggle()}
-        >
-          <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
-            <path d="M1 3.75A1.75 1.75 0 0 1 2.75 2h10.5A1.75 1.75 0 0 1 15 3.75v8.5A1.75 1.75 0 0 1 13.25 14H2.75A1.75 1.75 0 0 1 1 12.25v-8.5zm1.75-.25a.25.25 0 0 0-.25.25v8.5c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25v-8.5a.25.25 0 0 0-.25-.25H2.75z" />
-            <rect x="8" y="8" width="5" height="4" rx="0.75" />
-          </svg>
-        </button>
+        {/* Acciones secundarias agrupadas en ⋯ (Letras · Temporizador · Mini).
+            El botón muestra el badge de minutos del sleep cuando está activo,
+            para no perder el aviso al esconderlo dentro del menú. */}
+        <MoreMenu onOpenSleep={() => setSleepOpen(true)} />
         {/* F42/F44 · Grupo relative: en ventana ancha se ve el slider inline
             de siempre; en ventana estrecha (donde no cabe) NO desaparece —
             aparece como popover flotante. El estado abierto se gestiona en

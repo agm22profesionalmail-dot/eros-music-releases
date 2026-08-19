@@ -402,7 +402,7 @@ export function PlaylistPage({ id }: { id: string }): React.JSX.Element {
           {/* F43 · agente E — Shuffle: reproduce la playlist en orden aleatorio */}
           {pl.tracks.length > 0 && (
             <button
-              className="action-shuffle"
+              className="action-mini"
               aria-label={t('common.shufflePlay')}
               title={t('common.shufflePlay')}
               onClick={() => void playShuffled()}

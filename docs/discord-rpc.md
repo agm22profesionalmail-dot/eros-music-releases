@@ -88,6 +88,33 @@ Assets del portal (opcional, para robustez):
 - `icon` — logo de ERO'S Music (mínimo 512×512). Solo se usa como fallback
   literal cuando `trackThumb` es undefined (track sin carátula, muy raro).
 
+## Botón de descarga (link a GitHub)
+
+`setActivity` incluye `buttons: [DOWNLOAD_BUTTON]`, un botón **⬇️ Descargar
+ERO'S Music** que abre la página pública del repo de releases
+(`https://github.com/agm22profesionalmail-dot/eros-music-releases`). Así quien
+vea tu estado en Discord puede ir directo a instalar la app.
+
+Detalles y limitaciones de Discord (no obvias):
+
+- **No se ve en tu propio perfil.** Discord solo renderiza los botones de
+  actividad para OTRAS personas que miran tu estado, nunca para uno mismo. Al
+  probar, mira tu perfil desde una segunda cuenta o pide a un amigo que lo vea;
+  no es un bug que tú no lo veas.
+- **Máximo 2 botones.** `label` ≤ 32 caracteres, `url` debe ser http(s).
+- **`type: 2` (Listening) vs botones.** La tarjeta estilo Spotify que produce
+  `type: 2` a veces **no** pinta botones custom, según cliente/versión de
+  Discord. Se implementó igualmente porque cuando funciona no cuesta nada y no
+  rompe nada. **Si tras un build real los botones no aparecen** y se decide que
+  son prioritarios sobre la cabecera "Listening to", la única palanca es
+  cambiar `type: 2` → `type: 0` (Playing): con "Playing" los botones salen
+  seguro, pero la cabecera pasa a **"Playing ERO'S Music"** (se pierde
+  "Listening to", ver "Punto rojo" y "Qué NO tocar"). Es un trade-off, no hay
+  forma de tener las dos cosas garantizadas a la vez.
+- El botón está en la llamada principal Y en el `catch` de fallback (sin foto
+  de perfil), así que sobrevive a ese camino. Al pausar se hace
+  `clearActivity()`, así que el botón solo aparece mientras suena algo.
+
 ## Arquitectura (flujo de datos)
 
 ```

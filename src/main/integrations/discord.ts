@@ -42,6 +42,25 @@ import { getOrUploadProfilePhotoUrl } from './imageHost'
 // "Listening to YouTube Music".
 const DEFAULT_CLIENT_ID = '1538529552513507418'
 
+/**
+ * Botón de descarga en la tarjeta de Discord. Enlaza a la página pública de
+ * GitHub (repo de releases) para que cualquiera que vea tu estado pueda
+ * instalar la app.
+ *
+ * NOTAS de Discord (no obvias):
+ *  - Discord NO muestra estos botones en TU propio perfil — solo los ven
+ *    OTRAS personas mirando tu estado. Para probar hace falta una segunda
+ *    cuenta o que un amigo mire tu perfil.
+ *  - Máximo 2 botones por actividad; `label` ≤ 32 caracteres; `url` http(s).
+ *  - En actividades `type: 2` (Listening, estilo Spotify) Discord a veces no
+ *    pinta botones custom. Si no aparecen tras un build real, ver el fallback
+ *    comentado en `docs/discord-rpc.md`.
+ */
+const DOWNLOAD_BUTTON = {
+  label: "⬇️ Descargar ERO'S Music",
+  url: 'https://github.com/agm22profesionalmail-dot/eros-music-releases'
+}
+
 export interface NowPlayingInfo {
   title: string
   artists: string
@@ -223,7 +242,8 @@ export async function updateDiscordPresence(info: NowPlayingInfo | null): Promis
         smallImageText,
         startTimestamp: start,
         endTimestamp: info.durationSec > 0 ? end : undefined,
-        instance: false
+        instance: false,
+        buttons: [DOWNLOAD_BUTTON]
       })
       const perfilTag = useProfile
         ? ` · perfil="${profileName || '(sin nombre)'}"${profilePhoto ? ' +foto' : ''}`
@@ -253,7 +273,8 @@ export async function updateDiscordPresence(info: NowPlayingInfo | null): Promis
             info.durationSec > 0
               ? Date.now() - info.positionSec * 1000 + info.durationSec * 1000
               : undefined,
-          instance: false
+          instance: false,
+          buttons: [DOWNLOAD_BUTTON]
         })
         console.log(
           '[discord] presencia (fallback sin foto de perfil):',

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useSettings } from '../app/settingsStore'
 import { useAuth } from '../app/authStore'
 import { THEME_PRESETS } from '../app/themePresets'
+import { BG_DESIGNS } from '../app/bgDesigns'
 import { t as ti18n, useT } from '../app/i18n'
 import { EQ_BANDS, EQ_BANDS_10, EQ_BANDS_15, EQ_BANDS_31 } from '../player/engine'
 import {
@@ -992,6 +993,22 @@ export function SettingsPage(): React.JSX.Element {
       <p style={{ color: 'var(--text-subdued)', fontSize: 12, padding: '4px 0 0' }}>
         {t('settings.bg.note')}
       </p>
+      {/* Diseño del fondo ambiental (solo relevante si el fondo está activo).
+          Es un catálogo aparte de `bgMode`: el modo decide si reacciona al
+          audio y el diseño elige el estilo visual del fondo. */}
+      {settings.bgMode !== 'off' && (
+        <Row label={t('settings.bg.design')}>
+          {BG_DESIGNS.map((d) => (
+            <button
+              key={d.id}
+              className={`chip ${settings.bgDesign === d.id ? 'active' : ''}`}
+              onClick={() => void update({ bgDesign: d.id })}
+            >
+              {t(d.nameKey)}
+            </button>
+          ))}
+        </Row>
+      )}
 
       <Row label={t('settings.appearance.accent')}>
         <button

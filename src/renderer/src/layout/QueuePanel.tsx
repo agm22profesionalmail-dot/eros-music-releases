@@ -8,20 +8,30 @@ import { pushToast } from '../components/Toast'
 import { useLibrary } from '../app/libraryStore'
 
 // F43 · agente C · task #23: iconos inline dedicados a la cabecera de la cola.
-// Preferimos SVG local aquí (en vez de tocar Icons.tsx, fuera de mi ámbito) —
-// el peso es despreciable y así queda todo autocontenido en este archivo.
+// Estilo "trazo redondeado" a juego con Icons.tsx (rediseño propio, sin clones
+// de Spotify). Se mantienen locales por ser exclusivos de esta cabecera.
+const stroke = {
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 2,
+  strokeLinecap: 'round' as const,
+  strokeLinejoin: 'round' as const
+}
+
 function TrashIcon({ size = 16 }: { size?: number }): React.JSX.Element {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M9 3a1 1 0 0 0-1 1v1H4a1 1 0 1 0 0 2h1v12a3 3 0 0 0 3 3h8a3 3 0 0 0 3-3V7h1a1 1 0 1 0 0-2h-4V4a1 1 0 0 0-1-1H9zm1 4h4v12a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1V7zm-3 0h1v12a1 1 0 0 0 1 1H7V7zm9 0h1v12a1 1 0 0 1-1 1v-13z" />
+    <svg width={size} height={size} viewBox="0 0 24 24" {...stroke} aria-hidden="true">
+      <path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13" />
+      <path d="M10 11v6M14 11v6" />
     </svg>
   )
 }
 
 function PlaylistPlusIcon({ size = 16 }: { size?: number }): React.JSX.Element {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M14 10H3v2h11v-2zm0-4H3v2h11V6zM3 16h7v-2H3v2zm13-2v-3h-2v3h-3v2h3v3h2v-3h3v-2h-3z" />
+    <svg width={size} height={size} viewBox="0 0 24 24" {...stroke} aria-hidden="true">
+      <path d="M3 7h12M3 12h8M3 17h6" />
+      <path d="M17 13v7M13.5 16.5h7" />
     </svg>
   )
 }

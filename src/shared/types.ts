@@ -431,6 +431,17 @@ export interface AppSettings {
   accentMode: 'fixed' | 'dynamic'
   /** Fondo ambiental animado: off | ambient (deriva suave) | reactive (respira con el audio) */
   bgMode: 'off' | 'ambient' | 'reactive'
+  /**
+   * Diseño visual del fondo ambiental (independiente de `bgMode`, que sólo
+   * decide si reacciona al audio). No confundir con el visualizador a pantalla
+   * completa: todos estos diseños son capas ambientales difuminadas de fondo.
+   *  - blobs     · manchas de color que derivan (diseño original)
+   *  - waves     · ondas que se deforman con el ritmo
+   *  - particles · puntos/estrellas que brillan por banda de frecuencia
+   *  - aurora    · cortinas de color tipo aurora que respiran
+   *  - artwork   · carátula muy difuminada con zoom lento
+   */
+  bgDesign: 'blobs' | 'waves' | 'particles' | 'aurora' | 'artwork'
   /** Tinte de las superficies con el color de la carátula (0-100 %) */
   ambientTint: number
   /** Segundos de crossfade entre pistas (0 = desactivado) */
@@ -710,6 +721,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   accent: '#c98f55',
   accentMode: 'fixed',
   bgMode: 'ambient',
+  bgDesign: 'blobs',
   ambientTint: 60,
   crossfadeSec: 0,
   autoplay: true,

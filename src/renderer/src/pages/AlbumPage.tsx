@@ -143,7 +143,7 @@ export function AlbumPage({ id }: { id: string }): React.JSX.Element {
           </button>
           {album.tracks.length > 0 && (
             <button
-              className="action-shuffle"
+              className="action-mini"
               aria-label={t('common.shufflePlay')}
               title={t('common.shufflePlay')}
               onClick={() => {
