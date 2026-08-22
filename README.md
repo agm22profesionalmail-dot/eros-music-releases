@@ -23,7 +23,7 @@
 </p>
 
 <p align="center">
-  <img src="screenshots/search_ambient.png" alt="ERO'S Music — búsqueda con fondo ambient" width="850" />
+  <img src="screenshots/home_spiral.png" alt="ERO'S Music — pantalla principal con la Espiral Musical y la cola de reproducción" width="850" />
 </p>
 
 ---
@@ -64,15 +64,31 @@ En resumen:
 ### 🎵 Streaming con tu cuenta
 Inicia sesión con Google y ahí está todo: tu biblioteca, tus playlists, tus likes y tu historial. Lo que hagas en la app se refleja en tu cuenta y viceversa.
 
+<p align="center">
+  <img src="screenshots/search_ambient.png" alt="Búsqueda en ERO'S Music con el fondo ambient teñido por la canción en curso" width="750" />
+</p>
+
 ### 🎨 Diseño Coffee Cream + 20 temas
-El fondo ambient extrae una paleta 60-30-10 de la carátula del álbum y reacciona al audio en tiempo real, con **5 diseños a elegir**: Manchas, Ondas, Partículas, Aurora y Carátula difuminada. Incluye 20 presets de tema sobre base clara, oscura o negra, con color de acento dinámico.
+El fondo ambient extrae una paleta 60-30-10 de la carátula del álbum y reacciona al audio en tiempo real, con **5 diseños a elegir**: Manchas, Ondas, Partículas, Aurora y Carátula difuminada. Incluye 20 presets de tema sobre base clara, oscura o negra, con color de acento dinámico. Toda la interfaz usa un set de iconos de trazo dibujado a medida para la app.
 
 <p align="center">
-  <img src="screenshots/settings_themes.png" alt="Ajustes de temas de ERO'S Music" width="750" />
+  <img src="screenshots/settings_themes.png" alt="Ajustes de apariencia con los temas predefinidos y los diseños de fondo" width="750" />
+</p>
+
+Y como el color sale de la carátula, la app entera cambia de tono al cambiar de canción:
+
+<p align="center">
+  <img src="screenshots/ambient_shift.gif" alt="El fondo reactivo interpolando los colores de una canción a la siguiente" width="750" />
 </p>
 
 ### 🔀 Crossfade real entre pistas
 Motor de doble deck: la siguiente canción empieza a sonar mientras la actual termina, mezcladas de verdad. Configurable de 0 a 12 segundos, con reproducción gapless en álbumes.
+
+La cola lo enseña mientras pasa: la canción que sale se marca como «Mezclando…», una barra de acento se llena durante exactamente lo que dura el fundido y la lista se reordena sola cuando termina.
+
+<p align="center">
+  <img src="screenshots/crossfade_queue.gif" alt="La cola de reproducción durante un crossfade, con la barra de mezcla llenándose" width="420" />
+</p>
 
 <p align="center">
   <img src="screenshots/settings_playback.png" alt="Ajustes de reproducción con el slider de crossfade" width="750" />
@@ -89,11 +105,19 @@ Letras con timing palabra a palabra sincronizadas con la música.
 3 modos de ecualizador (10, 15 y 31 bandas) con 6 presets que se interpolan automáticamente a cualquier modo. Control manual completo con preamp. El visualizador muestra barras de frecuencia reactivas al audio en tiempo real.
 
 <p align="center">
-  <img src="screenshots/visualizer.png" alt="Visualizador de audio reactivo" width="750" />
+  <img src="screenshots/visualizer.png" alt="Visualizador de audio reactivo con la cola de reproducción abierta" width="750" />
+</p>
+
+<p align="center">
+  <img src="screenshots/settings_eq.png" alt="Ajustes del ecualizador con los modos de 10, 15 y 31 bandas" width="750" />
 </p>
 
 ### 🌀 Espiral Musical
 Sección de descubrimiento en la pantalla principal con 3 filas de tarjetas en scroll continuo. Sugiere música basándose en tus artistas favoritos, historial y likes. Las canciones rotan automáticamente desde un pool de reserva para que siempre haya algo nuevo.
+
+<p align="center">
+  <img src="screenshots/home_spiral.gif" alt="Las tres filas de la Espiral Musical desplazándose en sentidos alternos" width="750" />
+</p>
 
 ### 🎧 Last.fm scrobbling
 Conecta tu cuenta de Last.fm desde Ajustes y tus escuchas se registran automáticamente. Envía nowPlaying al empezar cada canción y scrobble cuando llevas más del 50% o 30 segundos.
