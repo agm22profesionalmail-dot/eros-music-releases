@@ -78,7 +78,7 @@ El fondo ambient extrae una paleta 60-30-10 de la carátula del álbum y reaccio
 Y como el color sale de la carátula, la app entera cambia de tono al cambiar de canción:
 
 <p align="center">
-  <img src="screenshots/ambient_shift.gif" alt="El fondo reactivo interpolando los colores de una canción a la siguiente" width="750" />
+  <img src="screenshots/ambient_shift.gif" alt="El fondo reactivo interpolando los colores de una canción a la siguiente" width="720" />
 </p>
 
 ### 🔀 Crossfade real entre pistas
@@ -87,7 +87,7 @@ Motor de doble deck: la siguiente canción empieza a sonar mientras la actual te
 La cola lo enseña mientras pasa: la canción que sale se marca como «Mezclando…», una barra de acento se llena durante exactamente lo que dura el fundido y la lista se reordena sola cuando termina.
 
 <p align="center">
-  <img src="screenshots/crossfade_queue.gif" alt="La cola de reproducción durante un crossfade, con la barra de mezcla llenándose" width="420" />
+  <img src="screenshots/crossfade_queue.gif" alt="La cola de reproducción durante un crossfade, con la barra de mezcla llenándose" width="300" />
 </p>
 
 <p align="center">
@@ -116,7 +116,7 @@ Letras con timing palabra a palabra sincronizadas con la música.
 Sección de descubrimiento en la pantalla principal con 3 filas de tarjetas en scroll continuo. Sugiere música basándose en tus artistas favoritos, historial y likes. Las canciones rotan automáticamente desde un pool de reserva para que siempre haya algo nuevo.
 
 <p align="center">
-  <img src="screenshots/home_spiral.gif" alt="Las tres filas de la Espiral Musical desplazándose en sentidos alternos" width="750" />
+  <img src="screenshots/home_spiral.gif" alt="Las tres filas de la Espiral Musical desplazándose en sentidos alternos" width="640" />
 </p>
 
 ### 🎧 Last.fm scrobbling
