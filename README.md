@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-v1.5.8-6f4e37" alt="Version v1.5.8" />
+  <img src="https://img.shields.io/badge/version-v1.5.11-6f4e37" alt="Version v1.5.11" />
   <img src="https://img.shields.io/badge/platform-Windows-0078d4" alt="Windows platform" />
   <img src="https://img.shields.io/badge/license-GPL--3.0-green" alt="GPL-3.0 license" />
 </p>
@@ -99,7 +99,7 @@ The queue shows it as it happens: the outgoing song is marked as "Mixing…", an
 </p>
 
 ### 🎤 Synced lyrics and karaoke
-Lyrics with word-by-word timing, synchronised with the music.
+Lyrics synchronised with the music. The line that is playing lights up in a cascade, letter by letter, while the rest dim and blur according to how far away they are. It reads over any cover art, however bright, and can be centred or left-aligned.
 
 <p align="center">
   <img src="screenshots/lyrics_karaoke.png" alt="Karaoke mode with synced lyrics" width="750" />
@@ -152,6 +152,9 @@ A welcome assistant walks you through the app the first time you open it.
 
 ### 📮 Reporting problems and suggesting improvements
 From **Settings → Help and feedback** you can report bugs or suggest improvements, attaching screenshots or videos to show the problem. A contact can optionally be left in case further details are needed.
+
+### 🔗 Sharing playlists
+The link to a private playlist does not work for whoever receives it. When sharing your own playlist while it is still private, the application warns and asks for confirmation before making it public. Each playlist shows whether it is public, private or unlisted.
 
 ### 🎶 Local music
 Add your own audio files (MP3, FLAC, OGG, OPUS, WAV, M4A…) to the library and play them alongside your YouTube Music. Title, artist, album and cover art can be edited straight from the app, and the ambient background adapts to the artwork just like with any other song.
