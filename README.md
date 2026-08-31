@@ -147,7 +147,7 @@ Interfaz completa en ambos idiomas.
 Un asistente de bienvenida te acompaña la primera vez que abres la app.
 
 ### 📮 Reportar problemas y proponer mejoras
-Desde **Ajustes → Ayuda y comentarios** puedes contarme qué te falla o qué te gustaría que hiciera la app, y adjuntar capturas o vídeos para que se vea el problema. Si quieres, puedes dejar un contacto para que te responda.
+Desde **Ajustes → Ayuda y comentarios** se pueden reportar fallos o proponer mejoras, adjuntando capturas o vídeos para mostrar el problema. Opcionalmente se puede dejar un contacto por si hacen falta más detalles.
 
 ### 🎶 Música local
 Añade tus archivos de audio (MP3, FLAC, OGG, OPUS, WAV, M4A…) a la biblioteca y reprodúcelos junto a tu música de YouTube Music. Puedes editar título, artista, álbum y carátula directamente desde la app, y el fondo ambient se adapta a la portada igual que con cualquier otra canción.
@@ -161,25 +161,25 @@ ERO'S Music solo se conecta a lo imprescindible:
 - **Discord** — solo si activas Rich Presence.
 - **Last.fm / ListenBrainz** — solo si conectas tu cuenta en Ajustes.
 
-### Sobre los informes de rendimiento (v1.5.7)
+### Informes de rendimiento (v1.5.7)
 
-Desde la v1.5.7 la app puede enviarme **informes de rendimiento** para que pueda arreglar lo que va mal sin depender de que alguien me lo cuente. Te lo explico sin letra pequeña:
+Desde la v1.5.7 la aplicación puede enviar **informes de rendimiento**, lo que permite detectar y corregir fallos sin depender de que alguien los reporte. Las condiciones, sin letra pequeña:
 
-- 🔒 **No llega a terceros. A nadie.** Los informes me llegan a mí y a nadie más. No hay empresas de analytics de por medio, ni anunciantes, ni servicios de seguimiento, ni nada parecido. No se venden, no se comparten y no se ceden.
-- 🔧 **El único objetivo es mejorar la app.** Se usan para detectar que algo va lento, que se traba o que se rompe, y arreglarlo. Para nada más.
-- ✅ **Es completamente opcional.** La primera vez que abras la app te sale una ventana explicándotelo con el interruptor ahí mismo. Y lo apagas o lo enciendes cuando quieras desde **Ajustes → Ayuda y comentarios**. Con el envío desactivado la app funciona exactamente igual: no se recorta ni una sola función.
+- 🔒 **No llega a terceros. A nadie.** Los informes se destinan únicamente al desarrollo de la aplicación. Sin empresas de analítica, sin anunciantes y sin servicios de seguimiento. No se venden, no se comparten ni se ceden.
+- 🔧 **El único objetivo es mejorar la aplicación.** Detectar qué va lento, se bloquea o se rompe, y corregirlo. Nada más.
+- ✅ **Es completamente opcional.** La primera vez que se abre la aplicación aparece una ventana explicándolo, con el interruptor ahí mismo, y se puede activar o desactivar en cualquier momento desde **Ajustes → Ayuda y comentarios**. Con el envío desactivado la aplicación funciona exactamente igual: no se pierde ninguna función.
 
-**Qué contiene el informe:** cuánto tarda en arrancar, cuánta memoria y procesador usa, si la interfaz se ha quedado trabada, los errores técnicos que hayan salido y tu versión de Windows. Nada más.
+**Qué contiene el informe:** cuánto tarda en arrancar, cuánta memoria y procesador consume, si la interfaz se ha bloqueado, los errores técnicos que se hayan producido y la versión de Windows. Nada más.
 
-**Qué no sale de tu PC, nunca:**
+**Qué no sale de tu equipo, nunca:**
 
 - ❌ Tu música, tus búsquedas y tus listas.
 - ❌ Tu cuenta de Google.
-- ❌ El nombre de tu equipo y tus carpetas personales (se enmascaran antes de enviar nada).
-- ❌ Sin analytics, sin publicidad, sin perfilado, sin venderle nada a nadie.
-- ✅ Las estadísticas viven en una base de datos SQLite local, en tu PC.
+- ❌ El nombre de tu equipo y tus carpetas personales (se enmascaran antes de cualquier envío).
+- ❌ Sin analítica de terceros, sin publicidad y sin perfilado.
+- ✅ Las estadísticas viven en una base de datos SQLite local, en tu equipo.
 
-Los reportes que escribes tú desde **Ajustes → Ayuda y comentarios** funcionan igual: se envían solo cuando tú le das al botón, me llegan solo a mí, y solo llevan lo que tú hayas escrito y adjuntado.
+Los reportes escritos desde **Ajustes → Ayuda y comentarios** siguen las mismas condiciones: se envían únicamente al pulsar el botón y contienen solo lo que se haya escrito y adjuntado.
 
 ## Requisitos
 
