@@ -161,11 +161,17 @@ ERO'S Music solo se conecta a lo imprescindible:
 - **Discord** — solo si activas Rich Presence.
 - **Last.fm / ListenBrainz** — solo si conectas tu cuenta en Ajustes.
 
-Desde la v1.5.7 hay una excepción, y prefiero contártela clara: la app puede enviarme **informes de rendimiento**. Viene activado, la primera vez que la abres te sale una ventana explicándolo, y lo apagas cuando quieras en Ajustes.
+### Sobre los informes de rendimiento (v1.5.7)
 
-Lo que incluye ese informe: cuánto tarda en arrancar, cuánta memoria y procesador usa, si la interfaz se ha quedado trabada, los errores técnicos que hayan salido y tu versión de Windows. Nada más.
+Desde la v1.5.7 la app puede enviarme **informes de rendimiento** para que pueda arreglar lo que va mal sin depender de que alguien me lo cuente. Te lo explico sin letra pequeña:
 
-Y lo que **nunca** sale de tu PC:
+- 🔒 **No llega a terceros. A nadie.** Los informes me llegan a mí y a nadie más. No hay empresas de analytics de por medio, ni anunciantes, ni servicios de seguimiento, ni nada parecido. No se venden, no se comparten y no se ceden.
+- 🔧 **El único objetivo es mejorar la app.** Se usan para detectar que algo va lento, que se traba o que se rompe, y arreglarlo. Para nada más.
+- ✅ **Es completamente opcional.** La primera vez que abras la app te sale una ventana explicándotelo con el interruptor ahí mismo. Y lo apagas o lo enciendes cuando quieras desde **Ajustes → Ayuda y comentarios**. Con el envío desactivado la app funciona exactamente igual: no se recorta ni una sola función.
+
+**Qué contiene el informe:** cuánto tarda en arrancar, cuánta memoria y procesador usa, si la interfaz se ha quedado trabada, los errores técnicos que hayan salido y tu versión de Windows. Nada más.
+
+**Qué no sale de tu PC, nunca:**
 
 - ❌ Tu música, tus búsquedas y tus listas.
 - ❌ Tu cuenta de Google.
@@ -173,7 +179,7 @@ Y lo que **nunca** sale de tu PC:
 - ❌ Sin analytics, sin publicidad, sin perfilado, sin venderle nada a nadie.
 - ✅ Las estadísticas viven en una base de datos SQLite local, en tu PC.
 
-Los informes solo se usan para arreglar lo que va mal. Si prefieres no mandar nada, un clic y listo — la app funciona exactamente igual.
+Los reportes que escribes tú desde **Ajustes → Ayuda y comentarios** funcionan igual: se envían solo cuando tú le das al botón, me llegan solo a mí, y solo llevan lo que tú hayas escrito y adjuntado.
 
 ## Requisitos
 
