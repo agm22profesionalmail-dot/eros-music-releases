@@ -9,6 +9,10 @@
 </p>
 
 <p align="center">
+  <strong>Español</strong> · <a href="README.en.md">English</a>
+</p>
+
+<p align="center">
   <img src="https://img.shields.io/badge/versión-v1.5.7-6f4e37" alt="Versión v1.5.7" />
   <img src="https://img.shields.io/badge/plataforma-Windows-0078d4" alt="Plataforma Windows" />
   <img src="https://img.shields.io/badge/licencia-GPL--3.0-green" alt="Licencia GPL-3.0" />
@@ -57,7 +61,7 @@ En resumen:
 
 - 🎧 **Tu cuenta, tu interfaz** — la cuenta es la tuya, la experiencia es nueva.
 - 🔊 **Motor de audio propio** — crossfade real (mezcla dos pistas a la vez), no un fade-out seguido de un fade-in.
-- 🔒 **Todo en local** — cero telemetría, tus datos no salen de tu PC.
+- 🔒 **Local por defecto** — tu biblioteca, tus estadísticas y tu historial no salen de tu equipo.
 
 ## Funciones
 
