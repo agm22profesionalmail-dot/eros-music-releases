@@ -165,19 +165,20 @@ ERO'S Music solo se conecta a lo imprescindible:
 
 Desde la v1.5.7 la aplicación puede enviar **informes de rendimiento**, lo que permite detectar y corregir fallos sin depender de que alguien los reporte. Las condiciones, sin letra pequeña:
 
-- 🔒 **No llega a terceros. A nadie.** Los informes se destinan únicamente al desarrollo de la aplicación. Sin empresas de analítica, sin anunciantes y sin servicios de seguimiento. No se venden, no se comparten ni se ceden.
-- 🔧 **El único objetivo es mejorar la aplicación.** Detectar qué va lento, se bloquea o se rompe, y corregirlo. Nada más.
-- ✅ **Es completamente opcional.** La primera vez que se abre la aplicación aparece una ventana explicándolo, con el interruptor ahí mismo, y se puede activar o desactivar en cualquier momento desde **Ajustes → Ayuda y comentarios**. Con el envío desactivado la aplicación funciona exactamente igual: no se pierde ninguna función.
+- **No llega a terceros. A nadie.** Los informes se destinan únicamente al desarrollo de la aplicación. Sin empresas de analítica, sin anunciantes y sin servicios de seguimiento. No se venden, no se comparten ni se ceden.
+- **El único objetivo es mejorar la aplicación.** Detectar qué va lento, se bloquea o se rompe, y corregirlo. Nada más.
+- **Es completamente opcional.** La primera vez que se abre la aplicación aparece una ventana explicándolo, con el interruptor ahí mismo, y se puede activar o desactivar en cualquier momento desde **Ajustes → Ayuda y comentarios**. Con el envío desactivado la aplicación funciona exactamente igual: no se pierde ninguna función.
 
 **Qué contiene el informe:** cuánto tarda en arrancar, cuánta memoria y procesador consume, si la interfaz se ha bloqueado, los errores técnicos que se hayan producido y la versión de Windows. Nada más.
 
 **Qué no sale de tu equipo, nunca:**
 
-- ❌ Tu música, tus búsquedas y tus listas.
-- ❌ Tu cuenta de Google.
-- ❌ El nombre de tu equipo y tus carpetas personales (se enmascaran antes de cualquier envío).
-- ❌ Sin analítica de terceros, sin publicidad y sin perfilado.
-- ✅ Las estadísticas viven en una base de datos SQLite local, en tu equipo.
+- Tu música, tus búsquedas y tus listas.
+- Tu cuenta de Google.
+- El nombre de tu equipo y tus carpetas personales (se enmascaran antes de cualquier envío).
+- Sin analítica de terceros, sin publicidad y sin perfilado.
+
+Las estadísticas viven en una base de datos SQLite local, en tu equipo.
 
 Los reportes escritos desde **Ajustes → Ayuda y comentarios** siguen las mismas condiciones: se envían únicamente al pulsar el botón y contienen solo lo que se haya escrito y adjuntado.
 
