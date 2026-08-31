@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/versión-v1.5.12-6f4e37" alt="Versión v1.5.12" />
+  <img src="https://img.shields.io/badge/versión-v1.5.13-6f4e37" alt="Versión v1.5.13" />
   <img src="https://img.shields.io/badge/plataforma-Windows-0078d4" alt="Plataforma Windows" />
   <img src="https://img.shields.io/badge/licencia-GPL--3.0-green" alt="Licencia GPL-3.0" />
 </p>
@@ -151,7 +151,7 @@ Interfaz completa en ambos idiomas.
 Un asistente de bienvenida te acompaña la primera vez que abres la app.
 
 ### 📮 Reportar problemas y proponer mejoras
-Desde **Ajustes → Ayuda y comentarios** se pueden reportar fallos o proponer mejoras, adjuntando capturas o vídeos para mostrar el problema. Opcionalmente se puede dejar un contacto por si hacen falta más detalles.
+Desde **Ajustes → Ayuda y comentarios** se pueden reportar fallos o proponer mejoras, adjuntando capturas o vídeos para mostrar el problema. Opcionalmente se puede dejar un contacto por si hacen falta más detalles. Los reportes se leen y se atienden: el listado de secciones de Ajustes y el arreglo de la Espiral Musical, ambos en la v1.5.13, salieron de este canal.
 
 ### 🔗 Compartir listas de reproducción
 El enlace de una lista privada no le funciona a quien lo recibe. Al compartir una lista propia que sigue siendo privada, la aplicación avisa y pide confirmación antes de hacerla pública. Cada lista muestra si es pública, privada u oculta.
