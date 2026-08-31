@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-v1.5.12-6f4e37" alt="Version v1.5.12" />
+  <img src="https://img.shields.io/badge/version-v1.5.13-6f4e37" alt="Version v1.5.13" />
   <img src="https://img.shields.io/badge/platform-Windows-0078d4" alt="Windows platform" />
   <img src="https://img.shields.io/badge/license-GPL--3.0-green" alt="GPL-3.0 license" />
 </p>
@@ -151,7 +151,7 @@ The interface is fully translated into both languages.
 A welcome assistant walks you through the app the first time you open it.
 
 ### 📮 Reporting problems and suggesting improvements
-From **Settings → Help and feedback** you can report bugs or suggest improvements, attaching screenshots or videos to show the problem. A contact can optionally be left in case further details are needed.
+From **Settings → Help and feedback** you can report bugs or suggest improvements, attaching screenshots or videos to show the problem. A contact can optionally be left in case further details are needed. Reports are read and acted on: the section list in Settings and the Musical Spiral fix, both in v1.5.13, came from this channel.
 
 ### 🔗 Sharing playlists
 The link to a private playlist does not work for whoever receives it. When sharing your own playlist while it is still private, the application warns and asks for confirmation before making it public. Each playlist shows whether it is public, private or unlisted.
