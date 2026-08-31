@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/versión-v1.5.6-6f4e37" alt="Versión v1.5.6" />
+  <img src="https://img.shields.io/badge/versión-v1.5.7-6f4e37" alt="Versión v1.5.7" />
   <img src="https://img.shields.io/badge/plataforma-Windows-0078d4" alt="Plataforma Windows" />
   <img src="https://img.shields.io/badge/licencia-GPL--3.0-green" alt="Licencia GPL-3.0" />
 </p>
@@ -146,6 +146,9 @@ Interfaz completa en ambos idiomas.
 ### 👋 Onboarding guiado
 Un asistente de bienvenida te acompaña la primera vez que abres la app.
 
+### 📮 Reportar problemas y proponer mejoras
+Desde **Ajustes → Ayuda y comentarios** puedes contarme qué te falla o qué te gustaría que hiciera la app, y adjuntar capturas o vídeos para que se vea el problema. Si quieres, puedes dejar un contacto para que te responda.
+
 ### 🎶 Música local
 Añade tus archivos de audio (MP3, FLAC, OGG, OPUS, WAV, M4A…) a la biblioteca y reprodúcelos junto a tu música de YouTube Music. Puedes editar título, artista, álbum y carátula directamente desde la app, y el fondo ambient se adapta a la portada igual que con cualquier otra canción.
 
@@ -158,12 +161,19 @@ ERO'S Music solo se conecta a lo imprescindible:
 - **Discord** — solo si activas Rich Presence.
 - **Last.fm / ListenBrainz** — solo si conectas tu cuenta en Ajustes.
 
-Y lo que **no** hace:
+Desde la v1.5.7 hay una excepción, y prefiero contártela clara: la app puede enviarme **informes de rendimiento**. Viene activado, la primera vez que la abres te sale una ventana explicándolo, y lo apagas cuando quieras en Ajustes.
 
-- ❌ Cero telemetría.
-- ❌ No envía datos a terceros.
-- ❌ Sin analytics de ningún tipo.
+Lo que incluye ese informe: cuánto tarda en arrancar, cuánta memoria y procesador usa, si la interfaz se ha quedado trabada, los errores técnicos que hayan salido y tu versión de Windows. Nada más.
+
+Y lo que **nunca** sale de tu PC:
+
+- ❌ Tu música, tus búsquedas y tus listas.
+- ❌ Tu cuenta de Google.
+- ❌ El nombre de tu equipo y tus carpetas personales (se enmascaran antes de enviar nada).
+- ❌ Sin analytics, sin publicidad, sin perfilado, sin venderle nada a nadie.
 - ✅ Las estadísticas viven en una base de datos SQLite local, en tu PC.
+
+Los informes solo se usan para arreglar lo que va mal. Si prefieres no mandar nada, un clic y listo — la app funciona exactamente igual.
 
 ## Requisitos
 
