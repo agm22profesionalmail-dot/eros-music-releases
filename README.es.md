@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/versión-v1.5.8-6f4e37" alt="Versión v1.5.8" />
+  <img src="https://img.shields.io/badge/versión-v1.5.11-6f4e37" alt="Versión v1.5.11" />
   <img src="https://img.shields.io/badge/plataforma-Windows-0078d4" alt="Plataforma Windows" />
   <img src="https://img.shields.io/badge/licencia-GPL--3.0-green" alt="Licencia GPL-3.0" />
 </p>
@@ -99,7 +99,7 @@ La cola lo enseña mientras pasa: la canción que sale se marca como «Mezclando
 </p>
 
 ### 🎤 Letras sincronizadas y karaoke
-Letras con timing palabra a palabra sincronizadas con la música.
+Letras sincronizadas con la música. La línea que suena se enciende en cascada, letra a letra, y el resto se apaga y se desenfoca según lo lejos que esté. Se lee sobre cualquier carátula, por clara que sea, y puede ir centrada o alineada a la izquierda.
 
 <p align="center">
   <img src="screenshots/lyrics_karaoke.png" alt="Modo karaoke con letras sincronizadas" width="750" />
@@ -152,6 +152,9 @@ Un asistente de bienvenida te acompaña la primera vez que abres la app.
 
 ### 📮 Reportar problemas y proponer mejoras
 Desde **Ajustes → Ayuda y comentarios** se pueden reportar fallos o proponer mejoras, adjuntando capturas o vídeos para mostrar el problema. Opcionalmente se puede dejar un contacto por si hacen falta más detalles.
+
+### 🔗 Compartir listas de reproducción
+El enlace de una lista privada no le funciona a quien lo recibe. Al compartir una lista propia que sigue siendo privada, la aplicación avisa y pide confirmación antes de hacerla pública. Cada lista muestra si es pública, privada u oculta.
 
 ### 🎶 Música local
 Añade tus archivos de audio (MP3, FLAC, OGG, OPUS, WAV, M4A…) a la biblioteca y reprodúcelos junto a tu música de YouTube Music. Puedes editar título, artista, álbum y carátula directamente desde la app, y el fondo ambient se adapta a la portada igual que con cualquier otra canción.
