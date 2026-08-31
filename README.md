@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-v1.5.11-6f4e37" alt="Version v1.5.11" />
+  <img src="https://img.shields.io/badge/version-v1.5.12-6f4e37" alt="Version v1.5.12" />
   <img src="https://img.shields.io/badge/platform-Windows-0078d4" alt="Windows platform" />
   <img src="https://img.shields.io/badge/license-GPL--3.0-green" alt="GPL-3.0 license" />
 </p>
