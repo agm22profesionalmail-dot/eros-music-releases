@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/versión-v1.5.14-6f4e37" alt="Versión v1.5.14" />
+  <img src="https://img.shields.io/badge/versión-v1.5.15-6f4e37" alt="Versión v1.5.15" />
   <img src="https://img.shields.io/badge/plataforma-Windows-0078d4" alt="Plataforma Windows" />
   <img src="https://img.shields.io/badge/licencia-GPL--3.0-green" alt="Licencia GPL-3.0" />
 </p>
@@ -145,7 +145,7 @@ Tops semanales y mensuales con un resumen de tu actividad. Todo se calcula 100% 
 Muestra en Discord lo que estás escuchando. Opcional y desactivable.
 
 ### 🔄 Auto-actualización
-Te avisa antes de actualizar. Nunca descarga nada en silencio.
+Te avisa antes de actualizar. Nunca descarga nada en silencio. El primer aviso de cada sesión es un diálogo centrado nada más arrancar, para resolver la actualización antes de ponerse a usar la aplicación; **Más tarde** lo cierra del todo y deja la actualización a un clic en *Ajustes → Sistema*, que entonces muestra **Actualizar ahora** en vez de pedir que se busque. Los avisos que llegan con la aplicación ya en marcha —la comprobación cada seis horas, o los que lleguen con música sonando— van a una tarjeta discreta en la esquina.
 
 ### 🌐 Español e inglés
 Interfaz completa en ambos idiomas.
