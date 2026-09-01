@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-v1.5.14-6f4e37" alt="Version v1.5.14" />
+  <img src="https://img.shields.io/badge/version-v1.5.15-6f4e37" alt="Version v1.5.15" />
   <img src="https://img.shields.io/badge/platform-Windows-0078d4" alt="Windows platform" />
   <img src="https://img.shields.io/badge/license-GPL--3.0-green" alt="GPL-3.0 license" />
 </p>
@@ -145,7 +145,7 @@ Weekly and monthly tops with a summary of your activity. Everything is computed 
 Shows what you are listening to on Discord. Optional and can be turned off.
 
 ### 🔄 Auto-update
-You are asked before updating. Nothing is ever downloaded silently.
+You are asked before updating. Nothing is ever downloaded silently. The first notice of each session is a centred dialog shown right after launch, so the update is dealt with before you get going; **Later** closes it for good and leaves the update one click away in *Settings → System*, which then shows **Update now** instead of asking you to check. Notices that arrive while you are already using the app — the six-hourly check, or any that lands while music is playing — go to a discreet corner card instead.
 
 ### 🌐 Spanish and English
 The interface is fully translated into both languages.
