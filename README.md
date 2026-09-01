@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-v1.5.13-6f4e37" alt="Version v1.5.13" />
+  <img src="https://img.shields.io/badge/version-v1.5.14-6f4e37" alt="Version v1.5.14" />
   <img src="https://img.shields.io/badge/platform-Windows-0078d4" alt="Windows platform" />
   <img src="https://img.shields.io/badge/license-GPL--3.0-green" alt="GPL-3.0 license" />
 </p>
@@ -42,12 +42,13 @@ ERO'S Music is an unofficial desktop client for **YouTube Music on Windows**, bu
 |---|:---:|:---:|:---:|:---:|
 | True crossfade between tracks | ❌ | ⚠️ Premium only | ❌ | ✅ |
 | 10/15/31-band equalizer | ❌ | ❌ Not on desktop | ❌ | ✅ |
+| Import AutoEq equalizer profiles | ❌ | ❌ | ❌ | ✅ |
 | Floating mini-player | ❌ | ❌ | ⚠️ Limited | ✅ |
 | Reactive ambient background | ❌ | ❌ | ❌ | ✅ |
 | Word-by-word karaoke | ❌ | ⚠️ Partial | ❌ | ✅ |
 | Fully local statistics | ❌ | ❌ | ❌ | ✅ |
 | Last.fm / ListenBrainz | ❌ | ❌ | ⚠️ Last.fm only | ✅ Both |
-| Import Spotify playlists | ❌ | ❌ | ❌ | ✅ |
+| Import playlists from any service | ❌ | ❌ | ❌ | ✅ |
 | Local music with metadata editing | ❌ | ✅ Partial | ❌ | ✅ |
 | Free, no subscription | ✅ | ❌ | ✅ | ✅ |
 
@@ -108,6 +109,8 @@ Lyrics synchronised with the music. The line that is playing lights up in a casc
 ### 🎛️ 10, 15 and 31-band equalizer + visualizer
 Three equalizer modes (10, 15 and 31 bands) with 6 presets that are automatically interpolated to any mode. Full manual control with preamp. The visualizer displays frequency bars reacting to the audio in real time.
 
+Equalizer files can also be imported from *Settings → Equalizer*: AutoEq and Equalizer APO (`ParametricEQ.txt`), AutoEq and Wavelet (`GraphicEQ.txt`), measurement curves in CSV, and JSON profiles from the mobile app. The bands in the file are translated to the bands of the app equalizer for the 10, 15 and 31 band modes at once. **My equalizers** keeps everything imported, along with anything saved with **Save current settings**.
+
 <p align="center">
   <img src="screenshots/visualizer.png" alt="Reactive audio visualizer with the play queue open" width="750" />
 </p>
@@ -129,8 +132,8 @@ Connect your Last.fm account from Settings and your listens are recorded automat
 ### 📡 ListenBrainz sync
 A free alternative to Last.fm. Paste your token in Settings and that is it — playing_now and submit-listens, sharing the same trigger as Last.fm.
 
-### 📥 Import playlists from Spotify and M3U/CSV
-Paste the URL of a public Spotify playlist and ERO'S Music looks up each song on YouTube Music, shows you the results and creates the playlist in your account. M3U and CSV files are accepted too.
+### 📥 Import playlists from any service
+Three routes in *Library → Import playlist*. **Link**: Spotify, Apple Music, Deezer, TIDAL, SoundCloud, Bandcamp, Last.fm and YouTube / YT Music, albums included — the service is recognised as the link is typed. **File**: M3U/M3U8, PLS, XSPF, WPL/ZPL, ASX, CSV/TSV, JSON and TXT, with the format worked out from the contents. **Paste list**: any list of tracks as plain text, which works even with services that publish nothing. Each song is looked up on YouTube Music, the results are shown, and the playlist is created in your account.
 
 ### 🖥️ Floating mini-player
 Always on top of other windows, snaps to the corners, resizable and with a karaoke mode.
