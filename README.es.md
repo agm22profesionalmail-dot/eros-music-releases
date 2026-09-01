@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/versión-v1.5.13-6f4e37" alt="Versión v1.5.13" />
+  <img src="https://img.shields.io/badge/versión-v1.5.14-6f4e37" alt="Versión v1.5.14" />
   <img src="https://img.shields.io/badge/plataforma-Windows-0078d4" alt="Plataforma Windows" />
   <img src="https://img.shields.io/badge/licencia-GPL--3.0-green" alt="Licencia GPL-3.0" />
 </p>
@@ -42,12 +42,13 @@ ERO'S Music es un cliente de escritorio no oficial de **YouTube Music para Windo
 |---|:---:|:---:|:---:|:---:|
 | Crossfade real entre pistas | ❌ | ⚠️ Solo con Premium | ❌ | ✅ |
 | Ecualizador de 10/15/31 bandas | ❌ | ❌ En escritorio no | ❌ | ✅ |
+| Importar perfiles de ecualizador de AutoEq | ❌ | ❌ | ❌ | ✅ |
 | Mini-player flotante | ❌ | ❌ | ⚠️ Limitado | ✅ |
 | Fondo ambient reactivo | ❌ | ❌ | ❌ | ✅ |
 | Karaoke palabra a palabra | ❌ | ⚠️ Parcial | ❌ | ✅ |
 | Estadísticas 100% locales | ❌ | ❌ | ❌ | ✅ |
 | Last.fm / ListenBrainz | ❌ | ❌ | ⚠️ Solo Last.fm | ✅ Ambos |
-| Importar playlists de Spotify | ❌ | ❌ | ❌ | ✅ |
+| Importar playlists de cualquier servicio | ❌ | ❌ | ❌ | ✅ |
 | Música local con edición de metadatos | ❌ | ✅ Parcial | ❌ | ✅ |
 | Gratis, sin suscripción | ✅ | ❌ | ✅ | ✅ |
 
@@ -108,6 +109,8 @@ Letras sincronizadas con la música. La línea que suena se enciende en cascada,
 ### 🎛️ Ecualizador de 10, 15 y 31 bandas + visualizador
 3 modos de ecualizador (10, 15 y 31 bandas) con 6 presets que se interpolan automáticamente a cualquier modo. Control manual completo con preamp. El visualizador muestra barras de frecuencia reactivas al audio en tiempo real.
 
+También se pueden importar archivos de ecualizador desde *Ajustes → Ecualizador*: AutoEq y Equalizer APO (`ParametricEQ.txt`), AutoEq y Wavelet (`GraphicEQ.txt`), curvas de medición en CSV y perfiles en JSON de la aplicación móvil. Las bandas del archivo se traducen a las del ecualizador de la aplicación para los modos de 10, 15 y 31 bandas a la vez. **Mis ecualizadores** reúne todo lo importado, junto a lo que se guarde con **Guardar el ajuste actual**.
+
 <p align="center">
   <img src="screenshots/visualizer.png" alt="Visualizador de audio reactivo con la cola de reproducción abierta" width="750" />
 </p>
@@ -129,8 +132,8 @@ Conecta tu cuenta de Last.fm desde Ajustes y tus escuchas se registran automáti
 ### 📡 ListenBrainz sync
 Alternativa libre a Last.fm. Pega tu token en Ajustes y listo — playing_now y submit-listens, compartiendo el mismo trigger que Last.fm.
 
-### 📥 Importar playlists de Spotify y M3U/CSV
-Pega la URL de una playlist pública de Spotify y ERO'S Music busca cada canción en YouTube Music, te muestra los resultados y crea la playlist en tu cuenta. También acepta archivos M3U y CSV.
+### 📥 Importar playlists de cualquier servicio
+Tres vías en *Tu biblioteca → Importar playlist*. **Enlace**: Spotify, Apple Music, Deezer, TIDAL, SoundCloud, Bandcamp, Last.fm y YouTube / YT Music, álbumes incluidos — el servicio se reconoce mientras se escribe el enlace. **Archivo**: M3U/M3U8, PLS, XSPF, WPL/ZPL, ASX, CSV/TSV, JSON y TXT, deduciendo el formato del contenido. **Pegar lista**: cualquier lista de canciones como texto, que funciona hasta con los servicios que no publican nada. Cada canción se busca en YouTube Music, se muestran los resultados y la playlist se crea en tu cuenta.
 
 ### 🖥️ Mini-player flotante
 Siempre visible encima de otras ventanas, se ancla a las esquinas, escalable y con modo karaoke.
