@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/versión-v1.5.16-6f4e37" alt="Versión v1.5.16" />
+  <img src="https://img.shields.io/badge/versión-v1.5.17-6f4e37" alt="Versión v1.5.17" />
   <img src="https://img.shields.io/badge/plataforma-Windows-0078d4" alt="Plataforma Windows" />
   <img src="https://img.shields.io/badge/licencia-GPL--3.0-green" alt="Licencia GPL-3.0" />
 </p>
@@ -139,7 +139,7 @@ Tres vías en *Tu biblioteca → Importar playlist*. **Enlace**: Spotify, Apple 
 Siempre visible encima de otras ventanas, se ancla a las esquinas, escalable y con modo karaoke.
 
 ### 📊 Estadísticas y recap personal
-Tops semanales y mensuales con un resumen de tu actividad. Todo se calcula 100% en local: nada sale de tu máquina.
+Tops semanales y mensuales con un resumen de tu actividad. Todo se calcula 100% en local: nada sale de tu máquina. Desde la v1.5.17 cada escucha se registra individualmente en lugar de solo la última vez que sonó una pista, así que las estadísticas ganan precisión cuanto más se usa la app, y una reproducción solo cuenta cuando se ha escuchado un umbral configurable de la pista.
 
 ### 🎮 Discord Rich Presence
 Muestra en Discord lo que estás escuchando. Opcional y desactivable.
@@ -161,6 +161,21 @@ El enlace de una lista privada no le funciona a quien lo recibe. Al compartir un
 
 ### 🎶 Música local
 Añade tus archivos de audio (MP3, FLAC, OGG, OPUS, WAV, M4A…) a la biblioteca y reprodúcelos junto a tu música de YouTube Music. Puedes editar título, artista, álbum y carátula directamente desde la app, y el fondo ambient se adapta a la portada igual que con cualquier otra canción.
+
+### 💾 Copias de seguridad
+Los ajustes, las listas, el historial de escucha y la caché de "me gusta" se pueden exportar a un único fichero y restaurar desde él, con una copia de seguridad automática antes de cada restauración. También se puede activar una copia programada (diaria o semanal), y hacer doble clic en un fichero de copia abre la app directamente en el diálogo de restauración.
+
+### 🎵 Gestión de la cola
+Las pistas de la cola "a continuación" se pueden reordenar desde el menú contextual, encolar varias canciones seguidas con *Reproducir a continuación* ahora las mantiene en el orden en que se añadieron, y cualquier pista se puede dejar repitiendo un número de veces a elegir.
+
+### ✅ Seleccionar varias pistas a la vez
+Clic, Shift+clic y Ctrl/Cmd+clic funcionan en cualquier lista de pistas. Con una selección activa, se puede encolar, añadir a una lista, descargar o quitar de una lista de una sola vez.
+
+### 🔊 Dispositivo de salida de audio
+El dispositivo por el que suena el audio se puede elegir desde Ajustes, en lugar de seguir siempre el predeterminado del sistema.
+
+### 🚫 Artistas bloqueados y una biblioteca más ordenada
+Bloquear un artista desde el menú contextual de una pista o un álbum saca su contenido de la biblioteca, la búsqueda, las listas y las estanterías de Inicio. Las pestañas de Biblioteca también se pueden reordenar u ocultar, y cada una recuerda su propio criterio de orden — por nombre, artista, duración o fecha de adición.
 
 ## Privacidad
 
@@ -219,7 +234,7 @@ Descarga el instalador desde la [última release](https://github.com/agm22profes
 >
 > Al ejecutar el instalador es posible que Windows muestre un aviso de "Windows protegió su PC" con "Editor desconocido". Esto ocurre porque la app no tiene un certificado de firma de código de pago — es un proyecto personal sin ánimo de lucro.
 >
-> **Es seguro.** Para continuar, haz clic en **"Más información"** y luego en **"Ejecutar de todas formas"**. El código fuente es público y puedes revisarlo tú mismo.
+> **Es seguro.** Para continuar, haz clic en **"Más información"** y luego en **"Ejecutar de todas formas"**. El aviso aparece únicamente porque un certificado de firma de código comercial tiene un coste anual que este proyecto personal sin ánimo de lucro no cubre.
 
 ---
 
