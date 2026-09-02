@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-v1.5.17-6f4e37" alt="Version v1.5.17" />
+  <img src="https://img.shields.io/badge/version-v1.5.18-6f4e37" alt="Version v1.5.18" />
   <img src="https://img.shields.io/badge/platform-Windows-0078d4" alt="Windows platform" />
   <img src="https://img.shields.io/badge/license-GPL--3.0-green" alt="GPL-3.0 license" />
 </p>
@@ -136,10 +136,10 @@ A free alternative to Last.fm. Paste your token in Settings and that is it — p
 Three routes in *Library → Import playlist*. **Link**: Spotify, Apple Music, Deezer, TIDAL, SoundCloud, Bandcamp, Last.fm and YouTube / YT Music, albums included — the service is recognised as the link is typed. **File**: M3U/M3U8, PLS, XSPF, WPL/ZPL, ASX, CSV/TSV, JSON and TXT, with the format worked out from the contents. **Paste list**: any list of tracks as plain text, which works even with services that publish nothing. Each song is looked up on YouTube Music, the results are shown, and the playlist is created in your account.
 
 ### 🖥️ Floating mini-player
-Always on top of other windows, snaps to the corners, resizable and with a karaoke mode.
+Always on top of other windows, snaps to the corners, resizable and with a karaoke mode. Since v1.5.18 it can also show the current track's play count and today's listening time in a small line under the progress bar, and past play queues can be reopened from the main queue panel.
 
 ### 📊 Statistics and personal recap
-Weekly and monthly tops with a summary of your activity. Everything is computed entirely on your machine: nothing leaves it. Since v1.5.17 each listen is recorded individually instead of only the last time a track was played, so statistics keep gaining precision the longer the app is used, and a play only counts once a configurable threshold of the track has been heard.
+Weekly and monthly tops with a summary of your activity. Everything is computed entirely on your machine: nothing leaves it. Since v1.5.17 each listen is recorded individually instead of only the last time a track was played, so statistics keep gaining precision the longer the app is used, and a play only counts once a configurable threshold of the track has been heard. Since v1.5.18 the recap can also cover the current year or a custom date range, Home can show a memory lane of tracks from this day in previous years, playlists can be built from rules that recalculate automatically, and listening history from Last.fm, ListenBrainz or a Spotify export can be imported.
 
 ### 🎮 Discord Rich Presence
 Shows what you are listening to on Discord. Optional and can be turned off.
