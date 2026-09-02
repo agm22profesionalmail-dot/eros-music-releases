@@ -165,17 +165,29 @@ Add your own audio files (MP3, FLAC, OGG, OPUS, WAV, M4A…) to the library and 
 ### 💾 Backups
 Settings, playlists, listening history and the liked-songs cache can be exported to a single file and restored from it, with an automatic safety copy made before every restore. A backup can also run on a schedule (daily or weekly), and double-clicking a backup file opens the app straight into the restore dialog.
 
+<p align="center">
+  <img src="screenshots/settings_backup.png" alt="System settings with the backup, restore and scheduled backup rows" width="750" />
+</p>
+
 ### 🎵 Queue management
 Tracks in the upcoming queue can be reordered from the context menu, queuing several songs in a row with *Play next* now keeps them in the order they were added, and any track can be set to repeat a chosen number of times.
 
 ### ✅ Selecting several tracks at once
-Click, Shift-click and Ctrl/Cmd-click work in every track list. With a selection active, it can be queued, added to a playlist, downloaded or removed from a playlist all in one action.
+Click, Shift-click and Ctrl-click work in every track list. With a selection active, it can be queued, added to a playlist, saved to the cache or removed from a playlist all in one action.
+
+<p align="center">
+  <img src="screenshots/library_multiselect.png" alt="A playlist with four tracks selected and the action bar at the bottom of the list" width="750" />
+</p>
 
 ### 🔊 Audio output device
 The device audio plays through can be chosen from Settings, instead of always following the system default.
 
 ### 🚫 Blocked artists and a more organized library
 Blocking an artist from a track's or album's context menu keeps their content out of the library, search, playlists and the Home shelves. The Library tabs can also be reordered or hidden, and each one remembers its own sort order — by name, artist, duration or date added.
+
+<p align="center">
+  <img src="screenshots/settings_content_blocked.png" alt="Content settings with the blocked artists list and the Library tabs editor" width="750" />
+</p>
 
 ## Privacy
 
