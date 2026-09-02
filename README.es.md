@@ -165,17 +165,29 @@ Añade tus archivos de audio (MP3, FLAC, OGG, OPUS, WAV, M4A…) a la biblioteca
 ### 💾 Copias de seguridad
 Los ajustes, las listas, el historial de escucha y la caché de "me gusta" se pueden exportar a un único fichero y restaurar desde él, con una copia de seguridad automática antes de cada restauración. También se puede activar una copia programada (diaria o semanal), y hacer doble clic en un fichero de copia abre la app directamente en el diálogo de restauración.
 
+<p align="center">
+  <img src="screenshots/settings_backup.png" alt="Ajustes de sistema con las filas de copia de seguridad, restauración y copia programada" width="750" />
+</p>
+
 ### 🎵 Gestión de la cola
 Las pistas de la cola "a continuación" se pueden reordenar desde el menú contextual, encolar varias canciones seguidas con *Reproducir a continuación* ahora las mantiene en el orden en que se añadieron, y cualquier pista se puede dejar repitiendo un número de veces a elegir.
 
 ### ✅ Seleccionar varias pistas a la vez
-Clic, Shift+clic y Ctrl/Cmd+clic funcionan en cualquier lista de pistas. Con una selección activa, se puede encolar, añadir a una lista, descargar o quitar de una lista de una sola vez.
+Clic, Shift+clic y Ctrl+clic funcionan en cualquier lista de pistas. Con una selección activa, se puede encolar, añadir a una lista, guardar en caché o quitar de una lista de una sola vez.
+
+<p align="center">
+  <img src="screenshots/library_multiselect.png" alt="Una playlist con cuatro pistas seleccionadas y la barra de acciones al pie de la lista" width="750" />
+</p>
 
 ### 🔊 Dispositivo de salida de audio
 El dispositivo por el que suena el audio se puede elegir desde Ajustes, en lugar de seguir siempre el predeterminado del sistema.
 
 ### 🚫 Artistas bloqueados y una biblioteca más ordenada
 Bloquear un artista desde el menú contextual de una pista o un álbum saca su contenido de la biblioteca, la búsqueda, las listas y las estanterías de Inicio. Las pestañas de Biblioteca también se pueden reordenar u ocultar, y cada una recuerda su propio criterio de orden — por nombre, artista, duración o fecha de adición.
+
+<p align="center">
+  <img src="screenshots/settings_content_blocked.png" alt="Ajustes de contenido con la lista de artistas bloqueados y el editor de pestañas de la biblioteca" width="750" />
+</p>
 
 ## Privacidad
 
