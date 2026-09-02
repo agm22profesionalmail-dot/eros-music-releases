@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-v1.5.16-6f4e37" alt="Version v1.5.16" />
+  <img src="https://img.shields.io/badge/version-v1.5.17-6f4e37" alt="Version v1.5.17" />
   <img src="https://img.shields.io/badge/platform-Windows-0078d4" alt="Windows platform" />
   <img src="https://img.shields.io/badge/license-GPL--3.0-green" alt="GPL-3.0 license" />
 </p>
@@ -139,7 +139,7 @@ Three routes in *Library → Import playlist*. **Link**: Spotify, Apple Music, D
 Always on top of other windows, snaps to the corners, resizable and with a karaoke mode.
 
 ### 📊 Statistics and personal recap
-Weekly and monthly tops with a summary of your activity. Everything is computed entirely on your machine: nothing leaves it.
+Weekly and monthly tops with a summary of your activity. Everything is computed entirely on your machine: nothing leaves it. Since v1.5.17 each listen is recorded individually instead of only the last time a track was played, so statistics keep gaining precision the longer the app is used, and a play only counts once a configurable threshold of the track has been heard.
 
 ### 🎮 Discord Rich Presence
 Shows what you are listening to on Discord. Optional and can be turned off.
@@ -161,6 +161,21 @@ The link to a private playlist does not work for whoever receives it. When shari
 
 ### 🎶 Local music
 Add your own audio files (MP3, FLAC, OGG, OPUS, WAV, M4A…) to the library and play them alongside your YouTube Music. Title, artist, album and cover art can be edited straight from the app, and the ambient background adapts to the artwork just like with any other song.
+
+### 💾 Backups
+Settings, playlists, listening history and the liked-songs cache can be exported to a single file and restored from it, with an automatic safety copy made before every restore. A backup can also run on a schedule (daily or weekly), and double-clicking a backup file opens the app straight into the restore dialog.
+
+### 🎵 Queue management
+Tracks in the upcoming queue can be reordered from the context menu, queuing several songs in a row with *Play next* now keeps them in the order they were added, and any track can be set to repeat a chosen number of times.
+
+### ✅ Selecting several tracks at once
+Click, Shift-click and Ctrl/Cmd-click work in every track list. With a selection active, it can be queued, added to a playlist, downloaded or removed from a playlist all in one action.
+
+### 🔊 Audio output device
+The device audio plays through can be chosen from Settings, instead of always following the system default.
+
+### 🚫 Blocked artists and a more organized library
+Blocking an artist from a track's or album's context menu keeps their content out of the library, search, playlists and the Home shelves. The Library tabs can also be reordered or hidden, and each one remembers its own sort order — by name, artist, duration or date added.
 
 ## Privacy
 
@@ -219,7 +234,7 @@ Download the installer from the [latest release](https://github.com/agm22profesi
 >
 > When running the installer, Windows may show a "Windows protected your PC" warning with "Unknown publisher". This happens because the app does not have a paid code-signing certificate — it is a personal, non-profit project.
 >
-> **It is safe.** To continue, click **"More info"** and then **"Run anyway"**. The source code is public and you can review it yourself.
+> **It is safe.** To continue, click **"More info"** and then **"Run anyway"**. The warning appears purely because a commercial code-signing certificate has a yearly cost this non-profit personal project does not cover.
 
 ---
 
