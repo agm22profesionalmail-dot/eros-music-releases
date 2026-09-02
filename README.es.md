@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/versión-v1.5.17-6f4e37" alt="Versión v1.5.17" />
+  <img src="https://img.shields.io/badge/versión-v1.5.18-6f4e37" alt="Versión v1.5.18" />
   <img src="https://img.shields.io/badge/plataforma-Windows-0078d4" alt="Plataforma Windows" />
   <img src="https://img.shields.io/badge/licencia-GPL--3.0-green" alt="Licencia GPL-3.0" />
 </p>
@@ -136,10 +136,10 @@ Alternativa libre a Last.fm. Pega tu token en Ajustes y listo — playing_now y 
 Tres vías en *Tu biblioteca → Importar playlist*. **Enlace**: Spotify, Apple Music, Deezer, TIDAL, SoundCloud, Bandcamp, Last.fm y YouTube / YT Music, álbumes incluidos — el servicio se reconoce mientras se escribe el enlace. **Archivo**: M3U/M3U8, PLS, XSPF, WPL/ZPL, ASX, CSV/TSV, JSON y TXT, deduciendo el formato del contenido. **Pegar lista**: cualquier lista de canciones como texto, que funciona hasta con los servicios que no publican nada. Cada canción se busca en YouTube Music, se muestran los resultados y la playlist se crea en tu cuenta.
 
 ### 🖥️ Mini-player flotante
-Siempre visible encima de otras ventanas, se ancla a las esquinas, escalable y con modo karaoke.
+Siempre visible encima de otras ventanas, se ancla a las esquinas, escalable y con modo karaoke. Desde la v1.5.18 puede mostrar también el número de reproducciones de la pista actual y el tiempo escuchado en el día en una pequeña línea bajo la barra de progreso, y las colas de reproducción anteriores se pueden volver a abrir desde el propio panel de cola.
 
 ### 📊 Estadísticas y recap personal
-Tops semanales y mensuales con un resumen de tu actividad. Todo se calcula 100% en local: nada sale de tu máquina. Desde la v1.5.17 cada escucha se registra individualmente en lugar de solo la última vez que sonó una pista, así que las estadísticas ganan precisión cuanto más se usa la app, y una reproducción solo cuenta cuando se ha escuchado un umbral configurable de la pista.
+Tops semanales y mensuales con un resumen de tu actividad. Todo se calcula 100% en local: nada sale de tu máquina. Desde la v1.5.17 cada escucha se registra individualmente en lugar de solo la última vez que sonó una pista, así que las estadísticas ganan precisión cuanto más se usa la app, y una reproducción solo cuenta cuando se ha escuchado un umbral configurable de la pista. Desde la v1.5.18 el recap también puede cubrir el año en curso o un rango de fechas personalizado, Inicio puede mostrar un paseo por pistas de este mismo día en años anteriores, las listas se pueden construir por reglas que se recalculan solas, y se puede importar el historial de escucha de Last.fm, ListenBrainz o una exportación de Spotify.
 
 ### 🎮 Discord Rich Presence
 Muestra en Discord lo que estás escuchando. Opcional y desactivable.
