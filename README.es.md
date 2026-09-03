@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/versión-v1.5.18-6f4e37" alt="Versión v1.5.18" />
+  <img src="https://img.shields.io/badge/versión-v1.6.0-6f4e37" alt="Versión v1.6.0" />
   <img src="https://img.shields.io/badge/plataforma-Windows-0078d4" alt="Plataforma Windows" />
   <img src="https://img.shields.io/badge/licencia-GPL--3.0-green" alt="Licencia GPL-3.0" />
 </p>
@@ -100,7 +100,13 @@ La cola lo enseña mientras pasa: la canción que sale se marca como «Mezclando
 </p>
 
 ### 🎤 Letras sincronizadas y karaoke
-Letras sincronizadas con la música. La línea que suena se enciende en cascada, letra a letra, y el resto se apaga y se desenfoca según lo lejos que esté. Se lee sobre cualquier carátula, por clara que sea, y puede ir centrada o alineada a la izquierda.
+Letras sincronizadas con la música. La línea que suena se enciende en cascada, letra a letra, y el resto se apaga y se desenfoca según lo lejos que esté. Se lee sobre cualquier carátula, por clara que sea, y puede ir centrada o alineada a la izquierda. Desde la v1.6.0 las letras también pueden venir de cuatro fuentes en línea distintas, o de un fichero junto a una pista local (LRC, SRT, VTT, SBV, ASS/SSA o texto plano), que siempre tiene prioridad cuando existe.
+
+### 🔊 Normalización de sonoridad y ficha técnica
+Desde la v1.6.0, el nivel de sonoridad se puede igualar entre canciones en vez de saltar de una pista floja a una a tope, mientras que el limitador de picos anterior sigue disponible con su propio nombre. El códec, la calidad y la frecuencia de muestreo se pueden consultar desde el menú de reproducción — y de paso se encontró y arregló un fallo de empaquetado que podía dejar la música local indexada sin artista ni álbum (peor aún en OGG y Opus).
+
+### 🎨 Presentación reactiva
+Desde la v1.6.0, la carátula puede pulsar suavemente con el ritmo, el cambio de pista lleva una transición visual propia, las pistas locales y descargadas muestran su forma de onda en la barra de progreso, y la barra de reproducción ofrece dos disposiciones a elegir en Ajustes — compacta y expandida.
 
 <p align="center">
   <img src="screenshots/lyrics_karaoke.png" alt="Modo karaoke con letras sincronizadas" width="750" />
@@ -120,7 +126,7 @@ También se pueden importar archivos de ecualizador desde *Ajustes → Ecualizad
 </p>
 
 ### 🌀 Espiral Musical
-Sección de descubrimiento en la pantalla principal con 3 filas de tarjetas en scroll continuo. Sugiere música basándose en tus artistas favoritos, historial y likes. Las canciones rotan automáticamente desde un pool de reserva para que siempre haya algo nuevo.
+Sección de descubrimiento en la pantalla principal con 3 filas de tarjetas en scroll continuo. Sugiere música basándose en tus artistas favoritos, historial y likes. Las canciones rotan automáticamente desde un pool de reserva para que siempre haya algo nuevo. Desde la v1.6.0, Inicio también puede mostrar una mezcla construida con pistas que suelen aparecer en las mismas sesiones de escucha.
 
 <p align="center">
   <img src="screenshots/home_spiral.gif" alt="Las tres filas de la Espiral Musical desplazándose en sentidos alternos" width="640" />
@@ -133,7 +139,7 @@ Conecta tu cuenta de Last.fm desde Ajustes y tus escuchas se registran automáti
 Alternativa libre a Last.fm. Pega tu token en Ajustes y listo — playing_now y submit-listens, compartiendo el mismo trigger que Last.fm.
 
 ### 📥 Importar playlists de cualquier servicio
-Tres vías en *Tu biblioteca → Importar playlist*. **Enlace**: Spotify, Apple Music, Deezer, TIDAL, SoundCloud, Bandcamp, Last.fm y YouTube / YT Music, álbumes incluidos — el servicio se reconoce mientras se escribe el enlace. **Archivo**: M3U/M3U8, PLS, XSPF, WPL/ZPL, ASX, CSV/TSV, JSON y TXT, deduciendo el formato del contenido. **Pegar lista**: cualquier lista de canciones como texto, que funciona hasta con los servicios que no publican nada. Cada canción se busca en YouTube Music, se muestran los resultados y la playlist se crea en tu cuenta.
+Tres vías en *Tu biblioteca → Importar playlist*. **Enlace**: Spotify, Apple Music, Deezer, TIDAL, SoundCloud, Bandcamp, Last.fm y YouTube / YT Music, álbumes incluidos — el servicio se reconoce mientras se escribe el enlace. **Archivo**: M3U/M3U8, PLS, XSPF, WPL/ZPL, ASX, CSV/TSV, JSON y TXT, deduciendo el formato del contenido. **Pegar lista**: cualquier lista de canciones como texto, que funciona hasta con los servicios que no publican nada. Cada canción se busca en YouTube Music, se muestran los resultados y la playlist se crea en tu cuenta. Desde la v1.6.0, cualquier lista, álbum o lista inteligente también se puede exportar a M3U o CSV.
 
 ### 🖥️ Mini-player flotante
 Siempre visible encima de otras ventanas, se ancla a las esquinas, escalable y con modo karaoke. Desde la v1.5.18 puede mostrar también el número de reproducciones de la pista actual y el tiempo escuchado en el día en una pequeña línea bajo la barra de progreso, y las colas de reproducción anteriores se pueden volver a abrir desde el propio panel de cola.
@@ -160,7 +166,10 @@ Desde **Ajustes → Ayuda y comentarios** se pueden reportar fallos o proponer m
 El enlace de una lista privada no le funciona a quien lo recibe. Al compartir una lista propia que sigue siendo privada, la aplicación avisa y pide confirmación antes de hacerla pública. Cada lista muestra si es pública, privada u oculta.
 
 ### 🎶 Música local
-Añade tus archivos de audio (MP3, FLAC, OGG, OPUS, WAV, M4A…) a la biblioteca y reprodúcelos junto a tu música de YouTube Music. Puedes editar título, artista, álbum y carátula directamente desde la app, y el fondo ambient se adapta a la portada igual que con cualquier otra canción.
+Añade tus archivos de audio (MP3, FLAC, OGG, OPUS, WAV, M4A…) a la biblioteca y reprodúcelos junto a tu música de YouTube Music. Puedes editar título, artista, álbum y carátula directamente desde la app, y el fondo ambient se adapta a la portada igual que con cualquier otra canción. Desde la v1.6.0, editar título, artista y álbum también puede escribirlos en el propio fichero.
+
+### 🔍 Buscador en Ajustes
+Desde la v1.6.0, un campo de búsqueda en Ajustes llega a cada sección, subsección y ajuste individual — escribir parte de lo que se busca salta directamente hasta ahí.
 
 ### 💾 Copias de seguridad
 Los ajustes, las listas, el historial de escucha y la caché de "me gusta" se pueden exportar a un único fichero y restaurar desde él, con una copia de seguridad automática antes de cada restauración. También se puede activar una copia programada (diaria o semanal), y hacer doble clic en un fichero de copia abre la app directamente en el diálogo de restauración.
