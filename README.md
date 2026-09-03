@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-v1.5.18-6f4e37" alt="Version v1.5.18" />
+  <img src="https://img.shields.io/badge/version-v1.6.0-6f4e37" alt="Version v1.6.0" />
   <img src="https://img.shields.io/badge/platform-Windows-0078d4" alt="Windows platform" />
   <img src="https://img.shields.io/badge/license-GPL--3.0-green" alt="GPL-3.0 license" />
 </p>
@@ -100,7 +100,13 @@ The queue shows it as it happens: the outgoing song is marked as "Mixing…", an
 </p>
 
 ### 🎤 Synced lyrics and karaoke
-Lyrics synchronised with the music. The line that is playing lights up in a cascade, letter by letter, while the rest dim and blur according to how far away they are. It reads over any cover art, however bright, and can be centred or left-aligned.
+Lyrics synchronised with the music. The line that is playing lights up in a cascade, letter by letter, while the rest dim and blur according to how far away they are. It reads over any cover art, however bright, and can be centred or left-aligned. Since v1.6.0 lyrics can also come from four different online sources, or from a file placed next to a local track (LRC, SRT, VTT, SBV, ASS/SSA or plain text), which always takes priority when present.
+
+### 🔊 Loudness normalization and track details
+Since v1.6.0, loudness can be evened out across tracks instead of jumping between a quiet song and a loud one, while the previous peak limiter stays available under its own name. Codec, bitrate and sample rate can be checked from the now-playing menu — and along the way, a packaging issue that could leave local music indexed with no artist or album (worse on OGG and Opus) was found and fixed.
+
+### 🎨 Reactive presentation
+Since v1.6.0, the album art can pulse gently with the beat, track changes carry a proper visual transition, local and downloaded tracks show their waveform on the progress bar, and the now-playing bar offers two layouts — compact and expanded — to choose from in Settings.
 
 <p align="center">
   <img src="screenshots/lyrics_karaoke.png" alt="Karaoke mode with synced lyrics" width="750" />
@@ -120,7 +126,7 @@ Equalizer files can also be imported from *Settings → Equalizer*: AutoEq and E
 </p>
 
 ### 🌀 Musical Spiral
-A discovery section on the main screen with 3 rows of continuously scrolling cards. It suggests music based on your favourite artists, your history and your likes. Songs rotate automatically from a reserve pool so there is always something new.
+A discovery section on the main screen with 3 rows of continuously scrolling cards. It suggests music based on your favourite artists, your history and your likes. Songs rotate automatically from a reserve pool so there is always something new. Since v1.6.0, Home can also show a mix built from tracks that tend to come up in the same listening sessions.
 
 <p align="center">
   <img src="screenshots/home_spiral.gif" alt="The three rows of the Musical Spiral scrolling in alternating directions" width="640" />
@@ -133,7 +139,7 @@ Connect your Last.fm account from Settings and your listens are recorded automat
 A free alternative to Last.fm. Paste your token in Settings and that is it — playing_now and submit-listens, sharing the same trigger as Last.fm.
 
 ### 📥 Import playlists from any service
-Three routes in *Library → Import playlist*. **Link**: Spotify, Apple Music, Deezer, TIDAL, SoundCloud, Bandcamp, Last.fm and YouTube / YT Music, albums included — the service is recognised as the link is typed. **File**: M3U/M3U8, PLS, XSPF, WPL/ZPL, ASX, CSV/TSV, JSON and TXT, with the format worked out from the contents. **Paste list**: any list of tracks as plain text, which works even with services that publish nothing. Each song is looked up on YouTube Music, the results are shown, and the playlist is created in your account.
+Three routes in *Library → Import playlist*. **Link**: Spotify, Apple Music, Deezer, TIDAL, SoundCloud, Bandcamp, Last.fm and YouTube / YT Music, albums included — the service is recognised as the link is typed. **File**: M3U/M3U8, PLS, XSPF, WPL/ZPL, ASX, CSV/TSV, JSON and TXT, with the format worked out from the contents. **Paste list**: any list of tracks as plain text, which works even with services that publish nothing. Each song is looked up on YouTube Music, the results are shown, and the playlist is created in your account. Since v1.6.0, any playlist, album or smart list can also be exported to M3U or CSV.
 
 ### 🖥️ Floating mini-player
 Always on top of other windows, snaps to the corners, resizable and with a karaoke mode. Since v1.5.18 it can also show the current track's play count and today's listening time in a small line under the progress bar, and past play queues can be reopened from the main queue panel.
@@ -160,7 +166,10 @@ From **Settings → Help and feedback** you can report bugs or suggest improveme
 The link to a private playlist does not work for whoever receives it. When sharing your own playlist while it is still private, the application warns and asks for confirmation before making it public. Each playlist shows whether it is public, private or unlisted.
 
 ### 🎶 Local music
-Add your own audio files (MP3, FLAC, OGG, OPUS, WAV, M4A…) to the library and play them alongside your YouTube Music. Title, artist, album and cover art can be edited straight from the app, and the ambient background adapts to the artwork just like with any other song.
+Add your own audio files (MP3, FLAC, OGG, OPUS, WAV, M4A…) to the library and play them alongside your YouTube Music. Title, artist, album and cover art can be edited straight from the app, and the ambient background adapts to the artwork just like with any other song. Since v1.6.0, edits to title, artist and album can also be written into the file itself.
+
+### 🔍 Settings search
+Since v1.6.0, a search box in Settings reaches every section, subsection and individual option — typing part of what is being looked for jumps straight to it.
 
 ### 💾 Backups
 Settings, playlists, listening history and the liked-songs cache can be exported to a single file and restored from it, with an automatic safety copy made before every restore. A backup can also run on a schedule (daily or weekly), and double-clicking a backup file opens the app straight into the restore dialog.
