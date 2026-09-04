@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/versión-v1.6.0-6f4e37" alt="Versión v1.6.0" />
+  <img src="https://img.shields.io/badge/versión-v1.6.1-6f4e37" alt="Versión v1.6.1" />
   <img src="https://img.shields.io/badge/plataforma-Windows-0078d4" alt="Plataforma Windows" />
   <img src="https://img.shields.io/badge/licencia-GPL--3.0-green" alt="Licencia GPL-3.0" />
 </p>
@@ -100,13 +100,13 @@ La cola lo enseña mientras pasa: la canción que sale se marca como «Mezclando
 </p>
 
 ### 🎤 Letras sincronizadas y karaoke
-Letras sincronizadas con la música. La línea que suena se enciende en cascada, letra a letra, y el resto se apaga y se desenfoca según lo lejos que esté. Se lee sobre cualquier carátula, por clara que sea, y puede ir centrada o alineada a la izquierda. Desde la v1.6.0 las letras también pueden venir de cuatro fuentes en línea distintas, o de un fichero junto a una pista local (LRC, SRT, VTT, SBV, ASS/SSA o texto plano), que siempre tiene prioridad cuando existe.
+Letras sincronizadas con la música. La línea que suena se enciende en cascada, letra a letra, y el resto se apaga y se desenfoca según lo lejos que esté. Se lee sobre cualquier carátula, por clara que sea, y puede ir centrada o alineada a la izquierda. Desde la v1.6.0 las letras también pueden venir de cuatro fuentes en línea distintas, o de un fichero junto a una pista local (LRC, SRT, VTT, SBV, ASS/SSA o texto plano), que siempre tiene prioridad cuando existe. Desde la v1.6.1, al desplazar la letra a mano se pausa el auto-seguimiento y la vista se queda donde se deja, con un botón **«Sincronizar»** para volver de un salto a la línea que suena.
 
 ### 🔊 Normalización de sonoridad y ficha técnica
 Desde la v1.6.0, el nivel de sonoridad se puede igualar entre canciones en vez de saltar de una pista floja a una a tope, mientras que el limitador de picos anterior sigue disponible con su propio nombre. El códec, la calidad y la frecuencia de muestreo se pueden consultar desde el menú de reproducción — y de paso se encontró y arregló un fallo de empaquetado que podía dejar la música local indexada sin artista ni álbum (peor aún en OGG y Opus).
 
 ### 🎨 Presentación reactiva
-Desde la v1.6.0, la carátula puede pulsar suavemente con el ritmo, el cambio de pista lleva una transición visual propia, las pistas locales y descargadas muestran su forma de onda en la barra de progreso, y la barra de reproducción ofrece dos disposiciones a elegir en Ajustes — compacta y expandida.
+Desde la v1.6.0, la carátula puede pulsar suavemente con el ritmo, el cambio de pista lleva una transición visual propia, las pistas locales y descargadas muestran su forma de onda en la barra de progreso, y la barra de reproducción ofrece dos disposiciones a elegir en Ajustes — compacta y expandida. Desde la v1.6.1, todo esto se sigue dibujando aunque otra ventana tape ERO'S Music por completo o pierda el foco, así que capturar la ventana —por ejemplo para transmitirla por Discord— ya no congela la imagen salvo que la aplicación esté a pantalla completa.
 
 <p align="center">
   <img src="screenshots/lyrics_karaoke.png" alt="Modo karaoke con letras sincronizadas" width="750" />
