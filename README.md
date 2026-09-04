@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-v1.6.0-6f4e37" alt="Version v1.6.0" />
+  <img src="https://img.shields.io/badge/version-v1.6.1-6f4e37" alt="Version v1.6.1" />
   <img src="https://img.shields.io/badge/platform-Windows-0078d4" alt="Windows platform" />
   <img src="https://img.shields.io/badge/license-GPL--3.0-green" alt="GPL-3.0 license" />
 </p>
@@ -100,13 +100,13 @@ The queue shows it as it happens: the outgoing song is marked as "Mixing…", an
 </p>
 
 ### 🎤 Synced lyrics and karaoke
-Lyrics synchronised with the music. The line that is playing lights up in a cascade, letter by letter, while the rest dim and blur according to how far away they are. It reads over any cover art, however bright, and can be centred or left-aligned. Since v1.6.0 lyrics can also come from four different online sources, or from a file placed next to a local track (LRC, SRT, VTT, SBV, ASS/SSA or plain text), which always takes priority when present.
+Lyrics synchronised with the music. The line that is playing lights up in a cascade, letter by letter, while the rest dim and blur according to how far away they are. It reads over any cover art, however bright, and can be centred or left-aligned. Since v1.6.0 lyrics can also come from four different online sources, or from a file placed next to a local track (LRC, SRT, VTT, SBV, ASS/SSA or plain text), which always takes priority when present. Since v1.6.1, scrolling the lyrics by hand pauses the auto-follow and keeps the view where you leave it, with a **Resync** button to jump straight back to the line that is playing.
 
 ### 🔊 Loudness normalization and track details
 Since v1.6.0, loudness can be evened out across tracks instead of jumping between a quiet song and a loud one, while the previous peak limiter stays available under its own name. Codec, bitrate and sample rate can be checked from the now-playing menu — and along the way, a packaging issue that could leave local music indexed with no artist or album (worse on OGG and Opus) was found and fixed.
 
 ### 🎨 Reactive presentation
-Since v1.6.0, the album art can pulse gently with the beat, track changes carry a proper visual transition, local and downloaded tracks show their waveform on the progress bar, and the now-playing bar offers two layouts — compact and expanded — to choose from in Settings.
+Since v1.6.0, the album art can pulse gently with the beat, track changes carry a proper visual transition, local and downloaded tracks show their waveform on the progress bar, and the now-playing bar offers two layouts — compact and expanded — to choose from in Settings. Since v1.6.1, all of this keeps rendering even when another window fully covers ERO'S Music or it loses focus, so capturing the window — for example to stream it over Discord — no longer freezes the picture unless the app is in full screen.
 
 <p align="center">
   <img src="screenshots/lyrics_karaoke.png" alt="Karaoke mode with synced lyrics" width="750" />
