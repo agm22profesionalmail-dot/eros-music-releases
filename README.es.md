@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/versión-v1.6.1-6f4e37" alt="Versión v1.6.1" />
+  <img src="https://img.shields.io/badge/versión-v1.6.2-6f4e37" alt="Versión v1.6.2" />
   <img src="https://img.shields.io/badge/plataforma-Windows-0078d4" alt="Plataforma Windows" />
   <img src="https://img.shields.io/badge/licencia-GPL--3.0-green" alt="Licencia GPL-3.0" />
 </p>
@@ -169,7 +169,7 @@ El enlace de una lista privada no le funciona a quien lo recibe. Al compartir un
 Añade tus archivos de audio (MP3, FLAC, OGG, OPUS, WAV, M4A…) a la biblioteca y reprodúcelos junto a tu música de YouTube Music. Puedes editar título, artista, álbum y carátula directamente desde la app, y el fondo ambient se adapta a la portada igual que con cualquier otra canción. Desde la v1.6.0, editar título, artista y álbum también puede escribirlos en el propio fichero.
 
 ### 🔍 Buscador en Ajustes
-Desde la v1.6.0, un campo de búsqueda en Ajustes llega a cada sección, subsección y ajuste individual — escribir parte de lo que se busca salta directamente hasta ahí.
+Desde la v1.6.0, un campo de búsqueda en Ajustes llega a cada sección, subsección y ajuste individual — escribir parte de lo que se busca salta directamente hasta ahí. Desde la v1.6.2, los ajustes se organizan en pestañas, así que cada categoría muestra solo sus opciones y hay mucho menos que recorrer.
 
 ### 💾 Copias de seguridad
 Los ajustes, las listas, el historial de escucha y la caché de "me gusta" se pueden exportar a un único fichero y restaurar desde él, con una copia de seguridad automática antes de cada restauración. También se puede activar una copia programada (diaria o semanal), y hacer doble clic en un fichero de copia abre la app directamente en el diálogo de restauración.
@@ -192,7 +192,7 @@ Clic, Shift+clic y Ctrl+clic funcionan en cualquier lista de pistas. Con una sel
 El dispositivo por el que suena el audio se puede elegir desde Ajustes, en lugar de seguir siempre el predeterminado del sistema.
 
 ### 🚫 Artistas bloqueados y una biblioteca más ordenada
-Bloquear un artista desde el menú contextual de una pista o un álbum saca su contenido de la biblioteca, la búsqueda, las listas y las estanterías de Inicio. Las pestañas de Biblioteca también se pueden reordenar u ocultar, y cada una recuerda su propio criterio de orden — por nombre, artista, duración o fecha de adición.
+Bloquear un artista desde el menú contextual de una pista o un álbum saca su contenido de la biblioteca, la búsqueda, las listas y las estanterías de Inicio. Las pestañas de Biblioteca también se pueden reordenar u ocultar, y cada una recuerda su propio criterio de orden — por nombre, artista, duración o fecha de adición. Desde la v1.6.2, un filtro de música con IA deja fuera de las recomendaciones, el autoplay, la búsqueda y la biblioteca la música generada con IA, y cualquier canción se puede marcar como *No me gusta* desde su menú para que se salte automáticamente cuando la radio o el autoplay rellenan la cola.
 
 <p align="center">
   <img src="screenshots/settings_content_blocked.png" alt="Ajustes de contenido con la lista de artistas bloqueados y el editor de pestañas de la biblioteca" width="750" />
