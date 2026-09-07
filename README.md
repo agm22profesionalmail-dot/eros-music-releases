@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-v1.6.1-6f4e37" alt="Version v1.6.1" />
+  <img src="https://img.shields.io/badge/version-v1.6.2-6f4e37" alt="Version v1.6.2" />
   <img src="https://img.shields.io/badge/platform-Windows-0078d4" alt="Windows platform" />
   <img src="https://img.shields.io/badge/license-GPL--3.0-green" alt="GPL-3.0 license" />
 </p>
@@ -169,7 +169,7 @@ The link to a private playlist does not work for whoever receives it. When shari
 Add your own audio files (MP3, FLAC, OGG, OPUS, WAV, M4A…) to the library and play them alongside your YouTube Music. Title, artist, album and cover art can be edited straight from the app, and the ambient background adapts to the artwork just like with any other song. Since v1.6.0, edits to title, artist and album can also be written into the file itself.
 
 ### 🔍 Settings search
-Since v1.6.0, a search box in Settings reaches every section, subsection and individual option — typing part of what is being looked for jumps straight to it.
+Since v1.6.0, a search box in Settings reaches every section, subsection and individual option — typing part of what is being looked for jumps straight to it. Since v1.6.2, Settings are organized into tabs, so each category shows only its own options and there is far less to scroll through.
 
 ### 💾 Backups
 Settings, playlists, listening history and the liked-songs cache can be exported to a single file and restored from it, with an automatic safety copy made before every restore. A backup can also run on a schedule (daily or weekly), and double-clicking a backup file opens the app straight into the restore dialog.
@@ -192,7 +192,7 @@ Click, Shift-click and Ctrl-click work in every track list. With a selection act
 The device audio plays through can be chosen from Settings, instead of always following the system default.
 
 ### 🚫 Blocked artists and a more organized library
-Blocking an artist from a track's or album's context menu keeps their content out of the library, search, playlists and the Home shelves. The Library tabs can also be reordered or hidden, and each one remembers its own sort order — by name, artist, duration or date added.
+Blocking an artist from a track's or album's context menu keeps their content out of the library, search, playlists and the Home shelves. The Library tabs can also be reordered or hidden, and each one remembers its own sort order — by name, artist, duration or date added. Since v1.6.2, an AI music filter keeps AI-generated music out of recommendations, autoplay, search and the library, and any song can be marked as *Not interested* from its menu to have it skipped automatically when radio or autoplay fills the queue.
 
 <p align="center">
   <img src="screenshots/settings_content_blocked.png" alt="Content settings with the blocked artists list and the Library tabs editor" width="750" />
