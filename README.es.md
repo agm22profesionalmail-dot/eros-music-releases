@@ -246,6 +246,8 @@ ERO'S Music es un proyecto vivo con la ambición de ir más allá. La idea a lar
 **¿Por qué no hay integración con Spotify?**
 Desde febrero de 2026, Spotify exige que la cuenta que registra una aplicación en su plataforma de desarrolladores tenga suscripción Premium, y limita esa aplicación a un máximo de cinco cuentas autorizadas de forma permanente. Abrir el acceso a cualquier usuario exigiría además una revisión aparte por parte de Spotify, sin garantía de aprobación. Con esas condiciones, no es posible ofrecer Spotify a todos los usuarios de la aplicación, así que la integración se ha descartado.
 
+Aun así, una lista de Spotify pública (o de Apple Music, Deezer, TIDAL, SoundCloud, Bandcamp o Last.fm) sí se puede traer: *Biblioteca → Importar lista*, pegando el enlace, y cada canción se busca y se añade desde YouTube Music. No hace falta cuenta ni inicio de sesión de Spotify — solo que la lista esté marcada como pública.
+
 ## Descarga
 
 <p align="center">
