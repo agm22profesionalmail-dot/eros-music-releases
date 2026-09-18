@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/versión-v1.6.2-6f4e37" alt="Versión v1.6.2" />
+  <img src="https://img.shields.io/badge/versión-v1.6.3-6f4e37" alt="Versión v1.6.3" />
   <img src="https://img.shields.io/badge/plataforma-Windows-0078d4" alt="Plataforma Windows" />
   <img src="https://img.shields.io/badge/licencia-GPL--3.0-green" alt="Licencia GPL-3.0" />
 </p>
@@ -166,7 +166,7 @@ Desde **Ajustes → Ayuda y comentarios** se pueden reportar fallos o proponer m
 El enlace de una lista privada no le funciona a quien lo recibe. Al compartir una lista propia que sigue siendo privada, la aplicación avisa y pide confirmación antes de hacerla pública. Cada lista muestra si es pública, privada u oculta.
 
 ### 🎶 Música local
-Añade tus archivos de audio (MP3, FLAC, OGG, OPUS, WAV, M4A…) a la biblioteca y reprodúcelos junto a tu música de YouTube Music. Puedes editar título, artista, álbum y carátula directamente desde la app, y el fondo ambient se adapta a la portada igual que con cualquier otra canción. Desde la v1.6.0, editar título, artista y álbum también puede escribirlos en el propio fichero.
+Añade tus archivos de audio (MP3, FLAC, OGG, OPUS, WAV, M4A…) a la biblioteca y reprodúcelos junto a tu música de YouTube Music. Puedes editar título, artista, álbum y carátula directamente desde la app, y el fondo ambient se adapta a la portada igual que con cualquier otra canción. Desde la v1.6.0, editar título, artista y álbum también puede escribirlos en el propio fichero. Desde la v1.6.3, un fichero de canción con una imagen al lado que tenga exactamente su mismo nombre usa esa imagen como carátula automáticamente.
 
 ### 🔍 Buscador en Ajustes
 Desde la v1.6.0, un campo de búsqueda en Ajustes llega a cada sección, subsección y ajuste individual — escribir parte de lo que se busca salta directamente hasta ahí. Desde la v1.6.2, los ajustes se organizan en pestañas, así que cada categoría muestra solo sus opciones y hay mucho menos que recorrer.
