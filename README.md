@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-v1.6.2-6f4e37" alt="Version v1.6.2" />
+  <img src="https://img.shields.io/badge/version-v1.6.3-6f4e37" alt="Version v1.6.3" />
   <img src="https://img.shields.io/badge/platform-Windows-0078d4" alt="Windows platform" />
   <img src="https://img.shields.io/badge/license-GPL--3.0-green" alt="GPL-3.0 license" />
 </p>
@@ -166,7 +166,7 @@ From **Settings → Help and feedback** you can report bugs or suggest improveme
 The link to a private playlist does not work for whoever receives it. When sharing your own playlist while it is still private, the application warns and asks for confirmation before making it public. Each playlist shows whether it is public, private or unlisted.
 
 ### 🎶 Local music
-Add your own audio files (MP3, FLAC, OGG, OPUS, WAV, M4A…) to the library and play them alongside your YouTube Music. Title, artist, album and cover art can be edited straight from the app, and the ambient background adapts to the artwork just like with any other song. Since v1.6.0, edits to title, artist and album can also be written into the file itself.
+Add your own audio files (MP3, FLAC, OGG, OPUS, WAV, M4A…) to the library and play them alongside your YouTube Music. Title, artist, album and cover art can be edited straight from the app, and the ambient background adapts to the artwork just like with any other song. Since v1.6.0, edits to title, artist and album can also be written into the file itself. Since v1.6.3, a song file sitting next to an image with the exact same name picks up that image as its cover automatically.
 
 ### 🔍 Settings search
 Since v1.6.0, a search box in Settings reaches every section, subsection and individual option — typing part of what is being looked for jumps straight to it. Since v1.6.2, Settings are organized into tabs, so each category shows only its own options and there is far less to scroll through.
