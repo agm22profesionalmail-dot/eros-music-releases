@@ -241,6 +241,11 @@ ERO'S Music is a living project with the ambition to go further. The long-term i
 - 🔗 **Integrating more platforms** — being able to reach your libraries and playlists across different streaming services from a single place.
 - 🧩 **Many more features** — the roadmap is open and grows with every release. This is not a finished product: it is a personal project aiming high.
 
+## FAQ
+
+**Why isn't Spotify integrated?**
+Since February 2026, Spotify requires the account that registers an application on its developer platform to have a Premium subscription, and caps that application at a maximum of five authorized accounts, permanently. Opening access to every user would additionally require a separate review by Spotify, with no guarantee of approval. Under those conditions, Spotify cannot be offered to every user of the application, so the integration has been left out.
+
 ## Download
 
 <p align="center">
