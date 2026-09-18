@@ -246,6 +246,8 @@ ERO'S Music is a living project with the ambition to go further. The long-term i
 **Why isn't Spotify integrated?**
 Since February 2026, Spotify requires the account that registers an application on its developer platform to have a Premium subscription, and caps that application at a maximum of five authorized accounts, permanently. Opening access to every user would additionally require a separate review by Spotify, with no guarantee of approval. Under those conditions, Spotify cannot be offered to every user of the application, so the integration has been left out.
 
+That said, a public Spotify playlist (or one from Apple Music, Deezer, TIDAL, SoundCloud, Bandcamp or Last.fm) can still be brought in: *Library → Import playlist*, paste the link, and every track is matched and added from YouTube Music. No Spotify account or login required — just the playlist set to public first.
+
 ## Download
 
 <p align="center">
