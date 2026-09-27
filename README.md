@@ -13,9 +13,9 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-v1.6.3-6f4e37" alt="Version v1.6.3" />
+  <img src="https://img.shields.io/badge/version-v1.6.4-6f4e37" alt="Version v1.6.4" />
   <img src="https://img.shields.io/badge/platform-Windows-0078d4" alt="Windows platform" />
-  <img src="https://img.shields.io/badge/license-GPL--3.0-green" alt="GPL-3.0 license" />
+  <img src="https://img.shields.io/badge/license-Freeware-6f4e37" alt="Freeware license" />
 </p>
 
 <p align="center">
@@ -248,6 +248,28 @@ Since February 2026, Spotify requires the account that registers an application 
 
 That said, a public Spotify playlist (or one from Apple Music, Deezer, TIDAL, SoundCloud, Bandcamp or Last.fm) can still be brought in: *Library → Import playlist*, paste the link, and every track is matched and added from YouTube Music. No Spotify account or login required — just the playlist set to public first.
 
+## License
+
+ERO'S Music is **freeware**: free of charge, closed source, for personal use.
+The full terms are in the `EULA.txt` shown by the installer (also available in
+the installation folder). It is provided "as is", without warranty of any kind.
+
+### Third-party components
+
+The installer bundles unmodified copies of two independent programs, each under
+its own license:
+
+- **FFmpeg** — licensed under the **GNU GPL v3** (built with `--enable-gpl`).
+  The exact build version, the full license text and links to the corresponding
+  source code are in `resources\licenses\ffmpeg\` inside the installation
+  folder. FFmpeg is not part of ERO'S Music and runs as a separate process.
+- **yt-dlp** — public domain (The Unlicense). See `resources\licenses\yt-dlp\`.
+
+The licenses of every JavaScript dependency shipped in the installer are listed
+in `resources\licenses\THIRD_PARTY_NOTICES.txt`. Brand logos shown in the app
+come from [Simple Icons](https://simpleicons.org) (CC0) and remain the property
+of their respective owners.
+
 ## Download
 
 <p align="center">
@@ -275,5 +297,6 @@ Download the installer from the [latest release](https://github.com/agm22profesi
   It is not affiliated with, sponsored by or endorsed by Google, YouTube, Spotify, Discord<br/>
   or any other brand mentioned. All product and brand names are the property of their<br/>
   respective owners and are used for descriptive purposes only.<br/>
-  Use of this application is at the user's own risk.</em>
+  Use of this application is at the user's own risk. ERO'S Music is freeware<br/>
+  (closed source); FFmpeg, bundled with the installer, is licensed under the GPL v3.</em>
 </p>
